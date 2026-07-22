@@ -3,6 +3,7 @@ import {
   useGameStore,
   type SelectedEntitySummary,
   type SelectedProduction,
+  type SelectionCommand,
   type TutorialStep,
 } from '../state/gameStore.js';
 
@@ -25,18 +26,23 @@ const TUTORIAL: Record<TutorialStep, { number: string; title: string; instructio
     title: 'Issue a move order',
     instruction: 'Right-click open terrain with units selected.',
   },
-  build: {
+  gather: {
     number: '03',
+    title: 'Fund the war effort',
+    instruction: 'Select the harvester and right-click an ore field.',
+  },
+  build: {
+    number: '04',
     title: 'Expand the base',
     instruction: 'Choose a structure, then deploy it on clear terrain.',
   },
   produce: {
-    number: '04',
+    number: '05',
     title: 'Produce a unit',
     instruction: 'Select a barracks or war factory and queue reinforcements.',
   },
   attack: {
-    number: '05',
+    number: '06',
     title: 'Engage the enemy',
     instruction: 'Select combat units and right-click a red target.',
   },
@@ -52,6 +58,8 @@ interface HudProps {
   onCancelProduction(): void;
   onPlaceBuilding(building: string): void;
   onCancelPlacement(): void;
+  onGather(): void;
+  onStop(): void;
   onOpenEditor(): void;
   onRestart(): void;
 }
@@ -159,7 +167,9 @@ export function Hud(props: HudProps): JSX.Element {
         </div>
       </aside>
 
-      {selectedEntity ? <SelectionCard entity={selectedEntity} /> : null}
+      {selectedEntity ? (
+        <SelectionCard entity={selectedEntity} onGather={props.onGather} onStop={props.onStop} />
+      ) : null}
       {placingBuilding ? (
         <div className="placement-banner steel-panel">
           <span className="placement-banner__lamp" />
@@ -284,7 +294,25 @@ function ProductionPanel({
   );
 }
 
-function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Element {
+const COMMAND_HELP: Record<SelectionCommand, { label: string; instruction: string }> = {
+  gather: { label: 'Harvest ore', instruction: 'Right-click an ore field or use nearest' },
+  move: { label: 'Move', instruction: 'Right-click open terrain' },
+  attack: { label: 'Attack', instruction: 'Right-click a red target' },
+  stop: { label: 'Stop', instruction: 'Cancel the current order' },
+  build: { label: 'Build', instruction: 'Choose a structure in the right panel' },
+  produce: { label: 'Produce', instruction: 'Queue a unit in the right panel' },
+  rally: { label: 'Rally point', instruction: 'Right-click terrain to set it' },
+};
+
+function SelectionCard({
+  entity,
+  onGather,
+  onStop,
+}: {
+  entity: SelectedEntitySummary;
+  onGather: () => void;
+  onStop: () => void;
+}): JSX.Element {
   const health = entity.maxHp && entity.hp !== undefined ? (entity.hp / entity.maxHp) * 100 : null;
   return (
     <section className="selection-card steel-panel">
@@ -309,6 +337,24 @@ function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Eleme
           {entity.status}
         </div>
       ) : null}
+      <div className="selection-card__orders">
+        <span className="panel-kicker">AVAILABLE ORDERS</span>
+        {entity.commands.map((command) => {
+          const help = COMMAND_HELP[command];
+          const action = command === 'gather' ? onGather : command === 'stop' ? onStop : null;
+          return action ? (
+            <button key={command} onClick={action}>
+              <strong>{help.label}</strong>
+              <small>{help.instruction}</small>
+            </button>
+          ) : (
+            <div key={command} className="selection-card__order">
+              <strong>{help.label}</strong>
+              <small>{help.instruction}</small>
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

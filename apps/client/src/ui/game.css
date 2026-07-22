@@ -725,11 +725,11 @@ kbd {
 
 .selection-card {
   position: absolute;
-  left: 14px;
-  bottom: 54px;
-  width: 278px;
+  left: 12px;
+  bottom: 292px;
+  width: 218px;
   padding: 12px;
-  pointer-events: none;
+  pointer-events: auto;
 }
 .selection-card > strong {
   display: block;
@@ -754,6 +754,50 @@ kbd {
   color: #b8b38f;
   font: 9px var(--body);
   text-transform: uppercase;
+}
+.selection-card__orders {
+  display: grid;
+  gap: 5px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #555943;
+}
+.selection-card__order,
+.selection-card__orders button {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 7px;
+  text-align: left;
+}
+.selection-card__order {
+  background: rgba(20, 23, 17, 0.5);
+  border-left: 2px solid #686b4f;
+}
+.selection-card__orders button {
+  color: #ddd5b4;
+  cursor: pointer;
+  background: linear-gradient(#464b37, #292d21);
+  border: 1px outset #6d7053;
+  font-family: var(--body);
+}
+.selection-card__orders button:hover {
+  filter: brightness(1.15);
+}
+.selection-card__order strong,
+.selection-card__orders button strong {
+  color: #ddd5b4;
+  font-size: 10px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.selection-card__order small,
+.selection-card__orders button small {
+  color: #949178;
+  font: 8px/1.25 var(--body);
+  text-align: right;
 }
 .placement-banner {
   position: absolute;
@@ -1362,6 +1406,9 @@ kbd {
   .minimap-frame {
     transform: scale(0.78);
     transform-origin: bottom left;
+  }
+  .selection-card {
+    bottom: 238px;
   }
   .editor-shell {
     grid-template-columns: 1fr;

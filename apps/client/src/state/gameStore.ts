@@ -1,8 +1,11 @@
 /** Zustand store for PRESENTATION state only. Never holds authoritative sim state. */
 import { create } from 'zustand';
-import type { MatchStateSnapshot } from '@iron/engine';
+import { UNIT_STATS, type EntitySnapshot, type MatchStateSnapshot } from '@iron/engine';
 
-export type TutorialStep = 'select' | 'move' | 'build' | 'produce' | 'attack' | 'complete';
+export type TutorialStep =
+  'select' | 'move' | 'gather' | 'build' | 'produce' | 'attack' | 'complete';
+export type SelectionCommand =
+  'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally';
 
 export interface SelectedEntitySummary {
   label: string;
@@ -11,6 +14,7 @@ export interface SelectedEntitySummary {
   hp?: number;
   maxHp?: number;
   status?: string;
+  commands: SelectionCommand[];
 }
 
 export interface SelectedProduction {
@@ -48,7 +52,15 @@ interface GameUiState {
   advanceTutorial: (expected: TutorialStep) => void;
 }
 
-const TUTORIAL_STEPS: TutorialStep[] = ['select', 'move', 'build', 'produce', 'attack', 'complete'];
+const TUTORIAL_STEPS: TutorialStep[] = [
+  'select',
+  'move',
+  'gather',
+  'build',
+  'produce',
+  'attack',
+  'complete',
+];
 
 export function nextTutorialStep(current: TutorialStep, expected: TutorialStep): TutorialStep {
   if (current !== expected) return current;
@@ -66,8 +78,41 @@ function sameSelectedEntity(
     left.count === right.count &&
     left.hp === right.hp &&
     left.maxHp === right.maxHp &&
-    left.status === right.status
+    left.status === right.status &&
+    left.commands.join() === right.commands.join()
   );
+}
+
+const COMMAND_ORDER: SelectionCommand[] = [
+  'gather',
+  'move',
+  'attack',
+  'stop',
+  'build',
+  'produce',
+  'rally',
+];
+
+export function selectionCommands(entities: readonly EntitySnapshot[]): SelectionCommand[] {
+  const available = new Set<SelectionCommand>();
+  const units = entities.filter((entity) => entity.kind === 'unit');
+  if (units.length > 0) {
+    available.add('move');
+    available.add('stop');
+    if (units.some((entity) => entity.unitType === 'harvester')) available.add('gather');
+    if (units.some((entity) => entity.unitType && UNIT_STATS[entity.unitType]?.weapon)) {
+      available.add('attack');
+    }
+  }
+  if (entities.length === 1) {
+    const entity = entities[0]!;
+    if (entity.buildingType === 'construction_yard') available.add('build');
+    if (entity.production) {
+      available.add('produce');
+      available.add('rally');
+    }
+  }
+  return COMMAND_ORDER.filter((command) => available.has(command));
 }
 
 function sameProduction(

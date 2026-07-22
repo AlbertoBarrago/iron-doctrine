@@ -9,7 +9,15 @@ import type { World } from '../ecs/world.js';
 import type { NavGrid } from '../pathfinding/nav-grid.js';
 import type { CommandBus } from '../commands/command.js';
 import type { PlayerEconomy } from '../../domain/economy/player-economy.js';
-import { Movement, Attack, Harvest, Production, Owner } from '../../domain/components/index.js';
+import {
+  Movement,
+  Attack,
+  Harvest,
+  Production,
+  Owner,
+  Position,
+  ResourceNode,
+} from '../../domain/components/index.js';
 import { spawnUnit, UNIT_STATS } from '../../domain/archetypes/units.js';
 import {
   BUILDING_STATS,
@@ -74,8 +82,19 @@ export function createCommandSystem(
             for (const e of cmd.entities) {
               const h = world.get(e, Harvest);
               if (h) {
-                h.phase = 'idle'; // re-enter the harvest loop, picking nearest ore
-                h.node = -1;
+                const target = cmd.target;
+                const targetPosition =
+                  target === undefined ? undefined : world.get(target, Position);
+                if (target !== undefined && targetPosition && world.has(target, ResourceNode)) {
+                  h.phase = 'toNode';
+                  h.node = target as number;
+                  const movement = world.get(e, Movement);
+                  if (movement) movement.target = { ...targetPosition };
+                } else {
+                  h.phase = 'idle'; // re-enter the harvest loop, picking nearest ore
+                  h.node = -1;
+                }
+                h.gatherLeft = 0;
               }
             }
             break;

@@ -17,7 +17,7 @@ import { Camera } from './camera.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
-import { useGameStore } from '../../state/gameStore.js';
+import { selectionCommands, useGameStore } from '../../state/gameStore.js';
 import type { SkirmishConfig } from '../../game/skirmishConfig.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
@@ -238,6 +238,26 @@ export class GameRenderer {
     this.placingBuilding = null;
     this.placementPointer = null;
     useGameStore.getState().setPlacingBuilding(null);
+  }
+
+  stopSelectedUnits(): void {
+    const units = this.selectedUnits();
+    if (units.length === 0) return;
+    this.bridge.command({
+      type: 'stop',
+      entities: units.map((entity) => asEntityId(entity.id)),
+    });
+  }
+
+  gatherWithSelectedHarvesters(target?: EntitySnapshot): void {
+    const harvesters = this.selectedUnits().filter((entity) => entity.unitType === 'harvester');
+    if (harvesters.length === 0) return;
+    this.bridge.command({
+      type: 'gather',
+      entities: harvesters.map((entity) => asEntityId(entity.id)),
+      ...(target ? { target: asEntityId(target.id) } : {}),
+    });
+    useGameStore.getState().advanceTutorial('gather');
   }
 
   // ---- rendering -------------------------------------------------------------
@@ -835,6 +855,13 @@ export class GameRenderer {
       return;
     }
 
+    const resource = curr ? this.findResourceAt(sx, sy, curr) : null;
+    if (resource && units.some((entity) => entity.unitType === 'harvester')) {
+      this.audio.play('move');
+      this.gatherWithSelectedHarvesters(resource);
+      return;
+    }
+
     const enemy = curr ? this.findEnemyAt(sx, sy, curr) : null;
     if (enemy) {
       this.audio.play('move');
@@ -853,6 +880,28 @@ export class GameRenderer {
       target: { x: fp.fromFloat(wx), y: fp.fromFloat(wy) },
     });
     useGameStore.getState().advanceTutorial('move');
+  }
+
+  private selectedUnits(snapshot = this.bridge.latest.curr): EntitySnapshot[] {
+    return (
+      snapshot?.entities.filter(
+        (entity) => entity.kind === 'unit' && this.selected.has(entity.id),
+      ) ?? []
+    );
+  }
+
+  private findResourceAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
+    let best: { entity: EntitySnapshot; distance: number } | null = null;
+    for (const entity of snapshot.entities) {
+      if (entity.kind !== 'resource') continue;
+      const screen = this.camera.worldToScreen(entity.x, entity.y);
+      const distance = (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2;
+      const hitRadius = (entity.radius * this.camera.scale + 10) ** 2;
+      if (distance <= hitRadius && (!best || distance < best.distance)) {
+        best = { entity, distance };
+      }
+    }
+    return best?.entity ?? null;
   }
 
   private findEnemyAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
@@ -878,8 +927,15 @@ export class GameRenderer {
     const hasSelectedUnits = snapshot?.entities.some(
       (entity) => entity.kind === 'unit' && this.selected.has(entity.id),
     );
+    const hasSelectedHarvester = snapshot?.entities.some(
+      (entity) => entity.unitType === 'harvester' && this.selected.has(entity.id),
+    );
     this.app.canvas.style.cursor =
-      hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot) ? 'crosshair' : 'default';
+      hasSelectedHarvester && snapshot && this.findResourceAt(sx, sy, snapshot)
+        ? 'cell'
+        : hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot)
+          ? 'crosshair'
+          : 'default';
   }
 
   private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
@@ -901,6 +957,7 @@ export class GameRenderer {
         label: `${selected.length} units selected`,
         kind: 'group',
         count: selected.length,
+        commands: selectionCommands(selected),
       });
     } else {
       const entity = selected[0]!;
@@ -909,6 +966,7 @@ export class GameRenderer {
         label: (entity.unitType ?? entity.buildingType ?? entity.kind).replaceAll('_', ' '),
         kind: entity.kind === 'building' ? 'building' : 'unit',
         count: 1,
+        commands: selectionCommands(selected),
         hp: entity.hp,
         maxHp: entity.maxHp,
         status: construction

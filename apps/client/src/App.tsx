@@ -89,6 +89,8 @@ function Game({
         onCancelProduction={() => rendererRef.current?.cancelProduction()}
         onPlaceBuilding={(building) => rendererRef.current?.beginBuildingPlacement(building)}
         onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
+        onGather={() => rendererRef.current?.gatherWithSelectedHarvesters()}
+        onStop={() => rendererRef.current?.stopSelectedUnits()}
         onOpenEditor={onOpenEditor}
         onRestart={() => setSession((current) => current + 1)}
       />

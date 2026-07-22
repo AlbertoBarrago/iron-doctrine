@@ -81,6 +81,24 @@ describe('Harvester economy loop', () => {
     expect(sim.world.get(harvester, Harvest)!.phase).toBe('toNode');
   });
 
+  it('routes a harvester to the explicitly targeted ore field', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnResource', amount: 500, at: at(4, 0) });
+    sim.enqueue({ type: 'spawnResource', amount: 500, at: at(12, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(2, 0) });
+    sim.step();
+    const harvester = sim.world.query(Harvest)[0]!;
+    const distantOre = sim.world.query(ResourceNode)[1]!;
+
+    sim.enqueue({ type: 'gather', entities: [harvester], target: distantOre });
+    sim.step();
+
+    expect(sim.world.get(harvester, Harvest)).toMatchObject({
+      phase: 'toNode',
+      node: distantOre,
+    });
+  });
+
   it('aggregates power from buildings', () => {
     const sim = makeSim();
     sim.enqueue({ type: 'spawnBuilding', building: 'power_plant', player: 0, at: at(0, 0) }); // +100

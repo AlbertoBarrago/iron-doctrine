@@ -54,6 +54,8 @@ export interface SpawnResourceCommand {
 export interface GatherCommand {
   type: 'gather';
   entities: EntityId[];
+  /** Explicit ore field. Omit to resume gathering from the nearest field. */
+  target?: EntityId;
 }
 
 export interface QueueProductionCommand {
