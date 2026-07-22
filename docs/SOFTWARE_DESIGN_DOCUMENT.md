@@ -654,28 +654,26 @@ flowchart LR
 
 Iterative, one subsystem at a time — each: implement → test → document → next.
 
-| # | Milestone | Deliverable |
-|---|---|---|
-| 0 | **Scaffold** | pnpm workspaces, tsconfig strict, ESLint/Prettier, Vitest, Docker skeleton, empty packages wired |
-| 1 | **ECS core** ⭐ next | World, EntityManager, sparse-set ComponentStore, Query, Scheduler + full tests |
-| 2 | Fixed-point math + seeded RNG | `fp`, `Vec2`, `Random` + property tests |
-| 3 | Simulation loop + snapshots | fixed-step tick, snapshot publish, determinism harness |
-| 4 | Command bus + basic commands | Move/Stop + command→intent flow |
-| 5 | Render bootstrap | Pixi stage, camera, worker bridge, interpolated draw |
-| 6 | Movement + pathfinding | NavGrid, A*, flow fields, collision, formations |
-| 7 | Selection + input | box/click/ctrl/shift/double-click → commands, HUD selection |
-| 8 | Combat + projectiles | health, armor, weapons, damage, death |
-| 9 | Economy + harvester loop | credits, ore, gather/deposit |
-| 10 | Base building + production | construction, build queues, rally points |
-| 11 | Energy + tech tree | power grid, unlocks |
-| 12 | Fog of war | vision + team-shared visibility |
-| 13 | AI Director | scout/expand/defend/attack/retreat + difficulty |
-| 14 | Save / load / replay | serialization + replay round-trip |
-| 15 | Networking transport | WS lockstep relay + server headless sim |
-| 16 | UI polish, audio, effects | HUD, minimap, particles, spatial audio |
-| 17 | Map editor | terrain/objects/spawns/resources/triggers → JSON |
-
-⭐ = your chosen first implementation target after scaffold.
+| # | Milestone | Deliverable | Status |
+|---|---|---|---|
+| 0 | **Scaffold** | pnpm workspaces, tsconfig strict, ESLint/Prettier, Vitest, Docker skeleton, empty packages wired | ✅ done |
+| 1 | **ECS core** | World, EntityManager, sparse-set ComponentStore, Query, Scheduler + full tests | ✅ done |
+| 2 | Fixed-point math + seeded RNG | `fp`, `Vec2`, `Random` + property tests | ✅ done |
+| 3 | Simulation loop + snapshots | fixed-step tick, snapshot publish, determinism harness | ✅ done |
+| 4 | Command bus + basic commands | Move/Stop/Spawn + command→intent flow | ✅ done |
+| 5 | Render bootstrap | Pixi stage, camera, worker bridge, interpolated draw | ✅ done |
+| 6 | Movement + pathfinding | NavGrid, A*, path smoothing, blocked-goal approach, **flow fields**, **formations** | ✅ done |
+| 7 | Selection + input | box/click/ctrl/shift → commands, HUD selection | ✅ core done (double-click type-select: pending) |
+| 8 | Combat + projectiles | health, weapons, damage, chase/leash, death | ✅ done (armor table + abilities: pending) |
+| 9 | Economy + harvester loop | credits, ore, gather/deposit, per-player economy | ✅ done |
+| 10 | Base building + production | building archetypes, footprint→navgrid, drop-off, **build queues + construction time + rally points + cancel/refund** | ✅ done |
+| 11 | Energy + tech tree | power grid per player, **deficit disables defenses**, **tech tree research + production gating** | ✅ done |
+| 12 | Fog of war | vision + team-shared visibility, rendered | ✅ done |
+| 13 | AI Director | economy + production + aggression, difficulty tiers | ✅ done (scout/expand/harass refinements: pending) |
+| 14 | Save / load / replay | full state serialization + replay round-trip + desync checksums | ✅ done |
+| 15 | Networking transport | WS lockstep relay + **client transport + lockstep coordinator (tested) + NetworkClient** | ✅ done (headless server sim: pending) |
+| 16 | UI polish, audio, effects | HUD, **minimap**, **particle explosions**, **synth spatial audio** | ✅ done |
+| 17 | Map editor | terrain painting, resources, spawns, **JSON export + validation** | ✅ done (triggers/scripted events: pending) |
 
 ---
 

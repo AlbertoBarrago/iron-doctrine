@@ -1,0 +1,18 @@
+# Node.js authoritative match host.
+FROM node:22-alpine AS build
+WORKDIR /app
+RUN corepack enable
+COPY pnpm-workspace.yaml package.json tsconfig.base.json tsconfig.json ./
+COPY packages ./packages
+COPY apps/server ./apps/server
+RUN pnpm install --frozen-lockfile=false
+RUN pnpm --filter @iron/shared build \
+ && pnpm --filter @iron/engine build \
+ && pnpm --filter @iron/server build
+
+FROM node:22-alpine AS run
+WORKDIR /app
+ENV NODE_ENV=production PORT=8080
+COPY --from=build /app /app
+EXPOSE 8080
+CMD ["node", "apps/server/dist/index.js"]
