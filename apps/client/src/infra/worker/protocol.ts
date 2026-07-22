@@ -6,6 +6,7 @@ export interface InitConfig {
   aiPlayers?: AIPlayerConfig[];
   startingCredits?: Record<number, number>;
   startingTech?: Record<number, string[]>;
+  matchPlayers?: number[];
 }
 
 export type ToWorker =

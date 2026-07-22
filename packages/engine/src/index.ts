@@ -87,3 +87,7 @@ export type {
   FogSnapshot,
   EntityKind,
 } from './application/snapshot.js';
+
+// Match lifecycle
+export { MatchState, createMatchSystem } from './application/match/match-state.js';
+export type { MatchStatus, MatchStateSnapshot } from './application/match/match-state.js';

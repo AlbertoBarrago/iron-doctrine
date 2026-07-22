@@ -19,6 +19,7 @@ import {
 } from '../domain/components/index.js';
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
+import type { MatchStateSnapshot } from './match/match-state.js';
 
 export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource';
 
@@ -71,6 +72,7 @@ export interface Snapshot {
   entities: EntitySnapshot[];
   players: PlayerSnapshot[];
   fog?: FogSnapshot;
+  match?: MatchStateSnapshot;
 }
 
 export function buildSnapshot(

@@ -6,12 +6,15 @@ export function Hud({
   onQueueProduction,
   onCancelProduction,
   onOpenEditor,
+  onRestart,
 }: {
   onQueueProduction: (unit: string) => void;
   onCancelProduction: () => void;
   onOpenEditor: () => void;
+  onRestart: () => void;
 }): JSX.Element {
-  const { fps, entityCount, selectedCount, credits, power, selectedProduction } = useGameStore();
+  const { fps, entityCount, selectedCount, credits, power, selectedProduction, match } =
+    useGameStore();
   const progress = selectedProduction?.currentBuildTicks
     ? Math.min(100, (selectedProduction.progressTicks / selectedProduction.currentBuildTicks) * 100)
     : 0;
@@ -73,6 +76,26 @@ export function Hud({
       <div style={hint}>
         Left-drag: select · Right-click: move/rally · Wheel: zoom · WASD/Arrows: pan
       </div>
+
+      {match?.status === 'finished' && (
+        <div style={matchOverlay}>
+          <div style={matchDialog}>
+            <strong style={matchTitle}>
+              {match.winner === 0 ? 'Victory' : match.winner === null ? 'Draw' : 'Defeat'}
+            </strong>
+            <span style={matchMessage}>
+              {match.winner === 0
+                ? 'Enemy command has been eliminated.'
+                : match.winner === null
+                  ? 'Both command structures were destroyed.'
+                  : 'Your command structure has been destroyed.'}
+            </span>
+            <button style={buildBtn} onClick={onRestart}>
+              Restart skirmish
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -141,6 +164,41 @@ const progressTrack: React.CSSProperties = {
 const progressFill: React.CSSProperties = {
   height: '100%',
   background: '#4ade80',
+};
+
+const matchOverlay: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  display: 'grid',
+  placeItems: 'center',
+  background: 'rgba(5,8,7,0.7)',
+  pointerEvents: 'auto',
+  fontFamily: font,
+};
+
+const matchDialog: React.CSSProperties = {
+  display: 'flex',
+  width: 360,
+  flexDirection: 'column',
+  gap: 18,
+  padding: 32,
+  textAlign: 'center',
+  background: '#0b0f0d',
+  border: '1px solid #4ade80',
+  borderRadius: 8,
+  boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+};
+
+const matchTitle: React.CSSProperties = {
+  color: '#dff5ea',
+  fontSize: 32,
+  textTransform: 'uppercase',
+  letterSpacing: 4,
+};
+
+const matchMessage: React.CSSProperties = {
+  color: '#8da99a',
+  fontSize: 13,
 };
 
 const buildBtn: React.CSSProperties = {

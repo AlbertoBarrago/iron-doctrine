@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Current status
 
-104 tests green; strict typecheck, ESLint and client build all clean.
+108 tests green; strict typecheck, ESLint and client build all clean.
 
 - ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
 - ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)
@@ -58,6 +58,7 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Economy (ore nodes, harvester gather→deposit loop, per-player credits)
 - ✅ Base building + production (footprints on navgrid, build queues, construction time, rally points, cancel/refund)
 - ✅ Playable production UI (select barracks/factory, pay costs, inspect progress/queue, cancel/refund, set rally point)
+- ✅ Match lifecycle (deterministic victory/defeat/draw, simulation freeze, end screen and restart)
 - ✅ Energy (per-player power balance; **power deficit disables defensive turrets**)
 - ✅ Defensive turrets (auto-acquire, power-gated)
 - ✅ Fog of war (per-team hidden/explored/visible grid, shared allied vision, rendered)
@@ -71,9 +72,8 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Web Worker sim bridge (simulation off the main thread)
 - ✅ Docker (client + server) & compose
 
-Pending (see SDD roadmap): match victory/defeat lifecycle, base placement,
-server-side headless authoritative sim, scripted map triggers, richer AI behaviours
-(scout/harass), art & music assets.
+Pending (see SDD roadmap): base placement, server-side headless authoritative sim,
+scripted map triggers, richer AI behaviours (scout/harass), art & music assets.
 
 ## Controls (vertical slice)
 

@@ -22,6 +22,7 @@ export function App(): JSX.Element {
  * to the editor). StrictMode double-invokes effects in dev, hence the duplicate guard.
  */
 function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
+  const [session, setSession] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -36,7 +37,7 @@ function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, []);
+  }, [session]);
 
   const attachMinimap = useCallback((c: HTMLCanvasElement | null) => {
     minimapCanvasRef.current = c;
@@ -53,6 +54,7 @@ function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
         onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
         onCancelProduction={() => rendererRef.current?.cancelProduction()}
         onOpenEditor={onOpenEditor}
+        onRestart={() => setSession((current) => current + 1)}
       />
       <Minimap onCanvas={attachMinimap} onClick={minimapClick} />
     </div>

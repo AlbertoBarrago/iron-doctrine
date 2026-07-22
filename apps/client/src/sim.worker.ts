@@ -28,6 +28,7 @@ function loop(now: number): void {
     sim.step();
     accumulator -= SIM_DT_MS;
     steps++;
+    if (sim.match?.isFinished) running = false;
   }
   if (steps > 0) post({ t: 'snapshot', snapshot: sim.snapshot() });
 
@@ -44,6 +45,7 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
         ...(c.aiPlayers ? { aiPlayers: c.aiPlayers } : {}),
         ...(c.startingCredits ? { startingCredits: c.startingCredits } : {}),
         ...(c.startingTech ? { startingTech: c.startingTech } : {}),
+        ...(c.matchPlayers ? { matchPlayers: c.matchPlayers } : {}),
       });
       post({ t: 'ready' });
       post({ t: 'snapshot', snapshot: sim.snapshot() });

@@ -80,9 +80,11 @@ export class GameRenderer {
       aiPlayers: [{ player: 1, difficulty: 'normal' }],
       startingCredits: { 0: 3000, 1: 4000 },
       startingTech: { 0: ['armor_doctrine'] },
+      matchPlayers: [0, 1],
     });
     this.bridge.start();
     useGameStore.getState().setPlaying(true);
+    useGameStore.getState().setMatch(null);
 
     // Seed the demo scene: a base, ore, a harvester and a squad for the human player.
     this.bridge.command({
@@ -217,6 +219,7 @@ export class GameRenderer {
       );
       const me = curr.players.find((p) => p.player === 0);
       if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
+      store.setMatch(curr.match ?? null);
       this.syncSelectionState(curr);
       this.drawFog(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);

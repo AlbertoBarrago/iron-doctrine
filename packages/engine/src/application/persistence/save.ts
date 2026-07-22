@@ -14,6 +14,7 @@ import { SAVE_VERSION, type EntityId } from '@iron/shared';
 import type { EntityManagerState } from '../ecs/entity.js';
 import type { PlayerResources } from '../../domain/economy/player-economy.js';
 import type { AIPlayerConfig } from '../ai/ai-director.js';
+import type { MatchStateSnapshot } from '../match/match-state.js';
 
 interface ComponentBlock {
   name: string;
@@ -32,10 +33,15 @@ export interface SaveState {
   components: ComponentBlock[];
   economy: Array<[number, PlayerResources]>;
   tech: Array<[number, string[]]>;
+  match?: { players: number[]; state: MatchStateSnapshot };
 }
 
 /** Serialize a running simulation into a plain, JSON-safe object. */
-export function saveSimulation(sim: Simulation, seed: number, aiPlayers: AIPlayerConfig[] = []): SaveState {
+export function saveSimulation(
+  sim: Simulation,
+  seed: number,
+  aiPlayers: AIPlayerConfig[] = [],
+): SaveState {
   const components: ComponentBlock[] = [];
   for (const type of ALL_COMPONENTS) {
     const entries: Array<[number, unknown]> = [];
@@ -59,6 +65,9 @@ export function saveSimulation(sim: Simulation, seed: number, aiPlayers: AIPlaye
     components,
     economy: sim.economy.serialize(),
     tech: sim.tech.serialize(),
+    ...(sim.match && {
+      match: { players: [...sim.match.players], state: sim.match.snapshot() },
+    }),
   };
 }
 
@@ -72,7 +81,12 @@ export function loadSimulation(save: SaveState): Simulation {
   const grid = new NavGrid(save.grid.width, save.grid.height, fp.fromFloat(save.grid.cellSize));
   grid.restore({ blocked: save.grid.blocked, cost: save.grid.cost });
 
-  const sim = new Simulation({ seed: save.seed, grid, aiPlayers: save.aiPlayers });
+  const sim = new Simulation({
+    seed: save.seed,
+    grid,
+    aiPlayers: save.aiPlayers,
+    ...(save.match && { matchPlayers: save.match.players }),
+  });
 
   sim.world.entities.restore(save.entityManager);
   for (const block of save.components) {
@@ -88,6 +102,7 @@ export function loadSimulation(save: SaveState): Simulation {
   if (save.tech) sim.tech.restore(save.tech);
   sim.rng.setState(save.rngState);
   sim.setTick(save.tick);
+  if (save.match && sim.match) sim.match.restore(save.match.state);
   return sim;
 }
 

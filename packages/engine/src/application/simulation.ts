@@ -26,7 +26,8 @@ import { NavGrid } from './pathfinding/nav-grid.js';
 import { Random } from '../domain/math/rng.js';
 import * as fp from '../domain/math/fixed.js';
 import { buildSnapshot, hashState, type Snapshot } from './snapshot.js';
-import { SIM_HZ, asTick } from '@iron/shared';
+import { SIM_HZ, asPlayerId, asTick } from '@iron/shared';
+import { createMatchSystem, MatchState } from './match/match-state.js';
 
 export interface SimulationConfig {
   seed: number;
@@ -40,6 +41,8 @@ export interface SimulationConfig {
   startingCredits?: Record<number, number>;
   /** Techs unlocked for each player at match start. */
   startingTech?: Record<number, string[]>;
+  /** Enables deterministic victory rules for the listed match participants. */
+  matchPlayers?: number[];
 }
 
 interface Deps {
@@ -50,6 +53,7 @@ interface Deps {
   fog: FogOfWar;
   teamOf: TeamResolver;
   aiPlayers: AIPlayerConfig[];
+  match: MatchState | null;
 }
 
 /** Default ordered pipeline for the current milestone. */
@@ -65,6 +69,7 @@ const defaultSystems = (d: Deps): System[] => [
   createCombatSystem(d.economy),
   ProjectileSystem,
   HealthSystem,
+  ...(d.match ? [createMatchSystem(d.match)] : []),
   createFogSystem(d.fog, d.teamOf),
 ];
 
@@ -77,6 +82,7 @@ export class Simulation {
   readonly fog: FogOfWar;
   readonly teamOf: TeamResolver;
   readonly rng: Random;
+  readonly match: MatchState | null;
   private readonly scheduler = new Scheduler();
   private readonly dt = fp.fromFloat(1 / SIM_HZ);
   private currentTick = 0;
@@ -86,6 +92,9 @@ export class Simulation {
     this.grid = config.grid ?? new NavGrid(128, 128, fp.fromInt(1));
     this.fog = new FogOfWar(this.grid);
     this.teamOf = config.teamOf ?? ((player) => player);
+    this.match = config.matchPlayers?.length
+      ? new MatchState(config.matchPlayers.map((player) => asPlayerId(player)))
+      : null;
     if (config.startingCredits) {
       for (const [player, amount] of Object.entries(config.startingCredits)) {
         this.economy.addCredits(Number(player), amount);
@@ -104,6 +113,7 @@ export class Simulation {
       fog: this.fog,
       teamOf: this.teamOf,
       aiPlayers: config.aiPlayers ?? [],
+      match: this.match,
     });
     for (const s of systems) this.scheduler.add(s);
   }
@@ -114,11 +124,13 @@ export class Simulation {
 
   /** Schedule a command to be applied at the start of the next {@link step}. */
   enqueue(cmd: Command): void {
+    if (this.match?.isFinished) return;
     this.bus.push(cmd);
   }
 
   /** Advance the simulation by exactly one tick. */
   step(): void {
+    if (this.match?.isFinished) return;
     const ctx: TickContext = {
       tick: asTick(this.currentTick),
       dt: this.dt,
@@ -140,6 +152,7 @@ export class Simulation {
       };
     });
     const snap = buildSnapshot(this.world, this.currentTick, players);
+    if (this.match) snap.match = this.match.snapshot();
     snap.fog = {
       width: this.fog.width,
       height: this.fog.height,
