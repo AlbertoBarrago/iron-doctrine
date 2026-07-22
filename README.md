@@ -1,7 +1,7 @@
 # Iron Doctrine
 
 Iron Doctrine is an original browser real-time strategy game inspired by the clarity,
-pace and physical command interfaces of the classic 1990s genre.
+pace and physical command interfaces of classics such as Command & Conquer.
 
 The goal is a real game, not a technology demo: build a base, control an economy,
 produce an army and make readable tactical decisions on a battlefield that reacts to
@@ -131,6 +131,6 @@ wheel to zoom. `Save level` stores a map locally; import/export uses the version
 
 ## License and intellectual property
 
-Iron Doctrine is original work. It does not include Command & Conquer names, factions,
-artwork or audio. Its inspiration is limited to genre conventions and game-design
-principles.
+Iron Doctrine is original work. Its names, factions, artwork and audio are original;
+its influences are limited to established real-time strategy conventions and
+game-design principles.
