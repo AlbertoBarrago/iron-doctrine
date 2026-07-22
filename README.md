@@ -33,6 +33,7 @@ or exchange it as a JSON file. Locally saved maps appear in the skirmish setup s
 - Select a harvester and right-click an ore field to gather from that field.
 - Use the contextual selection card for available orders such as Harvest and Stop.
 - Use the right command panel to construct buildings and produce units.
+- Click or drag on the tactical radar to explore the battlefield without moving units.
 - Use the mouse wheel to zoom and WASD or the arrow keys to move the camera.
 
 The objective is to destroy the enemy construction yard without losing your own.

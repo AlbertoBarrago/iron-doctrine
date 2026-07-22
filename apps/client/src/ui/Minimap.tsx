@@ -14,6 +14,13 @@ export function Minimap({
 }): JSX.Element {
   const ref = useRef<HTMLCanvasElement>(null);
 
+  const navigate = (event: React.PointerEvent<HTMLCanvasElement>): void => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const nx = Math.min(1, Math.max(0, (event.clientX - bounds.left) / bounds.width));
+    const ny = Math.min(1, Math.max(0, (event.clientY - bounds.top) / bounds.height));
+    onClick(nx, ny);
+  };
+
   useEffect(() => {
     onCanvas(ref.current);
     return () => onCanvas(null);
@@ -30,10 +37,25 @@ export function Minimap({
           ref={ref}
           width={192}
           height={192}
-          aria-label="Tactical radar; click to move camera"
-          onPointerDown={(e) => {
-            const r = e.currentTarget.getBoundingClientRect();
-            onClick((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+          aria-label="Tactical radar; click or drag to move camera"
+          onContextMenu={(event) => event.preventDefault()}
+          onPointerDown={(event) => {
+            if (event.button !== 0) return;
+            event.preventDefault();
+            event.stopPropagation();
+            event.currentTarget.setPointerCapture(event.pointerId);
+            navigate(event);
+          }}
+          onPointerMove={(event) => {
+            if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+            event.preventDefault();
+            event.stopPropagation();
+            navigate(event);
+          }}
+          onPointerUp={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.releasePointerCapture(event.pointerId);
+            }
           }}
         />
       </div>

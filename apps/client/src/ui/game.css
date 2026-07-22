@@ -926,6 +926,7 @@ kbd {
   image-rendering: pixelated;
   filter: sepia(0.3) saturate(0.8) contrast(1.12);
   cursor: crosshair;
+  touch-action: none;
 }
 .minimap-frame__footer {
   display: flex;
