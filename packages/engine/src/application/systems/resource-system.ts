@@ -45,6 +45,8 @@ export function createResourceSystem(economy: PlayerEconomy): System {
         const move = world.get(e, Movement)!;
 
         switch (h.phase) {
+          case 'paused':
+            break;
           case 'idle': {
             const node = nearestNode(world, pos);
             if (node !== undefined) {

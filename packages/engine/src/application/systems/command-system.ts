@@ -20,6 +20,7 @@ import { spawnResourceNode } from '../../domain/archetypes/resources.js';
 import { TECH_TREE, type TechState } from '../../domain/tech/tech-tree.js';
 import { computeFormationSlots } from '../../domain/movement/formation.js';
 import { indexOf } from '../ecs/entity.js';
+import type { EntityId } from '@iron/shared';
 
 export function createCommandSystem(
   bus: CommandBus,
@@ -37,6 +38,7 @@ export function createCommandSystem(
             const movers = [...cmd.entities].sort((a, b) => indexOf(a) - indexOf(b));
             const slots = computeFormationSlots(movers.length, cmd.target, 2);
             movers.forEach((e, i) => {
+              pauseHarvest(world, e);
               const move = world.get(e, Movement);
               if (move) {
                 const slot = slots[i] ?? cmd.target;
@@ -52,6 +54,7 @@ export function createCommandSystem(
           }
           case 'stop':
             for (const e of cmd.entities) {
+              pauseHarvest(world, e);
               const move = world.get(e, Movement);
               if (move) move.target = null;
               const atk = world.get(e, Attack);
@@ -138,4 +141,12 @@ export function createCommandSystem(
       }
     },
   };
+}
+
+function pauseHarvest(world: World, entity: EntityId): void {
+  const harvest = world.get(entity, Harvest);
+  if (!harvest) return;
+  harvest.phase = 'paused';
+  harvest.node = -1;
+  harvest.gatherLeft = 0;
 }

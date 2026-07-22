@@ -127,7 +127,7 @@ export const ResourceCarrier = defineComponent<ResourceCarrierData>('ResourceCar
 }));
 
 /** Harvester gathering state machine. `node`/`base` are entity ids or -1. */
-export type HarvestPhase = 'idle' | 'toNode' | 'gathering' | 'toBase' | 'depositing';
+export type HarvestPhase = 'idle' | 'toNode' | 'gathering' | 'toBase' | 'depositing' | 'paused';
 export interface HarvestData {
   phase: HarvestPhase;
   node: number;

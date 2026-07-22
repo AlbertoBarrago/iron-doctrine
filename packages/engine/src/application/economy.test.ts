@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
 import { NavGrid } from './pathfinding/nav-grid.js';
-import { ResourceNode } from '../domain/components/index.js';
+import { Harvest, ResourceNode } from '../domain/components/index.js';
 import { PlayerEconomy } from '../domain/economy/player-economy.js';
 import * as fp from '../domain/math/fixed.js';
 
@@ -62,6 +62,23 @@ describe('Harvester economy loop', () => {
     // Small node fully consumed and turned into credits.
     expect(sim.world.query(ResourceNode).length).toBe(0);
     expect(sim.economy.credits(0)).toBe(40);
+  });
+
+  it('keeps a harvester under manual control until gather is ordered again', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnResource', amount: 500, at: at(5, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(2, 0) });
+    sim.step();
+    const harvester = sim.world.query(Harvest)[0]!;
+    expect(sim.world.get(harvester, Harvest)!.phase).toBe('toNode');
+
+    sim.enqueue({ type: 'move', entities: [harvester], target: at(-10, 0) });
+    for (let i = 0; i < 20; i++) sim.step();
+    expect(sim.world.get(harvester, Harvest)!.phase).toBe('paused');
+
+    sim.enqueue({ type: 'gather', entities: [harvester] });
+    sim.step();
+    expect(sim.world.get(harvester, Harvest)!.phase).toBe('toNode');
   });
 
   it('aggregates power from buildings', () => {
