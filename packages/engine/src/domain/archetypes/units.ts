@@ -10,6 +10,7 @@ import {
   Facing,
   Health,
   Owner,
+  UnitType,
   Movement,
   Selectable,
   Weapon,
@@ -66,12 +67,7 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
   harvester: { hp: 600, speed: 2, radius: 1.2, cost: 1400, buildTicks: 180 },
 };
 
-export function spawnUnit(
-  world: World,
-  unit: string,
-  player: number,
-  at: Vec2,
-): EntityId {
+export function spawnUnit(world: World, unit: string, player: number, at: Vec2): EntityId {
   const stats = UNIT_STATS[unit];
   if (!stats) throw new Error(`spawnUnit: unknown unit '${unit}'`);
 
@@ -81,6 +77,7 @@ export function spawnUnit(
   world.add(e, Facing, { dir: { x: fp.FP.ONE, y: fp.FP.ZERO } });
   world.add(e, Health, { hp: stats.hp, max: stats.hp });
   world.add(e, Owner, { player: asPlayerId(player) });
+  world.add(e, UnitType, { kind: unit });
   world.add(e, Movement, { target: null, speed: fp.fromInt(stats.speed) });
   world.add(e, Selectable, { radius: fp.fromFloat(stats.radius) });
   world.add(e, Vision, { radius: fp.fromInt(unit === 'harvester' ? 5 : 7) });

@@ -75,7 +75,7 @@ type-select, scripted map triggers, richer AI behaviours (scout/harass), art & m
 
 ## Controls (vertical slice)
 
-Left-drag select · Ctrl/Shift add to selection · Right-click move · Wheel zoom ·
+Left-drag select · Double-click type-select · Ctrl/Shift add to selection · Right-click move · Wheel zoom ·
 WASD/Arrows pan · Build menu (top-right) spawns units at camera centre.
 
 ## License / IP

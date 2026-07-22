@@ -38,6 +38,12 @@ export interface OwnerData {
 }
 export const Owner = defineComponent<OwnerData>('Owner', () => ({ player: asPlayerId(0) }));
 
+/** Stable content identifier for a mobile unit archetype. */
+export interface UnitTypeData {
+  kind: string;
+}
+export const UnitType = defineComponent<UnitTypeData>('UnitType', () => ({ kind: 'unit' }));
+
 /** Movement intent: target destination and max speed (units/sec). */
 export interface MovementData {
   target: Vec2 | null;

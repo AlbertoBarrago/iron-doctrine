@@ -84,10 +84,29 @@ export class GameRenderer {
     useGameStore.getState().setPlaying(true);
 
     // Seed the demo scene: a base, ore, a harvester and a squad for the human player.
-    this.bridge.command({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: { x: fp.fromInt(-8), y: fp.fromInt(-8) } });
-    this.bridge.command({ type: 'spawnBuilding', building: 'power_plant', player: 0, at: { x: fp.fromInt(-12), y: fp.fromInt(-8) } });
-    this.bridge.command({ type: 'spawnResource', amount: 5000, at: { x: fp.fromInt(6), y: fp.fromInt(-6) } });
-    this.bridge.command({ type: 'spawnUnit', unit: 'harvester', player: 0, at: { x: fp.fromInt(-6), y: fp.fromInt(-6) } });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 0,
+      at: { x: fp.fromInt(-8), y: fp.fromInt(-8) },
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'power_plant',
+      player: 0,
+      at: { x: fp.fromInt(-12), y: fp.fromInt(-8) },
+    });
+    this.bridge.command({
+      type: 'spawnResource',
+      amount: 5000,
+      at: { x: fp.fromInt(6), y: fp.fromInt(-6) },
+    });
+    this.bridge.command({
+      type: 'spawnUnit',
+      unit: 'harvester',
+      player: 0,
+      at: { x: fp.fromInt(-6), y: fp.fromInt(-6) },
+    });
     for (let i = 0; i < 5; i++) {
       this.bridge.command({
         type: 'spawnUnit',
@@ -97,11 +116,35 @@ export class GameRenderer {
       });
     }
     // Enemy AI base and economy on the far side of the map.
-    this.bridge.command({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: { x: fp.fromInt(20), y: fp.fromInt(18) } });
-    this.bridge.command({ type: 'spawnBuilding', building: 'power_plant', player: 1, at: { x: fp.fromInt(24), y: fp.fromInt(18) } });
-    this.bridge.command({ type: 'spawnResource', amount: 6000, at: { x: fp.fromInt(16), y: fp.fromInt(20) } });
-    this.bridge.command({ type: 'spawnUnit', unit: 'harvester', player: 1, at: { x: fp.fromInt(18), y: fp.fromInt(18) } });
-    this.bridge.command({ type: 'spawnUnit', unit: 'tank', player: 1, at: { x: fp.fromInt(8), y: fp.fromInt(6) } });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 1,
+      at: { x: fp.fromInt(20), y: fp.fromInt(18) },
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'power_plant',
+      player: 1,
+      at: { x: fp.fromInt(24), y: fp.fromInt(18) },
+    });
+    this.bridge.command({
+      type: 'spawnResource',
+      amount: 6000,
+      at: { x: fp.fromInt(16), y: fp.fromInt(20) },
+    });
+    this.bridge.command({
+      type: 'spawnUnit',
+      unit: 'harvester',
+      player: 1,
+      at: { x: fp.fromInt(18), y: fp.fromInt(18) },
+    });
+    this.bridge.command({
+      type: 'spawnUnit',
+      unit: 'tank',
+      player: 1,
+      at: { x: fp.fromInt(8), y: fp.fromInt(6) },
+    });
 
     this.installInput();
     this.app.ticker.add(() => this.render());
@@ -148,7 +191,9 @@ export class GameRenderer {
       this.detectDeaths(curr);
       this.drawEntities(prev, curr, alpha);
       const store = useGameStore.getState();
-      store.setEntityCount(curr.entities.filter((e) => e.kind === 'unit' || e.kind === 'building').length);
+      store.setEntityCount(
+        curr.entities.filter((e) => e.kind === 'unit' || e.kind === 'building').length,
+      );
       const me = curr.players.find((p) => p.player === 0);
       if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
       this.drawFog(curr);
@@ -199,9 +244,14 @@ export class GameRenderer {
       if (e.kind === 'building') {
         const s = r;
         if (this.selected.has(e.id)) {
-          this.units.rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6).stroke({ width: 2, color: 0xffffff });
+          this.units
+            .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)
+            .stroke({ width: 2, color: 0xffffff });
         }
-        this.units.rect(sx - s, sy - s, s * 2, s * 2).fill({ color }).stroke({ width: 2, color: 0x0b0f0d });
+        this.units
+          .rect(sx - s, sy - s, s * 2, s * 2)
+          .fill({ color })
+          .stroke({ width: 2, color: 0x0b0f0d });
         if (e.maxHp > 0 && e.hp < e.maxHp) {
           const ratio = Math.max(0, e.hp / e.maxHp);
           this.units.rect(sx - s, sy - s - 8, s * 2, 3).fill({ color: 0x000000, alpha: 0.5 });
@@ -318,12 +368,7 @@ export class GameRenderer {
     for (const e of curr.entities) {
       if (e.kind === 'projectile') continue;
       const { mx, my } = toMap(e.x, e.y);
-      ctx.fillStyle =
-        e.kind === 'resource'
-          ? '#8b6f2e'
-          : e.owner === 0
-            ? '#4ade80'
-            : '#f87171';
+      ctx.fillStyle = e.kind === 'resource' ? '#8b6f2e' : e.owner === 0 ? '#4ade80' : '#f87171';
       const size = e.kind === 'building' ? 4 : 2;
       ctx.fillRect(mx - size / 2, my - size / 2, size, size);
     }
@@ -345,7 +390,10 @@ export class GameRenderer {
       const y = Math.min(this.dragStart.y, this.dragNow.y);
       const w = Math.abs(this.dragNow.x - this.dragStart.x);
       const h = Math.abs(this.dragNow.y - this.dragStart.y);
-      this.overlay.rect(x, y, w, h).fill({ color: 0x4ade80, alpha: 0.1 }).stroke({ width: 1, color: 0x4ade80 });
+      this.overlay
+        .rect(x, y, w, h)
+        .fill({ color: 0x4ade80, alpha: 0.1 })
+        .stroke({ width: 1, color: 0x4ade80 });
     }
   }
 
@@ -357,6 +405,7 @@ export class GameRenderer {
     canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
     canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
     canvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
+    canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
       this.camera.zoomBy(e.deltaY < 0 ? 1.1 : 0.9);
@@ -420,6 +469,44 @@ export class GameRenderer {
       }
     }
     if (isClick && best) this.selected.add(best.id);
+  }
+
+  private onDoubleClick(e: MouseEvent): void {
+    const curr = this.bridge.latest.curr;
+    if (!curr) return;
+
+    const clicked = this.findOwnedUnitAt(e.offsetX, e.offsetY, curr);
+    if (!clicked?.unitType) return;
+    if (!e.ctrlKey && !e.shiftKey) this.selected.clear();
+
+    const viewportWidth = this.app.renderer.width;
+    const viewportHeight = this.app.renderer.height;
+    for (const entity of curr.entities) {
+      if (entity.kind !== 'unit' || entity.owner !== 0 || entity.unitType !== clicked.unitType) {
+        continue;
+      }
+      const { sx, sy } = this.camera.worldToScreen(entity.x, entity.y);
+      if (sx >= 0 && sx <= viewportWidth && sy >= 0 && sy <= viewportHeight) {
+        this.selected.add(entity.id);
+      }
+    }
+
+    this.audio.play('select');
+    useGameStore.getState().setSelectedCount(this.selected.size);
+  }
+
+  private findOwnedUnitAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
+    let best: { entity: EntitySnapshot; distance: number } | null = null;
+    for (const entity of snapshot.entities) {
+      if (entity.kind !== 'unit' || entity.owner !== 0) continue;
+      const screen = this.camera.worldToScreen(entity.x, entity.y);
+      const distance = (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2;
+      const hitRadius = (entity.radius * this.camera.scale + 6) ** 2;
+      if (distance <= hitRadius && (!best || distance < best.distance)) {
+        best = { entity, distance };
+      }
+    }
+    return best?.entity ?? null;
   }
 
   private issueMove(sx: number, sy: number): void {

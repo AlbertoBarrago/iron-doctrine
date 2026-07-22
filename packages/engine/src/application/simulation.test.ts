@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
-import { Position, Movement } from '../domain/components/index.js';
+import { Position, Movement, UnitType } from '../domain/components/index.js';
 import * as fp from '../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 
@@ -20,6 +20,8 @@ describe('Simulation', () => {
     const e = spawnAndReturnId(sim, 'rifleman', 0, 0);
     expect(sim.world.isAlive(e)).toBe(true);
     expect(sim.world.get(e, Movement)).toBeTruthy();
+    expect(sim.world.get(e, UnitType)?.kind).toBe('rifleman');
+    expect(sim.snapshot().entities.find((entity) => entity.id === e)?.unitType).toBe('rifleman');
   });
 
   it('moves a unit toward its target and arrives', () => {

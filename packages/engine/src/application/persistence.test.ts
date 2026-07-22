@@ -4,6 +4,7 @@ import { NavGrid } from './pathfinding/nav-grid.js';
 import { saveSimulation, loadSimulation, serializeSave, deserializeSave } from './persistence/save.js';
 import { ReplayRecorder, runReplay } from './persistence/replay.js';
 import type { Command } from './commands/command.js';
+import { UnitType } from '../domain/components/index.js';
 import * as fp from '../domain/math/fixed.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
@@ -31,6 +32,9 @@ describe('Save / Load', () => {
     expect(loaded.tick).toBe(original.tick);
     expect(loaded.hash()).toBe(original.hash());
     expect(loaded.economy.credits(0)).toBe(original.economy.credits(0));
+    expect(
+      loaded.world.query(UnitType).map((entity) => loaded.world.get(entity, UnitType)?.kind),
+    ).toEqual(['harvester', 'tank', 'tank']);
 
     // And continues to stay in lockstep as both advance.
     for (let i = 0; i < 300; i++) {

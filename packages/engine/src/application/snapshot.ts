@@ -10,6 +10,7 @@ import {
   Facing,
   Health,
   Owner,
+  UnitType,
   Selectable,
   Projectile,
   Building,
@@ -30,6 +31,8 @@ export interface EntitySnapshot {
   maxHp: number;
   radius: number;
   owner: number;
+  /** Stable archetype identifier for type-based UI interactions. */
+  unitType?: string;
 }
 
 export interface PlayerSnapshot {
@@ -69,6 +72,7 @@ export function buildSnapshot(
     const health = world.get(e, Health);
     const sel = world.get(e, Selectable);
     const owner = world.get(e, Owner);
+    const unitType = world.get(e, UnitType);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
       : world.has(e, Building)
@@ -86,6 +90,7 @@ export function buildSnapshot(
       maxHp: health?.max ?? 0,
       radius: sel ? fp.toFloat(sel.radius) : 0.5,
       owner: owner?.player ?? 0,
+      ...(unitType && { unitType: unitType.kind }),
     });
   }
   return { tick, entities, players };

@@ -40,6 +40,7 @@
 ## 1. Goals & Non-Goals
 
 ### Goals
+
 - Deterministic, lockstep-capable simulation runnable identically on client and server.
 - Hard separation of **simulation**, **rendering**, **networking**, **state/UI**.
 - Data-driven content: units, buildings, weapons, tech defined in JSON, validated by schema.
@@ -48,6 +49,7 @@
 - Every subsystem independently testable in headless mode (no DOM, no GPU).
 
 ### Non-Goals (v1)
+
 - No copyrighted IP. Original factions ("Directive" vs "Coalition"), original art/audio.
 - No matchmaking service / accounts in v1 (server is authoritative match host only).
 - No mobile-first UI in v1 (desktop pointer + keyboard primary).
@@ -58,7 +60,7 @@
 
 - **Determinism is the contract.** The simulation is a pure function `(State, Commands) → State'`. No `Date.now()`, no `Math.random()` inside sim — only an injected seeded PRNG and a tick counter. No floating-point nondeterminism: fixed-point math (`Q16.16` integers) for all sim-critical values (positions, velocities, health).
 - **Simulation never imports rendering.** Render reads an immutable snapshot; it never mutates sim state.
-- **Commands, not state, cross the wire.** Multiplayer synchronizes *intents* (commands) under lockstep, not entity positions.
+- **Commands, not state, cross the wire.** Multiplayer synchronizes _intents_ (commands) under lockstep, not entity positions.
 - **ECS is data + behavior separation.** Components are plain data (SoA-friendly). Systems are stateless functions over component stores.
 - **Clean Architecture dependency rule.** Dependencies point inward: `domain` ← `application` ← `infrastructure`/`presentation`. Inner layers know nothing of Pixi, React, WebSocket.
 - **SOLID / DRY / small modules.** No file > ~300 LOC; one responsibility per module; features behind interfaces.
@@ -195,14 +197,17 @@ command-and-conquere/
 ## 6. ECS Design
 
 ### Storage model
+
 - **Archetype-free, sparse-set component stores** (SoA): each component type owns a `Map<EntityId, index>` + packed typed arrays. Fast iteration, cache-friendly, cheap add/remove.
 - **EntityId** = 32-bit: `index (20 bits) | generation (12 bits)` to detect stale references safely.
 - **Queries** cache the set of matching entities and invalidate on structural change (add/remove component).
 
 ### Component list (data only)
+
 `Position` · `Velocity` · `Facing` · `Health` · `Armor` · `Weapon` · `Selection` · `Movement` · `PathRequest` · `Attack` · `Animation` · `Sprite` · `Production` · `BuildQueue` · `Vision` · `Inventory` · `ResourceCarrier` · `Construction` · `Energy` · `Owner(playerId)` · `Team` · `Collider` · `Ability` · `AIControlled` · `RallyPoint`.
 
 ### System list & fixed execution order (per tick)
+
 ```
 1. CommandSystem        (apply queued player/AI commands to intent components)
 2. AISystem             (produce commands for AI players)
@@ -219,6 +224,7 @@ command-and-conquere/
 13. HealthSystem        (apply damage, deaths, cleanup, spawn wreckage)
 14. AnimationSystem     (advance animation state — sim-authoritative frames)
 ```
+
 Rendering, audio, and input are **not** systems inside the sim tick — they live on the main thread and consume snapshots.
 
 **Determinism rules for systems:** iterate entities in stable EntityId order; no wall-clock; all randomness via injected `Random` port seeded per match; fixed-point arithmetic for anything that affects state.
@@ -313,6 +319,7 @@ erDiagram
 Two decoupled clocks: a **fixed-step simulation** in the worker and a **variable-rate render** on the main thread with interpolation.
 
 ### Simulation tick (worker) — fixed timestep
+
 - Tick rate: **20 Hz** (`SIM_DT = 50ms`) for RTS (network-friendly). Configurable.
 - Accumulator pattern; catches up multiple ticks if behind, capped to avoid spiral of death.
 
@@ -332,6 +339,7 @@ sequenceDiagram
 ```
 
 ### Rendering loop (main thread) — `requestAnimationFrame`
+
 - Reads latest two snapshots and **interpolates** entity transforms by `alpha = timeSinceLastTick / SIM_DT`.
 - Never blocks on the worker; if a snapshot is late, keeps extrapolating within a bound.
 
@@ -428,7 +436,7 @@ flowchart LR
   ZUS --> REACT[React HUD]
 ```
 
-- **UI state vs sim state are separate.** Zustand holds *only* presentation state (open panels, hovered card, camera). Authoritative game state lives in the sim; the HUD subscribes to a throttled, derived view of the snapshot (selection summary, resources, power) — never mutates it.
+- **UI state vs sim state are separate.** Zustand holds _only_ presentation state (open panels, hovered card, camera). Authoritative game state lives in the sim; the HUD subscribes to a throttled, derived view of the snapshot (selection summary, resources, power) — never mutates it.
 - **Commands are the only write path** into the simulation.
 
 ---
@@ -436,6 +444,7 @@ flowchart LR
 ## 11. Network Flow & Multiplayer Model
 
 ### Model: Deterministic Lockstep with authoritative relay (v1)
+
 - Clients exchange **commands**, not state. Each command is tagged with an **execution tick** = `currentTick + inputDelay` (e.g. +4 ticks / 200ms).
 - Server validates ownership/legality, timestamps to a tick, and **broadcasts** the confirmed command set. A tick only executes once all players' command sets (or empty confirmations) for that tick are present.
 - Determinism guarantees identical state on every peer → no state replication needed → tiny bandwidth (KB/min).
@@ -459,6 +468,7 @@ sequenceDiagram
 ```
 
 ### Roadmap beyond v1
+
 - **Authoritative server + client prediction** (for higher player counts / anti-cheat): server holds the canonical sim; clients predict locally and reconcile on divergence. The clean sim/render/net split makes this a transport swap, not a rewrite.
 - **State synchronization** fallback: periodic full/delta snapshots for late-join and desync recovery.
 - **Replay** = seed + full command log (see §17); replays are just a transport that feeds recorded commands.
@@ -497,27 +507,27 @@ Three-state per cell, per team: `Hidden` (0) · `Explored` (1, remembered terrai
 
 Each is an independently testable module with a clear port/interface.
 
-| Subsystem | Package/Location | Key interface | Tested headless |
-|---|---|---|---|
-| ECS core | engine/application/ecs | `World`, `Query`, `System` | ✅ |
-| Fixed-point math + RNG | engine/domain/math | `fp`, `Vec2`, `Random` | ✅ |
-| Command bus | engine/application/commands | `CommandBus`, `Command` | ✅ |
-| Movement/Collision | engine/application/systems | systems over stores | ✅ |
-| Pathfinding | engine/application/pathfinding | `PathPlanner` | ✅ |
-| Combat/Projectiles | engine/application/systems | rules + systems | ✅ |
-| Economy/Resource | engine/application/systems | `Economy` | ✅ |
-| Production/Construction | engine/application/systems | `BuildQueue` | ✅ |
-| Energy/Power | engine/application/systems | `PowerGrid` | ✅ |
-| Tech tree | engine/domain/rules | `TechTree` | ✅ |
-| Fog of War | engine/application/fog | `Visibility` | ✅ |
-| AI Director | engine/application/ai | `AIDirector`, behaviors | ✅ |
-| Renderer | client/infra/render | `Renderer` port | GPU (visual) |
-| Audio | client/infra/audio | `AudioBus` port | mock |
-| Input | client/infra/input | `InputController` | ✅ (mock) |
-| Worker bridge | client/infra/worker | `SimBridge` | ✅ |
-| Transport | client/infra/net + server | `Transport` | ✅ |
-| Save/Replay store | client/infra/storage | `SaveStore` | ✅ |
-| Map editor | client/editor | — | component tests |
+| Subsystem               | Package/Location               | Key interface              | Tested headless |
+| ----------------------- | ------------------------------ | -------------------------- | --------------- |
+| ECS core                | engine/application/ecs         | `World`, `Query`, `System` | ✅              |
+| Fixed-point math + RNG  | engine/domain/math             | `fp`, `Vec2`, `Random`     | ✅              |
+| Command bus             | engine/application/commands    | `CommandBus`, `Command`    | ✅              |
+| Movement/Collision      | engine/application/systems     | systems over stores        | ✅              |
+| Pathfinding             | engine/application/pathfinding | `PathPlanner`              | ✅              |
+| Combat/Projectiles      | engine/application/systems     | rules + systems            | ✅              |
+| Economy/Resource        | engine/application/systems     | `Economy`                  | ✅              |
+| Production/Construction | engine/application/systems     | `BuildQueue`               | ✅              |
+| Energy/Power            | engine/application/systems     | `PowerGrid`                | ✅              |
+| Tech tree               | engine/domain/rules            | `TechTree`                 | ✅              |
+| Fog of War              | engine/application/fog         | `Visibility`               | ✅              |
+| AI Director             | engine/application/ai          | `AIDirector`, behaviors    | ✅              |
+| Renderer                | client/infra/render            | `Renderer` port            | GPU (visual)    |
+| Audio                   | client/infra/audio             | `AudioBus` port            | mock            |
+| Input                   | client/infra/input             | `InputController`          | ✅ (mock)       |
+| Worker bridge           | client/infra/worker            | `SimBridge`                | ✅              |
+| Transport               | client/infra/net + server      | `Transport`                | ✅              |
+| Save/Replay store       | client/infra/storage           | `SaveStore`                | ✅              |
+| Map editor              | client/editor                  | —                          | component tests |
 
 ---
 
@@ -543,25 +553,30 @@ Deterministic sim ⇒ a save is a **snapshot of authoritative state** plus metad
 {
   "format": "iron-doctrine.save",
   "version": 1,
-  "createdAt": "2026-07-21T10:00:00Z",     // metadata only, not sim input
+  "createdAt": "2026-07-21T10:00:00Z", // metadata only, not sim input
   "match": {
     "seed": 123456789,
     "tick": 4820,
     "mapId": "canyon_clash",
-    "players": [ { "id": 0, "faction": "directive", "kind": "human" },
-                 { "id": 1, "faction": "coalition", "kind": "ai", "difficulty": "hard" } ]
+    "players": [
+      { "id": 0, "faction": "directive", "kind": "human" },
+      { "id": 1, "faction": "coalition", "kind": "ai", "difficulty": "hard" },
+    ],
   },
-  "rngState": [ /* PRNG internal state words */ ],
+  "rngState": [/* PRNG internal state words */],
   "entities": [
-    { "id": 66052, "components": {
-        "Position": { "x": 655360, "y": 131072 },   // Q16.16 fixed-point
-        "Health":   { "hp": 240, "max": 240 },
-        "Owner":    { "player": 0 },
-        "Weapon":   { "cooldown": 3 }
-    }}
+    {
+      "id": 66052,
+      "components": {
+        "Position": { "x": 655360, "y": 131072 }, // Q16.16 fixed-point
+        "Health": { "hp": 240, "max": 240 },
+        "Owner": { "player": 0 },
+        "Weapon": { "cooldown": 3 },
+      },
+    },
   ],
-  "economy": [ { "player": 0, "credits": 5400, "power": { "produced": 200, "consumed": 150 } } ],
-  "fog": { "encoding": "rle", "perTeam": { "0": "…", "1": "…" } }
+  "economy": [{ "player": 0, "credits": 5400, "power": { "produced": 200, "consumed": 150 } }],
+  "fog": { "encoding": "rle", "perTeam": { "0": "…", "1": "…" } },
 }
 ```
 
@@ -578,13 +593,17 @@ Replays are **inputs, not frames** — a seed plus the full ordered command log.
 {
   "format": "iron-doctrine.replay",
   "version": 1,
-  "engineVersion": "1.0.0",       // must match to replay safely
-  "match": { "seed": 123456789, "mapId": "canyon_clash", "players": [ /* … */ ] },
+  "engineVersion": "1.0.0", // must match to replay safely
+  "match": { "seed": 123456789, "mapId": "canyon_clash", "players": [/* … */] },
   "commands": [
-    { "tick": 12, "player": 0, "cmd": { "t": "Move", "units": [66052], "to": {"x":700000,"y":200000} } },
-    { "tick": 40, "player": 1, "cmd": { "t": "Train", "building": 33025, "unit": "rifleman" } }
+    {
+      "tick": 12,
+      "player": 0,
+      "cmd": { "t": "Move", "units": [66052], "to": { "x": 700000, "y": 200000 } },
+    },
+    { "tick": 40, "player": 1, "cmd": { "t": "Train", "building": 33025, "unit": "rifleman" } },
   ],
-  "checksums": [ { "tick": 1000, "hash": "ab34…" } ]   // periodic desync verification
+  "checksums": [{ "tick": 1000, "hash": "ab34…" }], // periodic desync verification
 }
 ```
 
@@ -654,27 +673,27 @@ flowchart LR
 
 Iterative, one subsystem at a time — each: implement → test → document → next.
 
-| # | Milestone | Deliverable | Status |
-|---|---|---|---|
-| 0 | **Scaffold** | pnpm workspaces, tsconfig strict, ESLint/Prettier, Vitest, Docker skeleton, empty packages wired | ✅ done |
-| 1 | **ECS core** | World, EntityManager, sparse-set ComponentStore, Query, Scheduler + full tests | ✅ done |
-| 2 | Fixed-point math + seeded RNG | `fp`, `Vec2`, `Random` + property tests | ✅ done |
-| 3 | Simulation loop + snapshots | fixed-step tick, snapshot publish, determinism harness | ✅ done |
-| 4 | Command bus + basic commands | Move/Stop/Spawn + command→intent flow | ✅ done |
-| 5 | Render bootstrap | Pixi stage, camera, worker bridge, interpolated draw | ✅ done |
-| 6 | Movement + pathfinding | NavGrid, A*, path smoothing, blocked-goal approach, **flow fields**, **formations** | ✅ done |
-| 7 | Selection + input | box/click/ctrl/shift → commands, HUD selection | ✅ core done (double-click type-select: pending) |
-| 8 | Combat + projectiles | health, weapons, damage, chase/leash, death | ✅ done (armor table + abilities: pending) |
-| 9 | Economy + harvester loop | credits, ore, gather/deposit, per-player economy | ✅ done |
-| 10 | Base building + production | building archetypes, footprint→navgrid, drop-off, **build queues + construction time + rally points + cancel/refund** | ✅ done |
-| 11 | Energy + tech tree | power grid per player, **deficit disables defenses**, **tech tree research + production gating** | ✅ done |
-| 12 | Fog of war | vision + team-shared visibility, rendered | ✅ done |
-| 13 | AI Director | economy + production + aggression, difficulty tiers | ✅ done (scout/expand/harass refinements: pending) |
-| 14 | Save / load / replay | full state serialization + replay round-trip + desync checksums | ✅ done |
-| 15 | Networking transport | WS lockstep relay + **client transport + lockstep coordinator (tested) + NetworkClient** | ✅ done (headless server sim: pending) |
-| 16 | UI polish, audio, effects | HUD, **minimap**, **particle explosions**, **synth spatial audio** | ✅ done |
-| 17 | Map editor | terrain painting, resources, spawns, **JSON export + validation** | ✅ done (triggers/scripted events: pending) |
+| #   | Milestone                     | Deliverable                                                                                                           | Status                                             |
+| --- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 0   | **Scaffold**                  | pnpm workspaces, tsconfig strict, ESLint/Prettier, Vitest, Docker skeleton, empty packages wired                      | ✅ done                                            |
+| 1   | **ECS core**                  | World, EntityManager, sparse-set ComponentStore, Query, Scheduler + full tests                                        | ✅ done                                            |
+| 2   | Fixed-point math + seeded RNG | `fp`, `Vec2`, `Random` + property tests                                                                               | ✅ done                                            |
+| 3   | Simulation loop + snapshots   | fixed-step tick, snapshot publish, determinism harness                                                                | ✅ done                                            |
+| 4   | Command bus + basic commands  | Move/Stop/Spawn + command→intent flow                                                                                 | ✅ done                                            |
+| 5   | Render bootstrap              | Pixi stage, camera, worker bridge, interpolated draw                                                                  | ✅ done                                            |
+| 6   | Movement + pathfinding        | NavGrid, A*, path smoothing, blocked-goal approach, **flow fields**, **formations**                                   | ✅ done                                            |
+| 7   | Selection + input             | box/click/ctrl/shift/double-click type-select → commands, HUD selection                                               | ✅ done                                            |
+| 8   | Combat + projectiles          | health, weapons, damage, chase/leash, death                                                                           | ✅ done (armor table + abilities: pending)         |
+| 9   | Economy + harvester loop      | credits, ore, gather/deposit, per-player economy                                                                      | ✅ done                                            |
+| 10  | Base building + production    | building archetypes, footprint→navgrid, drop-off, **build queues + construction time + rally points + cancel/refund** | ✅ done                                            |
+| 11  | Energy + tech tree            | power grid per player, **deficit disables defenses**, **tech tree research + production gating**                      | ✅ done                                            |
+| 12  | Fog of war                    | vision + team-shared visibility, rendered                                                                             | ✅ done                                            |
+| 13  | AI Director                   | economy + production + aggression, difficulty tiers                                                                   | ✅ done (scout/expand/harass refinements: pending) |
+| 14  | Save / load / replay          | full state serialization + replay round-trip + desync checksums                                                       | ✅ done                                            |
+| 15  | Networking transport          | WS lockstep relay + **client transport + lockstep coordinator (tested) + NetworkClient**                              | ✅ done (headless server sim: pending)             |
+| 16  | UI polish, audio, effects     | HUD, **minimap**, **particle explosions**, **synth spatial audio**                                                    | ✅ done                                            |
+| 17  | Map editor                    | terrain painting, resources, spawns, **JSON export + validation**                                                     | ✅ done (triggers/scripted events: pending)        |
 
 ---
 
-*End of SDD v1.0. Subsequent PRs implement one milestone per branch, updating this document's status table as they land.*
+_End of SDD v1.0. Subsequent PRs implement one milestone per branch, updating this document's status table as they land._
