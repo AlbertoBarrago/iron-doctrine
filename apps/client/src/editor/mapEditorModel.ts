@@ -36,3 +36,8 @@ export function brushCells(
 export function clampZoom(zoom: number): number {
   return Math.min(2.5, Math.max(0.5, Math.round(zoom * 4) / 4));
 }
+
+export function canvasBackingSize(displaySize: number, devicePixelRatio: number): number {
+  const resolution = Math.min(2, Math.max(1, devicePixelRatio));
+  return Math.min(3072, Math.max(1024, Math.ceil(displaySize * resolution)));
+}

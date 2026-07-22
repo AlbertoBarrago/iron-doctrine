@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createEmptyMap, validateMap, type MapDef } from '@iron/shared';
-import { brushCells, clampZoom, pointToCell, type GridCell } from './mapEditorModel.js';
+import {
+  brushCells,
+  canvasBackingSize,
+  clampZoom,
+  pointToCell,
+  type GridCell,
+} from './mapEditorModel.js';
 
 type Tool = 'wall' | 'erase' | 'resource' | 'spawn';
 
-const CANVAS_PIXELS = 1024;
 const BRUSH_SIZES = [1, 3, 5] as const;
 const TOOLS: ReadonlyArray<{ id: Tool; symbol: string; label: string; description: string }> = [
   { id: 'wall', symbol: '▦', label: 'Blocked terrain', description: 'Paint impassable cells' },
@@ -38,6 +43,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
   const lastPainted = useRef<string | null>(null);
   const validationErrors = useMemo(() => validateMap(map), [map]);
   const displaySize = Math.round(fitSize * zoom);
+  const backingSize = canvasBackingSize(displaySize, globalThis.devicePixelRatio ?? 1);
 
   useEffect(() => {
     const viewport = viewportRef.current;
@@ -54,11 +60,11 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
   const draw = useCallback(() => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
-    const cellWidth = CANVAS_PIXELS / map.width;
-    const cellHeight = CANVAS_PIXELS / map.height;
+    const cellWidth = backingSize / map.width;
+    const cellHeight = backingSize / map.height;
 
     ctx.fillStyle = '#2d3827';
-    ctx.fillRect(0, 0, CANVAS_PIXELS, CANVAS_PIXELS);
+    ctx.fillRect(0, 0, backingSize, backingSize);
     for (let cy = 0; cy < map.height; cy++) {
       for (let cx = 0; cx < map.width; cx++) {
         const hash = Math.imul(cx, 73856093) ^ Math.imul(cy, 19349663);
@@ -114,13 +120,13 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
     for (let x = 0; x <= map.width; x++) {
       ctx.beginPath();
       ctx.moveTo(x * cellWidth, 0);
-      ctx.lineTo(x * cellWidth, CANVAS_PIXELS);
+      ctx.lineTo(x * cellWidth, backingSize);
       ctx.stroke();
     }
     for (let y = 0; y <= map.height; y++) {
       ctx.beginPath();
       ctx.moveTo(0, y * cellHeight);
-      ctx.lineTo(CANVAS_PIXELS, y * cellHeight);
+      ctx.lineTo(backingSize, y * cellHeight);
       ctx.stroke();
     }
 
@@ -142,7 +148,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
         );
       }
     }
-  }, [brushSize, hoveredCell, map, tool]);
+  }, [backingSize, brushSize, hoveredCell, map, tool]);
 
   useEffect(() => draw(), [draw]);
 
@@ -347,8 +353,8 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
           >
             <canvas
               ref={canvasRef}
-              width={CANVAS_PIXELS}
-              height={CANVAS_PIXELS}
+              width={backingSize}
+              height={backingSize}
               className="editor-canvas"
               style={{ width: displaySize, height: displaySize }}
               onPointerDown={(event) => {

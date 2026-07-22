@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Current status
 
-117 tests green; strict typecheck, ESLint and client build all clean.
+118 tests green; strict typecheck, ESLint and client build all clean.
 
 - ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
 - ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)

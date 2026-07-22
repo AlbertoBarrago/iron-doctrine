@@ -65,6 +65,8 @@ export class GameRenderer {
       background: 0x283224,
       resizeTo: this.container,
       antialias: true,
+      autoDensity: true,
+      resolution: Math.min(globalThis.devicePixelRatio ?? 1, 2),
     });
     // If we were disposed while init was in flight (React StrictMode), tear down now.
     if (this.disposed) {

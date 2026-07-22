@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { brushCells, clampZoom, pointToCell } from './mapEditorModel.js';
+import { brushCells, canvasBackingSize, clampZoom, pointToCell } from './mapEditorModel.js';
 
 describe('map editor model', () => {
   it('maps display coordinates to map cells independently of canvas resolution', () => {
@@ -21,5 +21,11 @@ describe('map editor model', () => {
     expect(clampZoom(0.1)).toBe(0.5);
     expect(clampZoom(1.18)).toBe(1.25);
     expect(clampZoom(3)).toBe(2.5);
+  });
+
+  it('allocates a DPR-aware backing buffer with safe bounds', () => {
+    expect(canvasBackingSize(640, 1)).toBe(1024);
+    expect(canvasBackingSize(900, 2)).toBe(1800);
+    expect(canvasBackingSize(2000, 3)).toBe(3072);
   });
 });

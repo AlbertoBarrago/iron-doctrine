@@ -177,8 +177,6 @@ kbd {
   font-size: clamp(64px, 10vw, 138px);
   line-height: 0.75;
   letter-spacing: -0.035em;
-  transform: scaleX(0.9);
-  transform-origin: left;
 }
 .start-screen__lead {
   max-width: 680px;
@@ -271,7 +269,6 @@ kbd {
   color: #25261d;
   border: 1px solid #eee1aa;
   box-shadow: 8px 9px 0 rgba(0, 0, 0, 0.35);
-  transform: rotate(-1deg);
 }
 .start-screen__objective::before {
   content: '★';
@@ -308,7 +305,6 @@ kbd {
   position: absolute;
   right: 18px;
   bottom: 15px;
-  transform: rotate(-8deg);
   color: rgba(112, 34, 24, 0.34);
   border: 3px double rgba(112, 34, 24, 0.34);
   padding: 5px 8px;
@@ -1179,7 +1175,6 @@ kbd {
     0 12px 35px rgba(0, 0, 0, 0.65);
   touch-action: none;
   cursor: crosshair;
-  image-rendering: pixelated;
 }
 
 .editor-inspector dl {
