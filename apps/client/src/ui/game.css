@@ -915,12 +915,12 @@ kbd {
 }
 .editor-brand small {
   color: #898970;
-  font: 7px var(--body);
+  font: 10px var(--body);
   letter-spacing: 0.14em;
 }
 .editor-brand strong {
   color: #dfd8b8;
-  font-size: 16px;
+  font-size: 20px;
   letter-spacing: 0.08em;
 }
 .editor-name {
@@ -930,7 +930,7 @@ kbd {
 }
 .editor-name span {
   color: #85866d;
-  font: 7px var(--body);
+  font: 10px var(--body);
   letter-spacing: 0.12em;
 }
 .editor-name input {
@@ -939,14 +939,14 @@ kbd {
   color: #e0d9ba;
   background: #151812;
   border: 1px inset #62654c;
-  font: 700 11px var(--body);
+  font: 700 14px var(--body);
   text-transform: uppercase;
 }
 .editor-summary {
   display: flex;
   gap: 13px;
   color: #96947a;
-  font: 8px var(--body);
+  font: 11px var(--body);
   letter-spacing: 0.08em;
 }
 .editor-summary span {
@@ -961,7 +961,7 @@ kbd {
   align-items: center;
   gap: 6px;
   color: #bdb790;
-  font: 8px var(--body);
+  font: 11px var(--body);
   letter-spacing: 0.08em;
 }
 .editor-validation i,
@@ -992,7 +992,7 @@ kbd {
 .editor-inspector h2 {
   margin: 3px 0 14px;
   color: #dfd8b8;
-  font-size: 20px;
+  font-size: 22px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1039,13 +1039,13 @@ kbd {
   display: block;
 }
 .editor-tool strong {
-  font-size: 11px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 .editor-tool small {
   margin-top: 3px;
   color: #929078;
-  font: 8px var(--body);
+  font: 11px var(--body);
 }
 .editor-brushes {
   display: grid;
@@ -1059,7 +1059,7 @@ kbd {
   cursor: pointer;
   background: #24281e;
   border: 1px outset #5b5e47;
-  font: 8px var(--body);
+  font: 11px var(--body);
 }
 .editor-brushes button.is-active {
   color: #18160d;
@@ -1074,7 +1074,7 @@ kbd {
   color: #98967e;
   background: #181b14;
   border: 1px inset #585b44;
-  font: 9px var(--body);
+  font: 12px var(--body);
 }
 .editor-legend span {
   display: flex;
@@ -1119,13 +1119,13 @@ kbd {
 }
 .editor-coordinates {
   color: #898970;
-  font: 8px var(--body);
+  font: 11px var(--body);
   letter-spacing: 0.1em;
 }
 .editor-coordinates strong {
   margin-left: 8px;
   color: var(--amber-light);
-  font-size: 11px;
+  font-size: 14px;
 }
 .editor-zoom {
   display: flex;
@@ -1139,13 +1139,13 @@ kbd {
   cursor: pointer;
   background: linear-gradient(#484c38, #272b20);
   border: 1px outset #62664c;
-  font-size: 11px;
+  font-size: 14px;
 }
 .editor-zoom span {
   min-width: 55px;
   color: var(--amber-light);
   text-align: center;
-  font: 10px var(--body);
+  font: 13px var(--body);
 }
 .editor-viewport {
   min-width: 0;
@@ -1188,19 +1188,19 @@ kbd {
 }
 .editor-inspector dt {
   color: #8f8e75;
-  font: 9px var(--body);
+  font: 12px var(--body);
   text-transform: uppercase;
 }
 .editor-inspector dd {
   margin: 0;
   color: var(--amber-light);
-  font: 10px var(--body);
+  font: 13px var(--body);
 }
 .editor-errors {
   margin: 8px 0;
   padding-left: 17px;
   color: #d77b67;
-  font: 9px/1.45 var(--body);
+  font: 12px/1.45 var(--body);
 }
 .editor-valid {
   display: flex;
@@ -1211,7 +1211,7 @@ kbd {
   color: #c4be9c;
   background: #1a1e15;
   border: 1px inset #575a42;
-  font: 9px var(--body);
+  font: 12px var(--body);
   text-transform: uppercase;
 }
 .editor-help {
@@ -1223,12 +1223,20 @@ kbd {
 }
 .editor-help strong {
   color: #c9c2a3;
-  font-size: 10px;
+  font-size: 13px;
   text-transform: uppercase;
 }
 .editor-help p {
   margin: 5px 0 0;
-  font: 9px/1.45 var(--body);
+  font: 12px/1.45 var(--body);
+}
+
+.editor-shell .panel-kicker {
+  font-size: 10px;
+}
+
+.editor-topbar .metal-button {
+  font-size: 12px;
 }
 
 @media (max-width: 900px) {
