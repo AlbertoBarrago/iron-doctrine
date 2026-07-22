@@ -7,7 +7,9 @@ import * as fp from '../domain/math/fixed.js';
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
 
 function countOwned(sim: Simulation, player: number, pred: (e: number) => boolean): number {
-  return sim.world.query(Owner, Position).filter((e) => sim.world.get(e, Owner)!.player === player && pred(e)).length;
+  return sim.world
+    .query(Owner, Position)
+    .filter((e) => sim.world.get(e, Owner)!.player === player && pred(e)).length;
 }
 
 describe('AIDirector', () => {
@@ -24,24 +26,57 @@ describe('AIDirector', () => {
   it('produces a harvester and combat units from starting credits', () => {
     const sim = makeSim();
     // Give the AI a base to anchor production.
-    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: at(10, 10) });
+    sim.enqueue({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 1,
+      at: at(10, 10),
+    });
     sim.step();
 
     for (let i = 0; i < 300; i++) sim.step();
 
     const harvesters = countOwned(sim, 1, (e) => sim.world.has(e, Harvest));
-    const combat = countOwned(sim, 1, (e) => sim.world.has(e, Weapon) && !sim.world.has(e, Building));
+    const combat = countOwned(
+      sim,
+      1,
+      (e) => sim.world.has(e, Weapon) && !sim.world.has(e, Building),
+    );
     expect(harvesters).toBeGreaterThanOrEqual(1);
     expect(combat).toBeGreaterThanOrEqual(1);
   });
 
   it('spends credits down as it produces', () => {
     const sim = makeSim();
-    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: at(10, 10) });
+    sim.enqueue({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 1,
+      at: at(10, 10),
+    });
     sim.step();
     const start = sim.economy.credits(1);
     for (let i = 0; i < 300; i++) sim.step();
     expect(sim.economy.credits(1)).toBeLessThan(start);
+  });
+
+  it('does not activate before the configured tick', () => {
+    const sim = new Simulation({
+      seed: 1,
+      aiPlayers: [{ player: 1, difficulty: 'easy', activationTick: 120 }],
+      startingCredits: { 1: 5000 },
+    });
+    sim.enqueue({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 1,
+      at: at(10, 10),
+    });
+    for (let i = 0; i < 120; i++) sim.step();
+
+    expect(countOwned(sim, 1, (entity) => !sim.world.has(entity, Building))).toBe(0);
+    sim.step();
+    expect(countOwned(sim, 1, (entity) => !sim.world.has(entity, Building))).toBe(1);
   });
 
   it('sends its army to attack the human player', () => {
@@ -56,7 +91,9 @@ describe('AIDirector', () => {
     let humanHarmed = false;
     for (let i = 0; i < 4000; i++) {
       sim.step();
-      const buildings = sim.world.query(Building, Owner).filter((e) => sim.world.get(e, Owner)!.player === 0);
+      const buildings = sim.world
+        .query(Building, Owner)
+        .filter((e) => sim.world.get(e, Owner)!.player === 0);
       if (buildings.length === 0) {
         humanHarmed = true;
         break;
@@ -74,7 +111,12 @@ describe('AIDirector', () => {
         aiPlayers: [{ player: 1, difficulty: 'normal' }],
         startingCredits: { 1: 3000 },
       });
-      s.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: at(10, 10) });
+      s.enqueue({
+        type: 'spawnBuilding',
+        building: 'construction_yard',
+        player: 1,
+        at: at(10, 10),
+      });
       s.enqueue({ type: 'spawnResource', amount: 5000, at: at(14, 10) });
       return s;
     };

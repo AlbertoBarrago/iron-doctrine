@@ -37,6 +37,8 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
 export interface AIPlayerConfig {
   player: number;
   difficulty: Difficulty;
+  /** Tick before this AI starts producing units or issuing orders. */
+  activationTick?: number;
 }
 
 interface Tuning {
@@ -61,8 +63,10 @@ export function createAISystem(
     name: 'AIDirector',
     update(world: World, ctx: TickContext): void {
       for (const ai of ais) {
+        if (ctx.tick < (ai.activationTick ?? 0)) continue;
         const tuning = TUNING[ai.difficulty];
-        if (ctx.tick % tuning.decisionInterval === 0) manageEconomyAndProduction(world, ctx, ai, economy, grid);
+        if (ctx.tick % tuning.decisionInterval === 0)
+          manageEconomyAndProduction(world, ctx, ai, economy, grid);
         if (ctx.tick % tuning.attackInterval === 0) manageAggression(world, ai, teamOf, tuning);
       }
     },
@@ -184,9 +188,7 @@ function nearestEnemy(
     const d = v2.distSq(from, world.get(e, Position)!);
     // Prefer units over buildings; among same class, nearest wins.
     const better =
-      best === undefined ||
-      (isUnit && !bestIsUnit) ||
-      (isUnit === bestIsUnit && d < bestD);
+      best === undefined || (isUnit && !bestIsUnit) || (isUnit === bestIsUnit && d < bestD);
     if (better) {
       best = e;
       bestD = d;
