@@ -1,20 +1,34 @@
 import { useGameStore } from '../state/gameStore.js';
-import { UNIT_STATS } from '@iron/engine';
+import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
+
+const BUILDABLE_STRUCTURES = ['power_plant', 'refinery', 'barracks', 'factory', 'turret'];
 
 /** Top-bar HUD: resources, power, FPS, entity/selection counters and a build menu. */
 export function Hud({
   onQueueProduction,
   onCancelProduction,
+  onPlaceBuilding,
+  onCancelPlacement,
   onOpenEditor,
   onRestart,
 }: {
   onQueueProduction: (unit: string) => void;
   onCancelProduction: () => void;
+  onPlaceBuilding: (building: string) => void;
+  onCancelPlacement: () => void;
   onOpenEditor: () => void;
   onRestart: () => void;
 }): JSX.Element {
-  const { fps, entityCount, selectedCount, credits, power, selectedProduction, match } =
-    useGameStore();
+  const {
+    fps,
+    entityCount,
+    selectedCount,
+    credits,
+    power,
+    selectedProduction,
+    placingBuilding,
+    match,
+  } = useGameStore();
   const progress = selectedProduction?.currentBuildTicks
     ? Math.min(100, (selectedProduction.progressTicks / selectedProduction.currentBuildTicks) * 100)
     : 0;
@@ -34,6 +48,33 @@ export function Hud({
       </div>
 
       <div style={productionPanel}>
+        <strong style={panelTitle}>Base construction</strong>
+        <div style={buildingGrid}>
+          {BUILDABLE_STRUCTURES.map((building) => {
+            const stats = BUILDING_STATS[building]!;
+            const affordable = credits >= stats.cost;
+            return (
+              <button
+                key={building}
+                style={{
+                  ...buildBtn,
+                  opacity: affordable ? 1 : 0.5,
+                  borderColor: placingBuilding === building ? '#4ade80' : '#2a4034',
+                }}
+                disabled={!affordable}
+                onClick={() => onPlaceBuilding(building)}
+              >
+                {building.replaceAll('_', ' ')} · ${stats.cost}
+              </button>
+            );
+          })}
+        </div>
+        {placingBuilding && (
+          <button style={buildBtn} onClick={onCancelPlacement}>
+            Cancel placement
+          </button>
+        )}
+        <div style={panelDivider} />
         {selectedProduction ? (
           <>
             <strong style={panelTitle}>
@@ -74,7 +115,7 @@ export function Hud({
       </div>
 
       <div style={hint}>
-        Left-drag: select · Right-click: move/rally · Wheel: zoom · WASD/Arrows: pan
+        Left-drag: select · Right-click: move/rally · Placement: click to build, Esc to cancel
       </div>
 
       {match?.status === 'finished' && (
@@ -134,12 +175,24 @@ const productionPanel: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
-  width: 220,
+  width: 250,
   padding: 12,
   background: 'rgba(11,15,13,0.92)',
   border: '1px solid #2a4034',
   borderRadius: 6,
   fontFamily: font,
+};
+
+const buildingGrid: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: '1fr 1fr',
+  gap: 6,
+};
+
+const panelDivider: React.CSSProperties = {
+  height: 1,
+  margin: '2px 0',
+  background: '#2a4034',
 };
 
 const panelTitle: React.CSSProperties = {

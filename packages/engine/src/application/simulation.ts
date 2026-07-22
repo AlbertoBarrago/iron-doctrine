@@ -18,6 +18,7 @@ import { createResourceSystem } from './systems/resource-system.js';
 import { createEnergySystem } from './systems/energy-system.js';
 import { createFogSystem, type TeamResolver } from './systems/fog-system.js';
 import { createProductionSystem } from './systems/production-system.js';
+import { ConstructionSystem } from './systems/construction-system.js';
 import { createAISystem, type AIPlayerConfig } from './ai/ai-director.js';
 import { PlayerEconomy } from '../domain/economy/player-economy.js';
 import { TechState } from '../domain/tech/tech-tree.js';
@@ -59,6 +60,7 @@ interface Deps {
 /** Default ordered pipeline for the current milestone. */
 const defaultSystems = (d: Deps): System[] => [
   createCommandSystem(d.bus, d.grid, d.economy, d.tech),
+  ConstructionSystem,
   createAISystem(d.aiPlayers, d.economy, d.teamOf, d.grid),
   // Energy is recomputed before combat so power-gated defenses see the current balance.
   createEnergySystem(d.economy),

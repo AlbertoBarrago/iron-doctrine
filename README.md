@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Current status
 
-108 tests green; strict typecheck, ESLint and client build all clean.
+112 tests green; strict typecheck, ESLint and client build all clean.
 
 - ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
 - ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)
@@ -57,6 +57,7 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Combat (weapons, hitscan + projectiles, target acquisition, chase/leash, death)
 - ✅ Economy (ore nodes, harvester gather→deposit loop, per-player credits)
 - ✅ Base building + production (footprints on navgrid, build queues, construction time, rally points, cancel/refund)
+- ✅ Base construction (placement preview, authoritative footprint validation, costs, build progress and deferred activation)
 - ✅ Playable production UI (select barracks/factory, pay costs, inspect progress/queue, cancel/refund, set rally point)
 - ✅ Match lifecycle (deterministic victory/defeat/draw, simulation freeze, end screen and restart)
 - ✅ Energy (per-player power balance; **power deficit disables defensive turrets**)
@@ -72,13 +73,13 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Web Worker sim bridge (simulation off the main thread)
 - ✅ Docker (client + server) & compose
 
-Pending (see SDD roadmap): base placement, server-side headless authoritative sim,
-scripted map triggers, richer AI behaviours (scout/harass), art & music assets.
+Pending (see SDD roadmap): server-side headless authoritative sim, scripted map
+triggers, richer AI behaviours (scout/harass), art & music assets.
 
 ## Controls (vertical slice)
 
 Left-drag select · Double-click type-select · Ctrl/Shift add to selection · Right-click move/set rally ·
-Wheel zoom · WASD/Arrows pan · Select a barracks/factory to produce units.
+Wheel zoom · WASD/Arrows pan · Use the build panel to place structures · Select a barracks/factory to produce units.
 
 ## License / IP
 

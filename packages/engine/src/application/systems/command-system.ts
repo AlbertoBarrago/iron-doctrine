@@ -11,7 +11,11 @@ import type { CommandBus } from '../commands/command.js';
 import type { PlayerEconomy } from '../../domain/economy/player-economy.js';
 import { Movement, Attack, Harvest, Production, Owner } from '../../domain/components/index.js';
 import { spawnUnit, UNIT_STATS } from '../../domain/archetypes/units.js';
-import { spawnBuilding } from '../../domain/archetypes/buildings.js';
+import {
+  BUILDING_STATS,
+  canPlaceBuilding,
+  spawnBuilding,
+} from '../../domain/archetypes/buildings.js';
 import { spawnResourceNode } from '../../domain/archetypes/resources.js';
 import { TECH_TREE, type TechState } from '../../domain/tech/tech-tree.js';
 import { computeFormationSlots } from '../../domain/movement/formation.js';
@@ -78,6 +82,15 @@ export function createCommandSystem(
           case 'spawnBuilding':
             spawnBuilding(world, grid, cmd.building, cmd.player, cmd.at);
             break;
+          case 'placeBuilding': {
+            const stats = BUILDING_STATS[cmd.building];
+            if (!stats || !canPlaceBuilding(grid, cmd.building, cmd.at)) break;
+            if (!economy.spend(cmd.player, stats.cost)) break;
+            spawnBuilding(world, grid, cmd.building, cmd.player, cmd.at, {
+              underConstruction: true,
+            });
+            break;
+          }
           case 'spawnResource':
             spawnResourceNode(world, cmd.at, cmd.amount);
             break;

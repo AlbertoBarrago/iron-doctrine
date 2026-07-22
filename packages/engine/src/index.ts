@@ -19,6 +19,7 @@ export { createCombatSystem } from './application/systems/combat.js';
 export { ProjectileSystem } from './application/systems/projectile.js';
 export { HealthSystem } from './application/systems/health.js';
 export { createProductionSystem } from './application/systems/production-system.js';
+export { ConstructionSystem } from './application/systems/construction-system.js';
 export { createResourceSystem } from './application/systems/resource-system.js';
 export { createEnergySystem } from './application/systems/energy-system.js';
 export { createFogSystem } from './application/systems/fog-system.js';
@@ -49,7 +50,12 @@ export { TechState, TECH_TREE, UNIT_TECH_REQUIREMENT } from './domain/tech/tech-
 export type { TechDef } from './domain/tech/tech-tree.js';
 
 // Building & resource archetypes
-export { spawnBuilding, BUILDING_STATS } from './domain/archetypes/buildings.js';
+export {
+  spawnBuilding,
+  activateBuilding,
+  canPlaceBuilding,
+  BUILDING_STATS,
+} from './domain/archetypes/buildings.js';
 export type { BuildingStats } from './domain/archetypes/buildings.js';
 export { spawnResourceNode } from './domain/archetypes/resources.js';
 
@@ -73,6 +79,7 @@ export type {
   MoveCommand,
   StopCommand,
   SpawnUnitCommand,
+  PlaceBuildingCommand,
 } from './application/commands/command.js';
 
 // Simulation + snapshot
@@ -83,6 +90,7 @@ export type {
   Snapshot,
   EntitySnapshot,
   ProductionSnapshot,
+  ConstructionSnapshot,
   PlayerSnapshot,
   FogSnapshot,
   EntityKind,

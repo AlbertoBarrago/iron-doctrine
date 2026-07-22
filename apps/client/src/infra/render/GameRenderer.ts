@@ -11,7 +11,7 @@
  * It reads snapshots but never mutates simulation state — the clean sim/render split.
  */
 import { Application, Container, Graphics } from 'pixi.js';
-import { fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
+import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
 import { asEntityId, SIM_DT_MS } from '@iron/shared';
 import { Camera } from './camera.js';
 import { ParticleSystem } from './Particles.js';
@@ -40,6 +40,8 @@ export class GameRenderer {
   private readonly keys = new Set<string>();
   private dragStart: { x: number; y: number } | null = null;
   private dragNow: { x: number; y: number } | null = null;
+  private placingBuilding: string | null = null;
+  private placementPointer: { x: number; y: number } | null = null;
 
   private minimapCtx: CanvasRenderingContext2D | null = null;
   private minimapFrame = 0;
@@ -197,6 +199,19 @@ export class GameRenderer {
     this.bridge.command({ type: 'cancelProduction', building: asEntityId(building.id) });
   }
 
+  /** Enter placement mode for one building archetype. */
+  beginBuildingPlacement(building: string): void {
+    if (!BUILDING_STATS[building]) return;
+    this.placingBuilding = building;
+    useGameStore.getState().setPlacingBuilding(building);
+  }
+
+  cancelBuildingPlacement(): void {
+    this.placingBuilding = null;
+    this.placementPointer = null;
+    useGameStore.getState().setPlacingBuilding(null);
+  }
+
   // ---- rendering -------------------------------------------------------------
 
   private render(): void {
@@ -275,8 +290,13 @@ export class GameRenderer {
         }
         this.units
           .rect(sx - s, sy - s, s * 2, s * 2)
-          .fill({ color })
+          .fill({ color, alpha: e.construction ? 0.45 : 1 })
           .stroke({ width: 2, color: 0x0b0f0d });
+        if (e.construction) {
+          const progress = e.construction.progressTicks / e.construction.buildTicks;
+          this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
+          this.units.rect(sx - s, sy + s + 4, s * 2 * progress, 4).fill({ color: 0x60a5fa });
+        }
         if (e.maxHp > 0 && e.hp < e.maxHp) {
           const ratio = Math.max(0, e.hp / e.maxHp);
           this.units.rect(sx - s, sy - s - 8, s * 2, 3).fill({ color: 0x000000, alpha: 0.5 });
@@ -410,6 +430,7 @@ export class GameRenderer {
 
   private drawSelectionBox(): void {
     this.overlay.clear();
+    this.drawPlacementPreview();
     if (this.dragStart && this.dragNow) {
       const x = Math.min(this.dragStart.x, this.dragNow.x);
       const y = Math.min(this.dragStart.y, this.dragNow.y);
@@ -420,6 +441,100 @@ export class GameRenderer {
         .fill({ color: 0x4ade80, alpha: 0.1 })
         .stroke({ width: 1, color: 0x4ade80 });
     }
+  }
+
+  private drawPlacementPreview(): void {
+    const building = this.placingBuilding;
+    const pointer = this.placementPointer;
+    const snapshot = this.bridge.latest.curr;
+    if (!building || !pointer || !snapshot?.fog) return;
+
+    const position = this.snappedPlacement(pointer.x, pointer.y);
+    const stats = BUILDING_STATS[building];
+    if (!stats) return;
+    const fog = snapshot.fog;
+    const cell = {
+      cx: Math.floor((position.x - fog.originX) / fog.cellSize),
+      cy: Math.floor((position.y - fog.originY) / fog.cellSize),
+    };
+    const half = Math.floor(stats.footprint / 2);
+    const startX = fog.originX + (cell.cx - half) * fog.cellSize;
+    const startY = fog.originY + (cell.cy - half) * fog.cellSize;
+    const topLeft = this.camera.worldToScreen(startX, startY);
+    const size = stats.footprint * fog.cellSize * this.camera.scale;
+    const valid = this.isPlacementValid(building, position, snapshot);
+    this.overlay
+      .rect(topLeft.sx, topLeft.sy, size, size)
+      .fill({ color: valid ? 0x4ade80 : 0xf87171, alpha: 0.22 })
+      .stroke({ width: 2, color: valid ? 0x4ade80 : 0xf87171 });
+  }
+
+  private confirmBuildingPlacement(sx: number, sy: number): void {
+    const building = this.placingBuilding;
+    const snapshot = this.bridge.latest.curr;
+    if (!building || !snapshot) return;
+    const position = this.snappedPlacement(sx, sy);
+    if (!this.isPlacementValid(building, position, snapshot)) return;
+
+    this.bridge.command({
+      type: 'placeBuilding',
+      building,
+      player: 0,
+      at: { x: fp.fromFloat(position.x), y: fp.fromFloat(position.y) },
+    });
+    this.audio.play('build');
+    this.cancelBuildingPlacement();
+  }
+
+  private snappedPlacement(sx: number, sy: number): { x: number; y: number } {
+    const { wx, wy } = this.camera.screenToWorld(sx, sy);
+    const footprint = BUILDING_STATS[this.placingBuilding ?? '']?.footprint ?? 1;
+    const snap = (value: number): number =>
+      footprint % 2 === 0 ? Math.round(value) : Math.floor(value) + 0.5;
+    return { x: snap(wx), y: snap(wy) };
+  }
+
+  /** Fast presentation check; the simulation repeats the authoritative grid validation. */
+  private isPlacementValid(
+    building: string,
+    at: { x: number; y: number },
+    snapshot: Snapshot,
+  ): boolean {
+    const stats = BUILDING_STATS[building];
+    const fog = snapshot.fog;
+    if (!stats || !fog || useGameStore.getState().credits < stats.cost) return false;
+
+    const toRect = (x: number, y: number, footprint: number) => {
+      const cx = Math.floor((x - fog.originX) / fog.cellSize);
+      const cy = Math.floor((y - fog.originY) / fog.cellSize);
+      const half = Math.floor(footprint / 2);
+      return { x0: cx - half, y0: cy - half, x1: cx - half + footprint, y1: cy - half + footprint };
+    };
+    const candidate = toRect(at.x, at.y, stats.footprint);
+    if (
+      candidate.x0 < 0 ||
+      candidate.y0 < 0 ||
+      candidate.x1 > fog.width ||
+      candidate.y1 > fog.height
+    ) {
+      return false;
+    }
+
+    for (const entity of snapshot.entities) {
+      if (entity.kind !== 'building' || !entity.buildingType) continue;
+      const footprint = BUILDING_STATS[entity.buildingType]?.footprint;
+      if (!footprint) continue;
+      const occupied = toRect(entity.x, entity.y, footprint);
+      if (
+        candidate.x0 < occupied.x1 &&
+        candidate.x1 > occupied.x0 &&
+        candidate.y0 < occupied.y1 &&
+        candidate.y1 > occupied.y0
+      ) {
+        return false;
+      }
+    }
+    return true;
   }
 
   // ---- input -----------------------------------------------------------------
@@ -435,7 +550,10 @@ export class GameRenderer {
       e.preventDefault();
       this.camera.zoomBy(e.deltaY < 0 ? 1.1 : 0.9);
     });
-    window.addEventListener('keydown', (e) => this.keys.add(e.key.toLowerCase()));
+    window.addEventListener('keydown', (e) => {
+      this.keys.add(e.key.toLowerCase());
+      if (e.key === 'Escape') this.cancelBuildingPlacement();
+    });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('resize', () =>
       this.camera.resize(this.container.clientWidth, this.container.clientHeight),
@@ -443,6 +561,11 @@ export class GameRenderer {
   }
 
   private onPointerDown(e: PointerEvent): void {
+    if (this.placingBuilding) {
+      if (e.button === 0) this.confirmBuildingPlacement(e.offsetX, e.offsetY);
+      else if (e.button === 2) this.cancelBuildingPlacement();
+      return;
+    }
     if (e.button === 0) {
       this.dragStart = { x: e.offsetX, y: e.offsetY };
       this.dragNow = { x: e.offsetX, y: e.offsetY };
@@ -452,6 +575,7 @@ export class GameRenderer {
   }
 
   private onPointerMove(e: PointerEvent): void {
+    this.placementPointer = { x: e.offsetX, y: e.offsetY };
     if (this.dragStart) this.dragNow = { x: e.offsetX, y: e.offsetY };
   }
 

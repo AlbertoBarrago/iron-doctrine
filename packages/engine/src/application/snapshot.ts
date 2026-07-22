@@ -16,6 +16,7 @@ import {
   Building,
   ResourceNode,
   Production,
+  Construction,
 } from '../domain/components/index.js';
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
@@ -40,6 +41,13 @@ export interface EntitySnapshot {
   buildingType?: string;
   /** Present only for buildings that can produce units. */
   production?: ProductionSnapshot;
+  /** Present while a placed building is not operational yet. */
+  construction?: ConstructionSnapshot;
+}
+
+export interface ConstructionSnapshot {
+  progressTicks: number;
+  buildTicks: number;
 }
 
 export interface ProductionSnapshot {
@@ -90,6 +98,7 @@ export function buildSnapshot(
     const unitType = world.get(e, UnitType);
     const building = world.get(e, Building);
     const production = world.get(e, Production);
+    const construction = world.get(e, Construction);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
       : building
@@ -115,6 +124,12 @@ export function buildSnapshot(
           progressTicks: production.progressTicks,
           currentBuildTicks: UNIT_STATS[production.queue[0] ?? '']?.buildTicks ?? 0,
           produces: [...production.produces],
+        },
+      }),
+      ...(construction && {
+        construction: {
+          progressTicks: construction.progressTicks,
+          buildTicks: construction.buildTicks,
         },
       }),
     });
@@ -145,6 +160,11 @@ export function hashState(world: World): number {
     }
     const owner = world.get(e, Owner);
     if (owner) mix(owner.player);
+    const construction = world.get(e, Construction);
+    if (construction) {
+      mix(construction.progressTicks);
+      mix(construction.buildTicks);
+    }
   }
   return h >>> 0;
 }

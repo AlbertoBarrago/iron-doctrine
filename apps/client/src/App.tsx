@@ -53,6 +53,8 @@ function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
       <Hud
         onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
         onCancelProduction={() => rendererRef.current?.cancelProduction()}
+        onPlaceBuilding={(building) => rendererRef.current?.beginBuildingPlacement(building)}
+        onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
         onOpenEditor={onOpenEditor}
         onRestart={() => setSession((current) => current + 1)}
       />

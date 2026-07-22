@@ -37,6 +37,14 @@ export interface SpawnBuildingCommand {
   at: { x: Fixed; y: Fixed };
 }
 
+/** Player-requested construction. Unlike scenario spawning, this validates and charges. */
+export interface PlaceBuildingCommand {
+  type: 'placeBuilding';
+  building: string;
+  player: number;
+  at: { x: Fixed; y: Fixed };
+}
+
 export interface SpawnResourceCommand {
   type: 'spawnResource';
   amount: number;
@@ -77,6 +85,7 @@ export type Command =
   | AttackCommand
   | SpawnUnitCommand
   | SpawnBuildingCommand
+  | PlaceBuildingCommand
   | SpawnResourceCommand
   | GatherCommand
   | QueueProductionCommand

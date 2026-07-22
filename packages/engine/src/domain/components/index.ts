@@ -187,6 +187,16 @@ export const Building = defineComponent<BuildingData>('Building', () => ({
   footprint: 2,
 }));
 
+/** Progress for a placed building that is not operational yet. */
+export interface ConstructionData {
+  progressTicks: number;
+  buildTicks: number;
+}
+export const Construction = defineComponent<ConstructionData>('Construction', () => ({
+  progressTicks: 0,
+  buildTicks: 1,
+}));
+
 /** In-flight projectile heading toward a target position, carrying damage + owner. */
 export interface ProjectileData {
   target: number;
