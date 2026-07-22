@@ -1047,13 +1047,15 @@ kbd {
   color: #929078;
   font: 11px var(--body);
 }
-.editor-brushes {
+.editor-brushes,
+.editor-spawn-players {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 4px;
   margin: 8px 0 17px;
 }
-.editor-brushes button {
+.editor-brushes button,
+.editor-spawn-players button {
   min-height: 32px;
   color: #aaa68a;
   cursor: pointer;
@@ -1061,10 +1063,23 @@ kbd {
   border: 1px outset #5b5e47;
   font: 11px var(--body);
 }
-.editor-brushes button.is-active {
+.editor-brushes button.is-active,
+.editor-spawn-players button.is-active {
   color: #18160d;
   background: var(--amber);
   border-color: #edca68;
+}
+.editor-spawn-players {
+  grid-template-columns: repeat(2, 1fr);
+}
+.editor-spawn-players button.is-active.friendly {
+  background: #b5a747;
+  border-color: #e4d36a;
+}
+.editor-spawn-players button.is-active.hostile {
+  color: #f1d0c8;
+  background: #8f3829;
+  border-color: #d96850;
 }
 .editor-legend {
   display: flex;

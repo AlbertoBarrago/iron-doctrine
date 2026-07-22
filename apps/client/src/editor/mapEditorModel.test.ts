@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { brushCells, canvasBackingSize, clampZoom, pointToCell } from './mapEditorModel.js';
+import {
+  brushCells,
+  canvasBackingSize,
+  clampZoom,
+  movePlayerSpawn,
+  pointToCell,
+} from './mapEditorModel.js';
 
 describe('map editor model', () => {
   it('maps display coordinates to map cells independently of canvas resolution', () => {
@@ -27,5 +33,16 @@ describe('map editor model', () => {
     expect(canvasBackingSize(640, 1)).toBe(1024);
     expect(canvasBackingSize(900, 2)).toBe(1800);
     expect(canvasBackingSize(2000, 3)).toBe(3072);
+  });
+
+  it('moves one player spawn instead of creating duplicates', () => {
+    const spawns = [
+      { player: 0, x: 4, y: 4 },
+      { player: 1, x: 43, y: 43 },
+    ];
+    expect(movePlayerSpawn(spawns, 0, { cx: 10, cy: 12 })).toEqual([
+      { player: 1, x: 43, y: 43 },
+      { player: 0, x: 10, y: 12 },
+    ]);
   });
 });

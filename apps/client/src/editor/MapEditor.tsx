@@ -4,6 +4,7 @@ import {
   brushCells,
   canvasBackingSize,
   clampZoom,
+  movePlayerSpawn,
   pointToCell,
   type GridCell,
 } from './mapEditorModel.js';
@@ -19,7 +20,7 @@ const TOOLS: ReadonlyArray<{ id: Tool; symbol: string; label: string; descriptio
     id: 'spawn',
     symbol: '★',
     label: 'Player spawn',
-    description: 'Alternate friendly and hostile',
+    description: 'Move the selected player start',
   },
 ];
 
@@ -33,6 +34,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
     return initial;
   });
   const [tool, setTool] = useState<Tool>('wall');
+  const [spawnPlayer, setSpawnPlayer] = useState<0 | 1>(0);
   const [brushSize, setBrushSize] = useState<(typeof BRUSH_SIZES)[number]>(1);
   const [zoom, setZoom] = useState(1);
   const [fitSize, setFitSize] = useState(720);
@@ -202,10 +204,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
         next.resources = next.resources.filter(
           (resource) => keyOf(resource.x, resource.y) !== keyOf(center.cx, center.cy),
         );
-        next.spawns = next.spawns.filter(
-          (spawn) => keyOf(spawn.x, spawn.y) !== keyOf(center.cx, center.cy),
-        );
-        next.spawns.push({ player: next.spawns.length % 2, x: center.cx, y: center.cy });
+        next.spawns = movePlayerSpawn(next.spawns, spawnPlayer, center);
       }
       next.blocked = [...blocked].map((key) => key.split(',').map(Number) as [number, number]);
       return next;
@@ -288,19 +287,40 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
         <div className="panel-separator">
           <span />
         </div>
-        <span className="panel-kicker">BRUSH SIZE</span>
-        <div className="editor-brushes">
-          {BRUSH_SIZES.map((size) => (
-            <button
-              key={size}
-              className={brushSize === size ? 'is-active' : ''}
-              disabled={tool === 'resource' || tool === 'spawn'}
-              onClick={() => setBrushSize(size)}
-            >
-              {size} × {size}
-            </button>
-          ))}
-        </div>
+        {tool === 'spawn' ? (
+          <>
+            <span className="panel-kicker">SPAWN OWNER</span>
+            <div className="editor-spawn-players">
+              <button
+                className={spawnPlayer === 0 ? 'is-active friendly' : ''}
+                onClick={() => setSpawnPlayer(0)}
+              >
+                PLAYER 1
+              </button>
+              <button
+                className={spawnPlayer === 1 ? 'is-active hostile' : ''}
+                onClick={() => setSpawnPlayer(1)}
+              >
+                PLAYER 2
+              </button>
+            </div>
+          </>
+        ) : tool === 'wall' || tool === 'erase' ? (
+          <>
+            <span className="panel-kicker">BRUSH SIZE</span>
+            <div className="editor-brushes">
+              {BRUSH_SIZES.map((size) => (
+                <button
+                  key={size}
+                  className={brushSize === size ? 'is-active' : ''}
+                  onClick={() => setBrushSize(size)}
+                >
+                  {size} × {size}
+                </button>
+              ))}
+            </div>
+          </>
+        ) : null}
         <div className="editor-legend">
           <span>
             <i className="friendly" />

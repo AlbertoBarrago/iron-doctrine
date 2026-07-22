@@ -1,3 +1,5 @@
+import type { MapSpawn } from '@iron/shared';
+
 export interface GridCell {
   cx: number;
   cy: number;
@@ -40,4 +42,18 @@ export function clampZoom(zoom: number): number {
 export function canvasBackingSize(displaySize: number, devicePixelRatio: number): number {
   const resolution = Math.min(2, Math.max(1, devicePixelRatio));
   return Math.min(3072, Math.max(1024, Math.ceil(displaySize * resolution)));
+}
+
+export function movePlayerSpawn(
+  spawns: readonly MapSpawn[],
+  player: number,
+  destination: GridCell,
+): MapSpawn[] {
+  return [
+    ...spawns.filter(
+      (spawn) =>
+        spawn.player !== player && (spawn.x !== destination.cx || spawn.y !== destination.cy),
+    ),
+    { player, x: destination.cx, y: destination.cy },
+  ];
 }
