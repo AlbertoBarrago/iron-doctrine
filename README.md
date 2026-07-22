@@ -1,96 +1,135 @@
 # Iron Doctrine
 
-A browser-based, real-time strategy engine inspired by classic Command & Conquer
-gameplay — built from scratch with original code and assets. Deterministic ECS
-simulation, clean architecture, multiplayer-ready.
+Iron Doctrine is an original browser real-time strategy game inspired by the clarity,
+pace and physical command interfaces of the classic 1990s genre.
 
-> Full design rationale: [`docs/SOFTWARE_DESIGN_DOCUMENT.md`](docs/SOFTWARE_DESIGN_DOCUMENT.md)
+The goal is a real game, not a technology demo: build a base, control an economy,
+produce an army and make readable tactical decisions on a battlefield that reacts to
+the player.
 
-## Stack
+The current build is an early playable vertical slice. Its foundations are solid, but
+game feel, balance, visual identity and content are still actively evolving.
 
-TypeScript (strict) · React · PixiJS · Vite · Zustand · Web Workers · WebSocket ·
-Node.js · Docker · pnpm workspaces · Vitest.
+## Play the current build
 
-## Monorepo layout
-
-```
-packages/shared   cross-cutting types, constants, wire protocol
-packages/engine   deterministic simulation core (ECS, math, systems) — headless
-apps/client       browser app (React + Pixi + sim worker)
-apps/server       Node.js lockstep match host
-docker/           container + compose definitions
-docs/             design document
-```
-
-The **engine** is the heart: a deterministic, fixed-step ECS simulation with no
-rendering or platform dependencies. It compiles unchanged for the browser worker,
-the Node server, and headless tests. Determinism (fixed-point Q16.16 math + seeded
-PRNG + ordered systems) is the contract that enables lockstep multiplayer, replays
-and savegames.
-
-## Getting started
+Requirements: Node.js 20+ and pnpm.
 
 ```bash
 pnpm install
-pnpm test          # run the engine test suite (incl. determinism gate)
-pnpm typecheck     # strict project-references build
-pnpm --filter @iron/client dev     # play the vertical slice at http://localhost:5173
-pnpm --filter @iron/server dev     # start the match host on :8080
+pnpm --filter @iron/client dev
 ```
 
-### Docker
+Open <http://localhost:5173>, configure a skirmish and start playing.
+
+You can also create a battlefield in the Map Forge, save it in the local level catalog
+or exchange it as a JSON file. Locally saved maps appear in the skirmish setup screen.
+
+## How to play
+
+- Left-click a unit or building to select it.
+- Drag with the left mouse button to select a squad.
+- Right-click terrain to move selected units or set a production rally point.
+- Right-click a red unit or building to attack it.
+- Select a harvester and right-click an ore field to gather from that field.
+- Use the contextual selection card for available orders such as Harvest and Stop.
+- Use the right command panel to construct buildings and produce units.
+- Use the mouse wheel to zoom and WASD or the arrow keys to move the camera.
+
+The objective is to destroy the enemy construction yard without losing your own.
+
+## What works today
+
+- Configurable skirmishes with AI difficulty, preparation time and enemy starting force.
+- Base construction, power management, resource harvesting and unit production.
+- Infantry, vehicles, defensive turrets, combat, fog of war and victory conditions.
+- Contextual unit and building orders with a guided first-match tutorial.
+- Local map catalog, validated JSON import/export and a full-screen map editor.
+- Save/load, deterministic replays and the networking foundation for multiplayer.
+- Original industrial military interface, tactical radar, effects and synthesized audio.
+
+The project currently has 127 automated tests. Tests, strict type checking, linting and
+the production build are expected to stay green on every change.
+
+## Roadmap
+
+The next work is ordered around player value rather than subsystem novelty.
+
+### Now — make the match understandable and enjoyable
+
+- [ ] Clarify what every structure unlocks and why the player should build it.
+- [ ] Tune economy, construction timings, unit costs and AI pressure through playtesting.
+- [ ] Improve battlefield readability, silhouettes, scale and selection feedback.
+- [ ] Replace remaining prototype presentation with a coherent original visual language.
+- [ ] Add useful feedback for invalid orders, unavailable production and blocked placement.
+
+### Next — turn the sandbox into a game
+
+- [ ] Add scenario objectives, map triggers and authored mission events.
+- [ ] Expand AI with scouting, defense, expansion and threat-aware attacks.
+- [ ] Build a balanced original faction roster with meaningful counters.
+- [ ] Add terrain types, chokepoints and maps designed around strategic choices.
+- [ ] Introduce a proper campaign/skirmish content pipeline and persistent settings.
+
+### Later — production and release
+
+- [ ] Run authoritative matches on the headless server with ownership validation.
+- [ ] Add end-to-end match tests, performance budgets and accessibility verification.
+- [ ] Produce original art, animation, music and a complete audio pass.
+- [ ] Harden deployment, telemetry, crash reporting and release packaging.
+
+The detailed technical milestones and architectural decisions remain in the
+[software design document](docs/SOFTWARE_DESIGN_DOCUMENT.md).
+
+## Want to collaborate?
+
+Yes — especially if you care about RTS games and can explain why a moment feels clear,
+confusing, satisfying or unfair.
+
+Useful ways to contribute:
+
+- Play a match and report the first moment where you no longer know what to do.
+- Create and share maps through the editor's JSON format.
+- Propose balance changes with the scenario and expected player behaviour attached.
+- Improve code with focused, tested changes that preserve deterministic simulation.
+- Contribute original visual or audio work that fits the game's identity.
+
+Before starting a large change, align it with the current roadmap. Small, reviewable
+contributions are preferable to broad rewrites.
+
+## Development
 
 ```bash
-docker compose -f docker/docker-compose.yml up --build
-# client → http://localhost:8000   server → ws://localhost:8080
+pnpm test
+pnpm typecheck
+pnpm lint
+pnpm build
+pnpm --filter @iron/server dev
 ```
 
-## Current status
+The monorepo contains:
 
-124 tests green; strict typecheck, ESLint and client build all clean.
+```text
+packages/shared   shared formats and network contracts
+packages/engine   deterministic headless game simulation
+apps/client       React, PixiJS and the simulation worker
+apps/server       multiplayer match host foundation
+docker            reproducible local and production containers
+docs              architecture and longer-term design
+```
 
-- ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
-- ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)
-- ✅ Deterministic fixed-step Simulation + snapshots + state hashing
-- ✅ Command bus (Move/Stop/Attack/Gather/Spawn/Queue-production/Rally/Cancel)
-- ✅ Movement + pathfinding (NavGrid, deterministic A*, path smoothing, flow fields, formations)
-- ✅ Combat (weapons, hitscan + projectiles, target acquisition, chase/leash, death)
-- ✅ Economy (ore nodes, harvester gather→deposit loop, per-player credits)
-- ✅ Base building + production (footprints on navgrid, build queues, construction time, rally points, cancel/refund)
-- ✅ Base construction (placement preview, authoritative footprint validation, costs, build progress and deferred activation)
-- ✅ Playable UX shell (industrial military HUD, tactical radar, mission briefing, contextual selection and guided tutorial)
-- ✅ Playable production UI (select barracks/factory, pay costs, inspect progress/queue, cancel/refund, set rally point)
-- ✅ Match lifecycle (deterministic victory/defeat/draw, simulation freeze, end screen and restart)
-- ✅ Energy (per-player power balance; **power deficit disables defensive turrets**)
-- ✅ Defensive turrets (auto-acquire, power-gated)
-- ✅ Fog of war (per-team hidden/explored/visible grid, shared allied vision, rendered)
-- ✅ Configurable skirmish AI director (delayed activation, economy, production and aggression)
-- ✅ Tech tree (research, prerequisites, production gating)
-- ✅ Save / load (full state round-trip) + replay (seed + command log + desync checksums)
-- ✅ Networking: WS lockstep relay server + client transport + tested lockstep coordinator
-- ✅ PixiJS renderer: interpolation, camera, drag-select, orders, health bars, fog overlay, minimap
-- ✅ Particle explosions + synthesized WebAudio SFX
-- ✅ In-browser map editor (terrain/resources/spawns, validated import/export and local level catalog)
-- ✅ Web Worker sim bridge (simulation off the main thread)
-- ✅ Docker (client + server) & compose
+The simulation uses fixed steps, fixed-point math and seeded randomness. Given the
+same commands and seed, it produces the same outcome in the browser, server, replay
+runner and tests.
 
-Pending (see SDD roadmap): server-side headless authoritative sim, scripted map
-triggers, richer AI behaviours (scout/harass), art & music assets.
+## Map Forge
 
-## Controls (vertical slice)
+The editor supports blocked terrain, ore fields, player spawns, live validation,
+50–250% zoom and scrollable detail editing. Hold Ctrl or Command while using the mouse
+wheel to zoom. `Save level` stores a map locally; import/export uses the versioned
+`MapDef` JSON format.
 
-Left-drag select · Double-click type-select · Ctrl/Shift add to selection · Right-click terrain to move/set rally ·
-Right-click red forces to attack · Wheel zoom · WASD/Arrows pan · Use the command panel to place structures ·
-Select a barracks/factory to produce units. The first skirmish includes a five-step interactive tutorial.
+## License and intellectual property
 
-### Map editor
-
-The full-screen map forge supports blocked-terrain brushes, ore and spawn placement,
-live validation, fit-to-map plus 50–250% zoom, and scrollable detail editing. Hold
-Ctrl/⌘ while using the mouse wheel to zoom. Maps can be imported/exported as validated
-`MapDef` JSON files or saved locally and selected from the skirmish setup screen.
-
-## License / IP
-
-Original work. No Command & Conquer names, factions, artwork or audio are used or
-included. Any resemblance is limited to genre mechanics.
+Iron Doctrine is original work. It does not include Command & Conquer names, factions,
+artwork or audio. Its inspiration is limited to genre conventions and game-design
+principles.
