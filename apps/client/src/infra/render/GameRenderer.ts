@@ -53,6 +53,7 @@ export class GameRenderer {
 
   private fpsAccum = 0;
   private fpsFrames = 0;
+  private lastUiTick = -1;
 
   constructor(private readonly container: HTMLElement) {
     this.camera = new Camera(container.clientWidth, container.clientHeight);
@@ -190,6 +191,7 @@ export class GameRenderer {
       building: asEntityId(building.id),
       unit,
     });
+    useGameStore.getState().advanceTutorial('produce');
   }
 
   /** Cancel the last item in the selected building's production queue. */
@@ -226,16 +228,19 @@ export class GameRenderer {
     this.particles.draw();
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
-      this.detectDeaths(curr);
       this.drawEntities(prev, curr, alpha);
-      const store = useGameStore.getState();
-      store.setEntityCount(
-        curr.entities.filter((e) => e.kind === 'unit' || e.kind === 'building').length,
-      );
-      const me = curr.players.find((p) => p.player === 0);
-      if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
-      store.setMatch(curr.match ?? null);
-      this.syncSelectionState(curr);
+      if (curr.tick !== this.lastUiTick) {
+        this.lastUiTick = curr.tick;
+        this.detectDeaths(curr);
+        const store = useGameStore.getState();
+        store.setEntityCount(
+          curr.entities.filter((e) => e.kind === 'unit' || e.kind === 'building').length,
+        );
+        const me = curr.players.find((p) => p.player === 0);
+        if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
+        store.setMatch(curr.match ?? null);
+        this.syncSelectionState(curr);
+      }
       this.drawFog(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);
     }
@@ -292,6 +297,7 @@ export class GameRenderer {
           .rect(sx - s, sy - s, s * 2, s * 2)
           .fill({ color, alpha: e.construction ? 0.45 : 1 })
           .stroke({ width: 2, color: 0x0b0f0d });
+        this.drawBuildingMark(e, sx, sy, s);
         if (e.construction) {
           const progress = e.construction.progressTicks / e.construction.buildTicks;
           this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
@@ -309,8 +315,7 @@ export class GameRenderer {
       if (this.selected.has(e.id)) {
         this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
       }
-      // Body.
-      this.units.circle(sx, sy, r).fill({ color });
+      this.drawUnitBody(e, sx, sy, r, color);
       // Facing tick.
       this.units
         .moveTo(sx, sy)
@@ -327,6 +332,80 @@ export class GameRenderer {
           .fill({ color: ratio > 0.5 ? 0x4ade80 : ratio > 0.25 ? 0xfbbf24 : 0xf87171 });
       }
     }
+  }
+
+  private drawBuildingMark(entity: EntitySnapshot, sx: number, sy: number, size: number): void {
+    const ink = 0x0b1711;
+    const mark = entity.buildingType;
+    if (mark === 'construction_yard') {
+      this.units
+        .moveTo(sx - size * 0.55, sy - size * 0.55)
+        .lineTo(sx + size * 0.55, sy + size * 0.55)
+        .moveTo(sx + size * 0.55, sy - size * 0.55)
+        .lineTo(sx - size * 0.55, sy + size * 0.55)
+        .stroke({ width: 3, color: ink });
+    } else if (mark === 'power_plant') {
+      this.units.circle(sx, sy, size * 0.45).stroke({ width: 3, color: ink });
+    } else if (mark === 'refinery') {
+      this.units
+        .rect(sx - size * 0.5, sy - size * 0.28, size, size * 0.56)
+        .stroke({ width: 3, color: ink });
+    } else if (mark === 'barracks') {
+      for (const offset of [-0.45, 0, 0.45]) {
+        this.units
+          .moveTo(sx + size * offset, sy - size * 0.6)
+          .lineTo(sx + size * offset, sy + size * 0.6);
+      }
+      this.units.stroke({ width: 2, color: ink });
+    } else if (mark === 'factory') {
+      this.units
+        .rect(sx - size * 0.7, sy - size * 0.35, size * 0.55, size * 0.7)
+        .rect(sx + size * 0.15, sy - size * 0.35, size * 0.55, size * 0.7)
+        .fill({ color: ink });
+    } else if (mark === 'turret') {
+      this.units
+        .circle(sx, sy, size * 0.45)
+        .fill({ color: ink })
+        .moveTo(sx, sy)
+        .lineTo(sx + size * 0.9, sy)
+        .stroke({ width: 3, color: ink });
+    }
+  }
+
+  private drawUnitBody(
+    entity: EntitySnapshot,
+    sx: number,
+    sy: number,
+    radius: number,
+    color: number,
+  ): void {
+    if (entity.unitType === 'tank') {
+      this.units
+        .roundRect(sx - radius, sy - radius * 0.72, radius * 2, radius * 1.44, 2)
+        .fill({ color })
+        .rect(sx - radius * 0.4, sy - radius * 0.28, radius * 0.8, radius * 0.56)
+        .fill({ color: 0x17231d });
+      return;
+    }
+    if (entity.unitType === 'harvester') {
+      this.units
+        .rect(sx - radius, sy - radius * 0.75, radius * 2, radius * 1.5)
+        .fill({ color })
+        .rect(sx - radius * 0.7, sy - radius * 0.16, radius * 1.4, radius * 0.32)
+        .fill({ color: 0xc59b3c });
+      return;
+    }
+    if (entity.unitType === 'engineer') {
+      this.units
+        .moveTo(sx, sy - radius)
+        .lineTo(sx + radius, sy)
+        .lineTo(sx, sy + radius)
+        .lineTo(sx - radius, sy)
+        .closePath()
+        .fill({ color });
+      return;
+    }
+    this.units.circle(sx, sy, radius).fill({ color });
   }
 
   private drawGrid(): void {
@@ -483,6 +562,7 @@ export class GameRenderer {
       at: { x: fp.fromFloat(position.x), y: fp.fromFloat(position.y) },
     });
     this.audio.play('build');
+    useGameStore.getState().advanceTutorial('build');
     this.cancelBuildingPlacement();
   }
 
@@ -576,6 +656,7 @@ export class GameRenderer {
 
   private onPointerMove(e: PointerEvent): void {
     this.placementPointer = { x: e.offsetX, y: e.offsetY };
+    this.updatePointerCursor(e.offsetX, e.offsetY);
     if (this.dragStart) this.dragNow = { x: e.offsetX, y: e.offsetY };
   }
 
@@ -593,6 +674,7 @@ export class GameRenderer {
     if (this.selected.size > 0) this.audio.play('select');
     const curr = this.bridge.latest.curr;
     if (curr) this.syncSelectionState(curr);
+    if (this.selected.size > 0) useGameStore.getState().advanceTutorial('select');
   }
 
   private selectInBox(
@@ -678,12 +760,52 @@ export class GameRenderer {
       }
       return;
     }
+
+    const enemy = curr ? this.findEnemyAt(sx, sy, curr) : null;
+    if (enemy) {
+      this.audio.play('move');
+      this.bridge.command({
+        type: 'attack',
+        entities: units.map((entity) => asEntityId(entity.id)),
+        target: asEntityId(enemy.id),
+      });
+      useGameStore.getState().advanceTutorial('attack');
+      return;
+    }
     this.audio.play('move');
     this.bridge.command({
       type: 'move',
       entities: units.map((entity) => asEntityId(entity.id)),
       target: { x: fp.fromFloat(wx), y: fp.fromFloat(wy) },
     });
+    useGameStore.getState().advanceTutorial('move');
+  }
+
+  private findEnemyAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
+    let best: { entity: EntitySnapshot; distance: number } | null = null;
+    for (const entity of snapshot.entities) {
+      if ((entity.kind !== 'unit' && entity.kind !== 'building') || entity.owner === 0) continue;
+      const screen = this.camera.worldToScreen(entity.x, entity.y);
+      const distance = (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2;
+      const hitRadius = (entity.radius * this.camera.scale + 8) ** 2;
+      if (distance <= hitRadius && (!best || distance < best.distance)) {
+        best = { entity, distance };
+      }
+    }
+    return best?.entity ?? null;
+  }
+
+  private updatePointerCursor(sx: number, sy: number): void {
+    if (this.placingBuilding) {
+      this.app.canvas.style.cursor = 'crosshair';
+      return;
+    }
+    const snapshot = this.bridge.latest.curr;
+    const hasSelectedUnits = snapshot?.entities.some(
+      (entity) => entity.kind === 'unit' && this.selected.has(entity.id),
+    );
+    this.app.canvas.style.cursor =
+      hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot) ? 'crosshair' : 'default';
   }
 
   private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
@@ -697,6 +819,31 @@ export class GameRenderer {
   private syncSelectionState(snapshot: Snapshot): void {
     const store = useGameStore.getState();
     store.setSelectedCount(this.selected.size);
+    const selected = snapshot.entities.filter((entity) => this.selected.has(entity.id));
+    if (selected.length === 0) {
+      store.setSelectedEntity(null);
+    } else if (selected.length > 1) {
+      store.setSelectedEntity({
+        label: `${selected.length} units selected`,
+        kind: 'group',
+        count: selected.length,
+      });
+    } else {
+      const entity = selected[0]!;
+      const construction = entity.construction;
+      store.setSelectedEntity({
+        label: (entity.unitType ?? entity.buildingType ?? entity.kind).replaceAll('_', ' '),
+        kind: entity.kind === 'building' ? 'building' : 'unit',
+        count: 1,
+        hp: entity.hp,
+        maxHp: entity.maxHp,
+        status: construction
+          ? `Under construction · ${Math.round((construction.progressTicks / construction.buildTicks) * 100)}%`
+          : entity.production?.queue.length
+            ? `Producing ${entity.production.queue[0]!.replaceAll('_', ' ')}`
+            : 'Ready',
+      });
+    }
     const building = this.selectedProductionBuilding(snapshot);
     store.setSelectedProduction(
       building?.production

@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Current status
 
-112 tests green; strict typecheck, ESLint and client build all clean.
+114 tests green; strict typecheck, ESLint and client build all clean.
 
 - ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
 - ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)
@@ -58,6 +58,7 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Economy (ore nodes, harvester gather→deposit loop, per-player credits)
 - ✅ Base building + production (footprints on navgrid, build queues, construction time, rally points, cancel/refund)
 - ✅ Base construction (placement preview, authoritative footprint validation, costs, build progress and deferred activation)
+- ✅ Playable UX shell (mission briefing, command panel, contextual selection, guided first-match tutorial)
 - ✅ Playable production UI (select barracks/factory, pay costs, inspect progress/queue, cancel/refund, set rally point)
 - ✅ Match lifecycle (deterministic victory/defeat/draw, simulation freeze, end screen and restart)
 - ✅ Energy (per-player power balance; **power deficit disables defensive turrets**)
@@ -78,8 +79,9 @@ triggers, richer AI behaviours (scout/harass), art & music assets.
 
 ## Controls (vertical slice)
 
-Left-drag select · Double-click type-select · Ctrl/Shift add to selection · Right-click move/set rally ·
-Wheel zoom · WASD/Arrows pan · Use the build panel to place structures · Select a barracks/factory to produce units.
+Left-drag select · Double-click type-select · Ctrl/Shift add to selection · Right-click terrain to move/set rally ·
+Right-click red forces to attack · Wheel zoom · WASD/Arrows pan · Use the command panel to place structures ·
+Select a barracks/factory to produce units. The first skirmish includes a five-step interactive tutorial.
 
 ## License / IP
 

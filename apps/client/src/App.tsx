@@ -3,17 +3,19 @@ import { GameRenderer } from './infra/render/GameRenderer.js';
 import { Hud } from './ui/Hud.js';
 import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
+import { StartScreen } from './ui/StartScreen.js';
+import './ui/game.css';
 
-type Mode = 'game' | 'editor';
+type Mode = 'menu' | 'game' | 'editor';
 
 /** Root: switches between the live game and the map editor. */
 export function App(): JSX.Element {
-  const [mode, setMode] = useState<Mode>('game');
-  return mode === 'game' ? (
-    <Game onOpenEditor={() => setMode('editor')} />
-  ) : (
-    <MapEditor onExit={() => setMode('game')} />
-  );
+  const [mode, setMode] = useState<Mode>('menu');
+  if (mode === 'menu') {
+    return <StartScreen onStart={() => setMode('game')} onOpenEditor={() => setMode('editor')} />;
+  }
+  if (mode === 'editor') return <MapEditor onExit={() => setMode('menu')} />;
+  return <Game onOpenEditor={() => setMode('editor')} />;
 }
 
 /**
@@ -48,8 +50,8 @@ function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
   }, []);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
+    <div className="game-shell">
+      <div ref={containerRef} className="game-canvas" />
       <Hud
         onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
         onCancelProduction={() => rendererRef.current?.cancelProduction()}

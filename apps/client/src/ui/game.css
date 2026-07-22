@@ -1,0 +1,233 @@
+:root {
+  color: #dce8df;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+button {
+  font: inherit;
+}
+kbd {
+  padding: 2px 5px;
+  color: #a8bbae;
+  background: #17271f;
+  border: 1px solid #344c3e;
+  font:
+    700 8px ui-monospace,
+    monospace;
+}
+.command-panel small {
+  overflow: hidden;
+  color: #687d70;
+  font-size: 8px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.game-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #07100d;
+}
+.game-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.start-screen {
+  position: relative;
+  min-height: 100%;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 64px;
+  align-items: center;
+  padding: clamp(32px, 7vw, 110px);
+  background:
+    radial-gradient(circle at 75% 30%, rgba(71, 162, 109, 0.16), transparent 34%),
+    linear-gradient(135deg, #07100d 0%, #0b1712 58%, #060b09 100%);
+}
+
+.start-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(113, 160, 130, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(113, 160, 130, 0.18) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to right, black, transparent 80%);
+}
+
+.start-screen__scanline {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.08) 3px 4px);
+}
+
+.start-screen__content,
+.start-screen__objective {
+  position: relative;
+  z-index: 1;
+}
+.eyebrow {
+  color: #64d98d;
+  font:
+    700 12px/1.2 ui-monospace,
+    monospace;
+  letter-spacing: 0.18em;
+}
+.start-screen h1 {
+  margin: 18px 0;
+  color: #effcf3;
+  font-size: clamp(56px, 9vw, 126px);
+  line-height: 0.78;
+  letter-spacing: -0.075em;
+}
+.start-screen__lead {
+  max-width: 700px;
+  color: #9eb2a5;
+  font-size: clamp(17px, 2vw, 24px);
+  line-height: 1.45;
+}
+
+.briefing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 38px 0;
+}
+.briefing-grid article {
+  min-height: 148px;
+  padding: 18px;
+  background: rgba(13, 29, 22, 0.8);
+  border: 1px solid #223e30;
+}
+.briefing-grid__number {
+  display: block;
+  margin-bottom: 24px;
+  color: #4e7560;
+  font:
+    700 11px ui-monospace,
+    monospace;
+}
+.briefing-grid strong {
+  color: #e8f6ed;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.briefing-grid p {
+  margin: 8px 0 0;
+  color: #82998b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.start-screen__actions {
+  display: flex;
+  gap: 12px;
+}
+.primary-action,
+.secondary-action {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.primary-action {
+  color: #07100d;
+  background: #64d98d;
+  border: 1px solid #64d98d;
+}
+.primary-action:hover {
+  background: #8af0ac;
+}
+.secondary-action {
+  color: #c4d7ca;
+  background: transparent;
+  border: 1px solid #395344;
+}
+.secondary-action:hover {
+  border-color: #64d98d;
+}
+
+.start-screen__objective {
+  align-self: end;
+  padding: 24px;
+  background: rgba(7, 16, 13, 0.86);
+  border-left: 3px solid #64d98d;
+}
+.start-screen__objective span {
+  color: #64d98d;
+  font:
+    700 10px ui-monospace,
+    monospace;
+  letter-spacing: 0.16em;
+}
+.start-screen__objective strong {
+  display: block;
+  margin: 12px 0;
+  color: #effcf3;
+  font-size: 20px;
+  line-height: 1.25;
+}
+.start-screen__objective p {
+  margin: 0;
+  color: #82998b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hud-topbar,
+.command-panel,
+.tutorial-card,
+.selection-card,
+.controls-strip,
+.placement-banner {
+  z-index: 20;
+}
+
+@media (max-width: 900px) {
+  .start-screen {
+    grid-template-columns: 1fr;
+    align-content: center;
+    gap: 28px;
+    overflow-y: auto;
+  }
+  .start-screen__objective {
+    align-self: auto;
+  }
+  .briefing-grid {
+    grid-template-columns: 1fr;
+  }
+  .briefing-grid article {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .command-panel {
+    width: min(280px, calc(100vw - 24px)) !important;
+    max-height: 52vh !important;
+    top: 66px !important;
+  }
+  .hud-topbar {
+    gap: 12px !important;
+    padding: 0 10px !important;
+  }
+  .hud-optional {
+    display: none !important;
+  }
+  .tutorial-card {
+    max-width: calc(100vw - 304px) !important;
+  }
+  .controls-strip {
+    display: none !important;
+  }
+}
