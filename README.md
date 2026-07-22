@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Current status
 
-114 tests green; strict typecheck, ESLint and client build all clean.
+117 tests green; strict typecheck, ESLint and client build all clean.
 
 - ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
 - ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)
@@ -82,6 +82,12 @@ triggers, richer AI behaviours (scout/harass), art & music assets.
 Left-drag select · Double-click type-select · Ctrl/Shift add to selection · Right-click terrain to move/set rally ·
 Right-click red forces to attack · Wheel zoom · WASD/Arrows pan · Use the command panel to place structures ·
 Select a barracks/factory to produce units. The first skirmish includes a five-step interactive tutorial.
+
+### Map editor
+
+The full-screen map forge supports blocked-terrain brushes, ore and spawn placement,
+live validation, fit-to-map plus 50–250% zoom, and scrollable detail editing. Hold
+Ctrl/⌘ while using the mouse wheel to zoom; export produces a validated `MapDef` JSON file.
 
 ## License / IP
 
