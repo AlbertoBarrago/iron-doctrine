@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up --build
 
 ## Current status
 
-119 tests green; strict typecheck, ESLint and client build all clean.
+124 tests green; strict typecheck, ESLint and client build all clean.
 
 - ✅ ECS core (entities w/ generational handles, sparse-set stores, queries, scheduler)
 - ✅ Fixed-point Q16.16 math, vec2, seeded PRNG (property-tested)
@@ -64,13 +64,13 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Energy (per-player power balance; **power deficit disables defensive turrets**)
 - ✅ Defensive turrets (auto-acquire, power-gated)
 - ✅ Fog of war (per-team hidden/explored/visible grid, shared allied vision, rendered)
-- ✅ Skirmish AI director (economy + production + aggression, easy/normal/hard)
+- ✅ Configurable skirmish AI director (delayed activation, economy, production and aggression)
 - ✅ Tech tree (research, prerequisites, production gating)
 - ✅ Save / load (full state round-trip) + replay (seed + command log + desync checksums)
 - ✅ Networking: WS lockstep relay server + client transport + tested lockstep coordinator
 - ✅ PixiJS renderer: interpolation, camera, drag-select, orders, health bars, fog overlay, minimap
 - ✅ Particle explosions + synthesized WebAudio SFX
-- ✅ In-browser map editor (terrain/resources/spawns → validated JSON export)
+- ✅ In-browser map editor (terrain/resources/spawns, validated import/export and local level catalog)
 - ✅ Web Worker sim bridge (simulation off the main thread)
 - ✅ Docker (client + server) & compose
 
@@ -87,7 +87,8 @@ Select a barracks/factory to produce units. The first skirmish includes a five-s
 
 The full-screen map forge supports blocked-terrain brushes, ore and spawn placement,
 live validation, fit-to-map plus 50–250% zoom, and scrollable detail editing. Hold
-Ctrl/⌘ while using the mouse wheel to zoom; export produces a validated `MapDef` JSON file.
+Ctrl/⌘ while using the mouse wheel to zoom. Maps can be imported/exported as validated
+`MapDef` JSON files or saved locally and selected from the skirmish setup screen.
 
 ## License / IP
 

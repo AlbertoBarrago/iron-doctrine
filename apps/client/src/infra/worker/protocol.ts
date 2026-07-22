@@ -1,5 +1,6 @@
 /** Message protocol between the main thread and the simulation Web Worker. */
 import type { Command, Snapshot, AIPlayerConfig } from '@iron/engine';
+import type { MapDef } from '@iron/shared';
 
 export interface InitConfig {
   seed: number;
@@ -7,6 +8,7 @@ export interface InitConfig {
   startingCredits?: Record<number, number>;
   startingTech?: Record<number, string[]>;
   matchPlayers?: number[];
+  map?: MapDef;
 }
 
 export type ToWorker =

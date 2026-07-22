@@ -12,15 +12,27 @@
  */
 import { Application, Container, Graphics } from 'pixi.js';
 import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
-import { asEntityId, SIM_DT_MS } from '@iron/shared';
+import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
 import { Camera } from './camera.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import { useGameStore } from '../../state/gameStore.js';
+import type { SkirmishConfig } from '../../game/skirmishConfig.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
+
+function mapPosition(map: MapDef, x: number, y: number): { x: fp.Fixed; y: fp.Fixed } {
+  return {
+    x: fp.fromFloat((x + 0.5 - map.width / 2) * map.cellSize),
+    y: fp.fromFloat((y + 0.5 - map.height / 2) * map.cellSize),
+  };
+}
+
+function offsetSpawn(map: MapDef, spawn: MapSpawn, dx: number, dy: number) {
+  return mapPosition(map, spawn.x + dx, spawn.y + dy);
+}
 
 export class GameRenderer {
   private readonly app = new Application();
@@ -33,6 +45,8 @@ export class GameRenderer {
   private readonly bridge = new SimBridge();
   private readonly particles: ParticleSystem;
   private readonly audio = new AudioBus();
+  private activeMap: MapDef | null = null;
+  private aiActivationTick = 0;
   /** Entities seen last frame, to detect deaths for explosion FX. */
   private readonly prevIds = new Map<number, { x: number; y: number; kind: string }>();
 
@@ -60,7 +74,9 @@ export class GameRenderer {
     this.particles = new ParticleSystem(this.camera);
   }
 
-  async start(seed = 123456789): Promise<void> {
+  async start(config: SkirmishConfig, seed = 123456789): Promise<void> {
+    this.activeMap = config.map;
+    this.aiActivationTick = config.gracePeriodSeconds * SIM_HZ;
     await this.app.init({
       background: 0x283224,
       resizeTo: this.container,
@@ -80,10 +96,19 @@ export class GameRenderer {
     this.world.addChild(this.units);
     this.app.stage.addChild(this.particles.gfx, this.fogGfx, this.overlay);
 
+    const aiCredits =
+      config.difficulty === 'easy' ? 1800 : config.difficulty === 'normal' ? 2600 : 3400;
     this.bridge.init({
       seed,
-      aiPlayers: [{ player: 1, difficulty: 'normal' }],
-      startingCredits: { 0: 3000, 1: 4000 },
+      map: config.map,
+      aiPlayers: [
+        {
+          player: 1,
+          difficulty: config.difficulty,
+          activationTick: this.aiActivationTick,
+        },
+      ],
+      startingCredits: { 0: 3500, 1: aiCredits },
       startingTech: { 0: ['armor_doctrine'] },
       matchPlayers: [0, 1],
     });
@@ -91,80 +116,79 @@ export class GameRenderer {
     useGameStore.getState().setPlaying(true);
     useGameStore.getState().setMatch(null);
 
-    // Seed the demo scene: a base, ore, a harvester and a squad for the human player.
+    const humanSpawn = config.map.spawns.find((spawn) => spawn.player === 0);
+    const enemySpawn = config.map.spawns.find((spawn) => spawn.player === 1);
+    if (!humanSpawn || !enemySpawn)
+      throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
+
+    const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
+    const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
+    this.camera.x = fp.toFloat(humanBase.x);
+    this.camera.y = fp.toFloat(humanBase.y);
+
+    for (const resource of config.map.resources) {
+      this.bridge.command({
+        type: 'spawnResource',
+        amount: resource.amount,
+        at: mapPosition(config.map, resource.x, resource.y),
+      });
+    }
+
+    // Player base and initial field team.
     this.bridge.command({
       type: 'spawnBuilding',
       building: 'construction_yard',
       player: 0,
-      at: { x: fp.fromInt(-8), y: fp.fromInt(-8) },
+      at: humanBase,
     });
     this.bridge.command({
       type: 'spawnBuilding',
       building: 'power_plant',
       player: 0,
-      at: { x: fp.fromInt(-12), y: fp.fromInt(-8) },
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'barracks',
-      player: 0,
-      at: { x: fp.fromInt(-12), y: fp.fromInt(-3) },
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'factory',
-      player: 0,
-      at: { x: fp.fromInt(-7), y: fp.fromInt(-2) },
-    });
-    this.bridge.command({
-      type: 'spawnResource',
-      amount: 5000,
-      at: { x: fp.fromInt(6), y: fp.fromInt(-6) },
+      at: offsetSpawn(config.map, humanSpawn, 5, 0),
     });
     this.bridge.command({
       type: 'spawnUnit',
       unit: 'harvester',
       player: 0,
-      at: { x: fp.fromInt(-6), y: fp.fromInt(-6) },
+      at: offsetSpawn(config.map, humanSpawn, 2, 2),
     });
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
+      this.bridge.command({
+        type: 'spawnUnit',
+        unit: i === 0 ? 'tank' : 'rifleman',
+        player: 0,
+        at: offsetSpawn(config.map, humanSpawn, 1 + i * 2, 5),
+      });
+    }
+
+    // Enemy base starts dormant until the configured activation tick.
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 1,
+      at: enemyBase,
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'power_plant',
+      player: 1,
+      at: offsetSpawn(config.map, enemySpawn, -5, 0),
+    });
+    this.bridge.command({
+      type: 'spawnUnit',
+      unit: 'harvester',
+      player: 1,
+      at: offsetSpawn(config.map, enemySpawn, -2, -2),
+    });
+    for (let i = 0; i < config.enemyStartingForce; i++) {
       this.bridge.command({
         type: 'spawnUnit',
         unit: i % 3 === 0 ? 'tank' : 'rifleman',
-        player: 0,
-        at: { x: fp.fromInt(-4 + i * 2), y: fp.fromInt(0) },
+        player: 1,
+        at: offsetSpawn(config.map, enemySpawn, -1 - (i % 3) * 2, -5 - Math.floor(i / 3) * 2),
       });
     }
-    // Enemy AI base and economy on the far side of the map.
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'construction_yard',
-      player: 1,
-      at: { x: fp.fromInt(20), y: fp.fromInt(18) },
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'power_plant',
-      player: 1,
-      at: { x: fp.fromInt(24), y: fp.fromInt(18) },
-    });
-    this.bridge.command({
-      type: 'spawnResource',
-      amount: 6000,
-      at: { x: fp.fromInt(16), y: fp.fromInt(20) },
-    });
-    this.bridge.command({
-      type: 'spawnUnit',
-      unit: 'harvester',
-      player: 1,
-      at: { x: fp.fromInt(18), y: fp.fromInt(18) },
-    });
-    this.bridge.command({
-      type: 'spawnUnit',
-      unit: 'tank',
-      player: 1,
-      at: { x: fp.fromInt(8), y: fp.fromInt(6) },
-    });
 
     this.installInput();
     this.app.ticker.add(() => this.render());
@@ -241,6 +265,9 @@ export class GameRenderer {
         const me = curr.players.find((p) => p.player === 0);
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
+        store.setAiActivationSeconds(
+          Math.max(0, Math.ceil((this.aiActivationTick - curr.tick) / SIM_HZ)),
+        );
         this.syncSelectionState(curr);
       }
       this.drawFog(curr);
@@ -444,6 +471,18 @@ export class GameRenderer {
             .circle(screen.sx + size * 0.55, screen.sy + size * 0.45, size * 0.22)
             .fill({ color: 0x4a3c25, alpha: 0.26 });
         }
+      }
+    }
+
+    if (this.activeMap) {
+      const size = this.activeMap.cellSize * this.camera.scale;
+      for (const [x, y] of this.activeMap.blocked) {
+        const worldX = (x - this.activeMap.width / 2) * this.activeMap.cellSize;
+        const worldY = (y - this.activeMap.height / 2) * this.activeMap.cellSize;
+        const screen = this.camera.worldToScreen(worldX, worldY);
+        this.grid
+          .rect(screen.sx, screen.sy, size + 1, size + 1)
+          .fill({ color: 0x171a14, alpha: 0.92 });
       }
     }
 

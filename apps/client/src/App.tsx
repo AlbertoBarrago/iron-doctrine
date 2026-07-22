@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GameRenderer } from './infra/render/GameRenderer.js';
 import { Hud } from './ui/Hud.js';
 import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
+import { loadMapCatalog } from './maps/mapCatalog.js';
+import type { SkirmishConfig } from './game/skirmishConfig.js';
 import './ui/game.css';
 
 type Mode = 'menu' | 'game' | 'editor';
@@ -11,11 +13,35 @@ type Mode = 'menu' | 'game' | 'editor';
 /** Root: switches between the live game and the map editor. */
 export function App(): JSX.Element {
   const [mode, setMode] = useState<Mode>('menu');
+  const [catalogRevision, setCatalogRevision] = useState(0);
+  const [skirmish, setSkirmish] = useState<SkirmishConfig | null>(null);
+  const maps = useMemo(() => loadMapCatalog(localStorage), [catalogRevision]);
   if (mode === 'menu') {
-    return <StartScreen onStart={() => setMode('game')} onOpenEditor={() => setMode('editor')} />;
+    return (
+      <StartScreen
+        maps={maps}
+        onStart={(config) => {
+          setSkirmish(config);
+          setMode('game');
+        }}
+        onOpenEditor={() => setMode('editor')}
+      />
+    );
   }
-  if (mode === 'editor') return <MapEditor onExit={() => setMode('menu')} />;
-  return <Game onOpenEditor={() => setMode('editor')} />;
+  if (mode === 'editor') {
+    return (
+      <MapEditor
+        onExit={() => {
+          setCatalogRevision((current) => current + 1);
+          setMode('menu');
+        }}
+      />
+    );
+  }
+  if (!skirmish) {
+    throw new Error('Game mode requires a skirmish configuration');
+  }
+  return <Game config={skirmish} onOpenEditor={() => setMode('editor')} />;
 }
 
 /**
@@ -23,7 +49,13 @@ export function App(): JSX.Element {
  * overlays the React HUD/minimap. Unmounting disposes the renderer (used when switching
  * to the editor). StrictMode double-invokes effects in dev, hence the duplicate guard.
  */
-function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
+function Game({
+  config,
+  onOpenEditor,
+}: {
+  config: SkirmishConfig;
+  onOpenEditor: () => void;
+}): JSX.Element {
   const [session, setSession] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
@@ -34,12 +66,12 @@ function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
     if (!el || rendererRef.current) return;
     const renderer = new GameRenderer(el);
     rendererRef.current = renderer;
-    void renderer.start().then(() => renderer.attachMinimap(minimapCanvasRef.current));
+    void renderer.start(config).then(() => renderer.attachMinimap(minimapCanvasRef.current));
     return () => {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [session]);
+  }, [config, session]);
 
   const attachMinimap = useCallback((c: HTMLCanvasElement | null) => {
     minimapCanvasRef.current = c;

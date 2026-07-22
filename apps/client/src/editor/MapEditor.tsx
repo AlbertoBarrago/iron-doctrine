@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createEmptyMap, validateMap, type MapDef } from '@iron/shared';
+import { parseMapJson, saveLocalMap } from '../maps/mapCatalog.js';
 import {
   brushCells,
   canvasBackingSize,
@@ -39,6 +40,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
   const [zoom, setZoom] = useState(1);
   const [fitSize, setFitSize] = useState(720);
   const [hoveredCell, setHoveredCell] = useState<GridCell | null>(null);
+  const [storageStatus, setStorageStatus] = useState('');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const painting = useRef(false);
@@ -225,6 +227,26 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
     URL.revokeObjectURL(url);
   };
 
+  const saveMap = (): void => {
+    try {
+      saveLocalMap(localStorage, map);
+      setStorageStatus(`Saved locally: ${map.name}`);
+    } catch (error) {
+      setStorageStatus(error instanceof Error ? error.message : 'Unable to save map');
+    }
+  };
+
+  const importJson = async (file: File | undefined): Promise<void> => {
+    if (!file) return;
+    try {
+      const imported = parseMapJson(await file.text());
+      setMap(imported);
+      setStorageStatus(`Imported: ${imported.name}`);
+    } catch (error) {
+      setStorageStatus(error instanceof Error ? error.message : 'Unable to import map');
+    }
+  };
+
   const changeZoom = (delta: number): void => setZoom((current) => clampZoom(current + delta));
 
   return (
@@ -257,6 +279,21 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
           <i />
           {validationErrors.length ? `${validationErrors.length} ISSUES` : 'MAP VALID'}
         </div>
+        {storageStatus ? <span className="editor-storage-status">{storageStatus}</span> : null}
+        <button className="metal-button metal-button--primary" onClick={saveMap}>
+          Save level
+        </button>
+        <label className="metal-button editor-import">
+          Import JSON
+          <input
+            type="file"
+            accept="application/json,.json"
+            onChange={(event) => {
+              void importJson(event.target.files?.[0]);
+              event.target.value = '';
+            }}
+          />
+        </label>
         <button className="metal-button metal-button--primary" onClick={exportJson}>
           Export JSON
         </button>

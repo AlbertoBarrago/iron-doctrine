@@ -24,4 +24,18 @@ describe('MapDef', () => {
     m.version = 99;
     expect(validateMap(m).some((e) => e.includes('unsupported version'))).toBe(true);
   });
+
+  it('flags invalid resources and duplicate player spawns', () => {
+    const m = createEmptyMap('t', 8, 8);
+    m.resources.push({ x: 9, y: 2, amount: 0 });
+    m.spawns.push({ player: 0, x: 1, y: 1 }, { player: 0, x: 2, y: 2 });
+
+    expect(validateMap(m)).toEqual(
+      expect.arrayContaining([
+        'resource out of bounds: 9,2',
+        'resource amount must be positive: 9,2',
+        'duplicate spawn for player 1',
+      ]),
+    );
+  });
 });

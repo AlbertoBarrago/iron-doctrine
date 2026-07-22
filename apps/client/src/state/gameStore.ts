@@ -33,6 +33,7 @@ interface GameUiState {
   selectedProduction: SelectedProduction | null;
   placingBuilding: string | null;
   match: MatchStateSnapshot | null;
+  aiActivationSeconds: number;
   tutorialStep: TutorialStep;
   setFps: (fps: number) => void;
   setPlaying: (playing: boolean) => void;
@@ -43,6 +44,7 @@ interface GameUiState {
   setSelectedProduction: (production: SelectedProduction | null) => void;
   setPlacingBuilding: (building: string | null) => void;
   setMatch: (match: MatchStateSnapshot | null) => void;
+  setAiActivationSeconds: (seconds: number) => void;
   advanceTutorial: (expected: TutorialStep) => void;
 }
 
@@ -94,6 +96,7 @@ export const useGameStore = create<GameUiState>((set) => ({
   selectedProduction: null,
   placingBuilding: null,
   match: null,
+  aiActivationSeconds: 0,
   tutorialStep: 'select',
   setFps: (fps) =>
     set((state) => {
@@ -128,6 +131,10 @@ export const useGameStore = create<GameUiState>((set) => ({
       state.match?.status === match?.status && state.match?.winner === match?.winner
         ? state
         : { match },
+    ),
+  setAiActivationSeconds: (aiActivationSeconds) =>
+    set((state) =>
+      state.aiActivationSeconds === aiActivationSeconds ? state : { aiActivationSeconds },
     ),
   advanceTutorial: (expected) =>
     set((state) => {

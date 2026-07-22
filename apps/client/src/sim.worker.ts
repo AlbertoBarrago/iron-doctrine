@@ -4,7 +4,7 @@
  * per tick. The main thread only renders — it never touches simulation state.
  */
 /// <reference lib="webworker" />
-import { Simulation } from '@iron/engine';
+import { fp, NavGrid, Simulation } from '@iron/engine';
 import { SIM_DT_MS, MAX_CATCHUP_TICKS } from '@iron/shared';
 import type { ToWorker, FromWorker } from './infra/worker/protocol.js';
 
@@ -40,8 +40,15 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
   switch (msg.t) {
     case 'init': {
       const c = msg.config;
+      const grid = c.map
+        ? new NavGrid(c.map.width, c.map.height, fp.fromFloat(c.map.cellSize))
+        : undefined;
+      if (grid && c.map) {
+        for (const [x, y] of c.map.blocked) grid.setBlocked(x, y, true);
+      }
       sim = new Simulation({
         seed: c.seed,
+        ...(grid ? { grid } : {}),
         ...(c.aiPlayers ? { aiPlayers: c.aiPlayers } : {}),
         ...(c.startingCredits ? { startingCredits: c.startingCredits } : {}),
         ...(c.startingTech ? { startingTech: c.startingTech } : {}),

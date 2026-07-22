@@ -234,6 +234,34 @@ kbd {
   display: flex;
   gap: 10px;
 }
+.skirmish-setup {
+  display: grid;
+  grid-template-columns: 1.2fr repeat(3, minmax(120px, 1fr));
+  gap: 8px;
+  margin: -12px 0 22px;
+  padding: 13px;
+}
+.skirmish-setup__heading {
+  display: none;
+}
+.skirmish-setup label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #9e9a80;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.skirmish-setup select {
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  color: #e3dbb7;
+  background: #1c2018;
+  border: 1px inset #676a50;
+  font: 700 12px var(--body);
+}
 .primary-action,
 .secondary-action {
   min-height: 50px;
@@ -956,6 +984,28 @@ kbd {
 .editor-topbar__spacer {
   flex: 1;
 }
+.editor-storage-status {
+  max-width: 180px;
+  overflow: hidden;
+  color: #aaa68a;
+  font: 11px var(--body);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.editor-import {
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+.editor-import input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 .editor-validation {
   display: flex;
   align-items: center;
@@ -1269,6 +1319,9 @@ kbd {
   }
   .briefing-grid article {
     min-height: auto;
+  }
+  .skirmish-setup {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .editor-shell {
     grid-template-columns: 200px minmax(0, 1fr);

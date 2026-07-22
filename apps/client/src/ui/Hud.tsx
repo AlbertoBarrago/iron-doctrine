@@ -67,6 +67,7 @@ export function Hud(props: HudProps): JSX.Element {
   const placingBuilding = useGameStore((state) => state.placingBuilding);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
+  const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
 
   return (
@@ -83,6 +84,9 @@ export function Hud(props: HudProps): JSX.Element {
           warning={power.consumed > power.produced}
         />
         <div className="hud-optional">
+          {aiActivationSeconds > 0 ? (
+            <Stat label="Enemy activation" value={`${aiActivationSeconds}s`} accent />
+          ) : null}
           <Stat label="Assets" value={String(entityCount)} />
           <Stat label="FPS" value={String(fps)} />
         </div>
