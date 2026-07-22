@@ -79,6 +79,7 @@ export class GameRenderer {
       seed,
       aiPlayers: [{ player: 1, difficulty: 'normal' }],
       startingCredits: { 0: 3000, 1: 4000 },
+      startingTech: { 0: ['armor_doctrine'] },
     });
     this.bridge.start();
     useGameStore.getState().setPlaying(true);
@@ -95,6 +96,18 @@ export class GameRenderer {
       building: 'power_plant',
       player: 0,
       at: { x: fp.fromInt(-12), y: fp.fromInt(-8) },
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'barracks',
+      player: 0,
+      at: { x: fp.fromInt(-12), y: fp.fromInt(-3) },
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'factory',
+      player: 0,
+      at: { x: fp.fromInt(-7), y: fp.fromInt(-2) },
     });
     this.bridge.command({
       type: 'spawnResource',
@@ -163,15 +176,23 @@ export class GameRenderer {
     this.camera.y = fog.originY + ny * fog.height * fog.cellSize;
   }
 
-  /** Spawn a unit for the local player at the current camera centre (HUD action). */
-  spawn(unit: string): void {
+  /** Queue a unit in the currently selected production building. */
+  queueProduction(unit: string): void {
+    const building = this.selectedProductionBuilding();
+    if (!building?.production?.produces.includes(unit)) return;
     this.audio.play('build');
     this.bridge.command({
-      type: 'spawnUnit',
+      type: 'queueProduction',
+      building: asEntityId(building.id),
       unit,
-      player: 0,
-      at: { x: fp.fromFloat(this.camera.x), y: fp.fromFloat(this.camera.y) },
     });
+  }
+
+  /** Cancel the last item in the selected building's production queue. */
+  cancelProduction(): void {
+    const building = this.selectedProductionBuilding();
+    if (!building?.production || building.production.queue.length === 0) return;
+    this.bridge.command({ type: 'cancelProduction', building: asEntityId(building.id) });
   }
 
   // ---- rendering -------------------------------------------------------------
@@ -196,6 +217,7 @@ export class GameRenderer {
       );
       const me = curr.players.find((p) => p.player === 0);
       if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
+      this.syncSelectionState(curr);
       this.drawFog(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);
     }
@@ -442,7 +464,8 @@ export class GameRenderer {
     this.dragStart = null;
     this.dragNow = null;
     if (this.selected.size > 0) this.audio.play('select');
-    useGameStore.getState().setSelectedCount(this.selected.size);
+    const curr = this.bridge.latest.curr;
+    if (curr) this.syncSelectionState(curr);
   }
 
   private selectInBox(
@@ -458,13 +481,13 @@ export class GameRenderer {
 
     let best: { id: number; d: number } | null = null;
     for (const ent of curr.entities) {
-      if (ent.kind !== 'unit' || ent.owner !== 0) continue; // only own units are selectable
+      if ((ent.kind !== 'unit' && ent.kind !== 'building') || ent.owner !== 0) continue;
       const { sx, sy } = this.camera.worldToScreen(ent.x, ent.y);
       if (isClick) {
         const d = (sx - box.x0) ** 2 + (sy - box.y0) ** 2;
         const rr = (ent.radius * this.camera.scale + 6) ** 2;
         if (d <= rr && (!best || d < best.d)) best = { id: ent.id, d };
-      } else if (sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
+      } else if (ent.kind === 'unit' && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
         this.selected.add(ent.id);
       }
     }
@@ -492,7 +515,7 @@ export class GameRenderer {
     }
 
     this.audio.play('select');
-    useGameStore.getState().setSelectedCount(this.selected.size);
+    this.syncSelectionState(curr);
   }
 
   private findOwnedUnitAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
@@ -511,13 +534,55 @@ export class GameRenderer {
 
   private issueMove(sx: number, sy: number): void {
     if (this.selected.size === 0) return;
-    this.audio.play('move');
     const { wx, wy } = this.camera.screenToWorld(sx, sy);
+    const curr = this.bridge.latest.curr;
+    const units = curr?.entities.filter((entity) => {
+      return entity.kind === 'unit' && this.selected.has(entity.id);
+    });
+    if (!units || units.length === 0) {
+      const building = this.selectedProductionBuilding();
+      if (building) {
+        this.audio.play('move');
+        this.bridge.command({
+          type: 'setRally',
+          building: asEntityId(building.id),
+          point: { x: fp.fromFloat(wx), y: fp.fromFloat(wy) },
+        });
+      }
+      return;
+    }
+    this.audio.play('move');
     this.bridge.command({
       type: 'move',
-      entities: Array.from(this.selected, (id) => asEntityId(id)),
+      entities: units.map((entity) => asEntityId(entity.id)),
       target: { x: fp.fromFloat(wx), y: fp.fromFloat(wy) },
     });
+  }
+
+  private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
+    if (this.selected.size !== 1) return null;
+    const selectedId = this.selected.values().next().value as number | undefined;
+    if (selectedId === undefined) return null;
+    const entity = snapshot?.entities.find((candidate) => candidate.id === selectedId);
+    return entity?.kind === 'building' && entity.owner === 0 && entity.production ? entity : null;
+  }
+
+  private syncSelectionState(snapshot: Snapshot): void {
+    const store = useGameStore.getState();
+    store.setSelectedCount(this.selected.size);
+    const building = this.selectedProductionBuilding(snapshot);
+    store.setSelectedProduction(
+      building?.production
+        ? {
+            building: building.id,
+            buildingType: building.buildingType ?? 'production building',
+            queue: building.production.queue,
+            progressTicks: building.production.progressTicks,
+            currentBuildTicks: building.production.currentBuildTicks,
+            produces: building.production.produces,
+          }
+        : null,
+    );
   }
 
   private updatePan(dtMs: number): void {

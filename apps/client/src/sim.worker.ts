@@ -43,6 +43,7 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
         seed: c.seed,
         ...(c.aiPlayers ? { aiPlayers: c.aiPlayers } : {}),
         ...(c.startingCredits ? { startingCredits: c.startingCredits } : {}),
+        ...(c.startingTech ? { startingTech: c.startingTech } : {}),
       });
       post({ t: 'ready' });
       post({ t: 'snapshot', snapshot: sim.snapshot() });

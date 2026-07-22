@@ -49,7 +49,11 @@ function Game({ onOpenEditor }: { onOpenEditor: () => void }): JSX.Element {
   return (
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div ref={containerRef} style={{ position: 'absolute', inset: 0 }} />
-      <Hud onSpawn={(unit) => rendererRef.current?.spawn(unit)} onOpenEditor={onOpenEditor} />
+      <Hud
+        onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
+        onCancelProduction={() => rendererRef.current?.cancelProduction()}
+        onOpenEditor={onOpenEditor}
+      />
       <Minimap onCanvas={attachMinimap} onClick={minimapClick} />
     </div>
   );

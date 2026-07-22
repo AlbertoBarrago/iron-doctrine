@@ -78,6 +78,25 @@ describe('ProductionSystem', () => {
     expect(sim.economy.credits(0)).toBe(before);
   });
 
+  it('publishes production state for presentation clients', () => {
+    const sim = makeSim();
+    const fac = factory(sim);
+    sim.enqueue({ type: 'queueProduction', building: fac, unit: 'tank' });
+    sim.step();
+
+    const building = sim.snapshot().entities.find((entity) => entity.id === fac);
+    expect(building).toMatchObject({
+      kind: 'building',
+      buildingType: 'factory',
+      production: {
+        queue: ['tank'],
+        progressTicks: 1,
+        currentBuildTicks: 140,
+        produces: ['tank', 'harvester'],
+      },
+    });
+  });
+
   it('sends a finished unit to the rally point', () => {
     const sim = makeSim();
     const fac = factory(sim);

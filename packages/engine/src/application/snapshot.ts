@@ -15,7 +15,9 @@ import {
   Projectile,
   Building,
   ResourceNode,
+  Production,
 } from '../domain/components/index.js';
+import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
 
 export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource';
@@ -33,6 +35,17 @@ export interface EntitySnapshot {
   owner: number;
   /** Stable archetype identifier for type-based UI interactions. */
   unitType?: string;
+  /** Stable building identifier for selection and production UI. */
+  buildingType?: string;
+  /** Present only for buildings that can produce units. */
+  production?: ProductionSnapshot;
+}
+
+export interface ProductionSnapshot {
+  queue: string[];
+  progressTicks: number;
+  currentBuildTicks: number;
+  produces: string[];
 }
 
 export interface PlayerSnapshot {
@@ -73,9 +86,11 @@ export function buildSnapshot(
     const sel = world.get(e, Selectable);
     const owner = world.get(e, Owner);
     const unitType = world.get(e, UnitType);
+    const building = world.get(e, Building);
+    const production = world.get(e, Production);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
-      : world.has(e, Building)
+      : building
         ? 'building'
         : world.has(e, ResourceNode)
           ? 'resource'
@@ -91,6 +106,15 @@ export function buildSnapshot(
       radius: sel ? fp.toFloat(sel.radius) : 0.5,
       owner: owner?.player ?? 0,
       ...(unitType && { unitType: unitType.kind }),
+      ...(building && { buildingType: building.kind }),
+      ...(production && {
+        production: {
+          queue: [...production.queue],
+          progressTicks: production.progressTicks,
+          currentBuildTicks: UNIT_STATS[production.queue[0] ?? '']?.buildTicks ?? 0,
+          produces: [...production.produces],
+        },
+      }),
     });
   }
   return { tick, entities, players };

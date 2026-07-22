@@ -1,14 +1,20 @@
 import { useGameStore } from '../state/gameStore.js';
+import { UNIT_STATS } from '@iron/engine';
 
 /** Top-bar HUD: resources, power, FPS, entity/selection counters and a build menu. */
 export function Hud({
-  onSpawn,
+  onQueueProduction,
+  onCancelProduction,
   onOpenEditor,
 }: {
-  onSpawn: (unit: string) => void;
+  onQueueProduction: (unit: string) => void;
+  onCancelProduction: () => void;
   onOpenEditor: () => void;
 }): JSX.Element {
-  const { fps, entityCount, selectedCount, credits, power } = useGameStore();
+  const { fps, entityCount, selectedCount, credits, power, selectedProduction } = useGameStore();
+  const progress = selectedProduction?.currentBuildTicks
+    ? Math.min(100, (selectedProduction.progressTicks / selectedProduction.currentBuildTicks) * 100)
+    : 0;
 
   return (
     <>
@@ -24,16 +30,48 @@ export function Hud({
         </button>
       </div>
 
-      <div style={buildMenu}>
-        {(['rifleman', 'engineer', 'tank', 'harvester'] as const).map((u) => (
-          <button key={u} style={buildBtn} onClick={() => onSpawn(u)}>
-            {u}
-          </button>
-        ))}
+      <div style={productionPanel}>
+        {selectedProduction ? (
+          <>
+            <strong style={panelTitle}>
+              {selectedProduction.buildingType.replaceAll('_', ' ')}
+            </strong>
+            {selectedProduction.produces.map((unit) => {
+              const stats = UNIT_STATS[unit];
+              const affordable = stats !== undefined && credits >= stats.cost;
+              return (
+                <button
+                  key={unit}
+                  style={{ ...buildBtn, opacity: affordable ? 1 : 0.5 }}
+                  disabled={!affordable}
+                  onClick={() => onQueueProduction(unit)}
+                >
+                  {unit} · ${stats?.cost ?? '?'}
+                </button>
+              );
+            })}
+            <div style={queueText}>
+              Queue:{' '}
+              {selectedProduction.queue.length > 0 ? selectedProduction.queue.join(' → ') : 'empty'}
+            </div>
+            <div style={progressTrack}>
+              <div style={{ ...progressFill, width: `${progress}%` }} />
+            </div>
+            <button
+              style={buildBtn}
+              disabled={selectedProduction.queue.length === 0}
+              onClick={onCancelProduction}
+            >
+              Cancel last
+            </button>
+          </>
+        ) : (
+          <span style={queueText}>Select a barracks or factory to produce units.</span>
+        )}
       </div>
 
       <div style={hint}>
-        Left-drag: select · Right-click: move · Wheel: zoom · WASD/Arrows: pan
+        Left-drag: select · Right-click: move/rally · Wheel: zoom · WASD/Arrows: pan
       </div>
     </>
   );
@@ -66,14 +104,43 @@ const topBar: React.CSSProperties = {
   pointerEvents: 'none',
 };
 
-const buildMenu: React.CSSProperties = {
+const productionPanel: React.CSSProperties = {
   position: 'absolute',
   right: 12,
   top: 72,
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
+  width: 220,
+  padding: 12,
+  background: 'rgba(11,15,13,0.92)',
+  border: '1px solid #2a4034',
+  borderRadius: 6,
   fontFamily: font,
+};
+
+const panelTitle: React.CSSProperties = {
+  color: '#dff5ea',
+  textTransform: 'capitalize',
+};
+
+const queueText: React.CSSProperties = {
+  color: '#8da99a',
+  fontSize: 11,
+  lineHeight: 1.4,
+  overflowWrap: 'anywhere',
+};
+
+const progressTrack: React.CSSProperties = {
+  height: 5,
+  overflow: 'hidden',
+  background: '#1c2b24',
+  borderRadius: 3,
+};
+
+const progressFill: React.CSSProperties = {
+  height: '100%',
+  background: '#4ade80',
 };
 
 const buildBtn: React.CSSProperties = {

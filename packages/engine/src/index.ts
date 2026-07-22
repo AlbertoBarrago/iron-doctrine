@@ -54,7 +54,13 @@ export type { BuildingStats } from './domain/archetypes/buildings.js';
 export { spawnResourceNode } from './domain/archetypes/resources.js';
 
 // Pathfinding
-export { NavGrid, findPath, smoothPath, hasLineOfSight, FlowField } from './application/pathfinding/index.js';
+export {
+  NavGrid,
+  findPath,
+  smoothPath,
+  hasLineOfSight,
+  FlowField,
+} from './application/pathfinding/index.js';
 export type { Cell } from './application/pathfinding/index.js';
 
 // Formations
@@ -62,7 +68,12 @@ export { computeFormationSlots } from './domain/movement/formation.js';
 
 // Commands
 export { CommandBus } from './application/commands/command.js';
-export type { Command, MoveCommand, StopCommand, SpawnUnitCommand } from './application/commands/command.js';
+export type {
+  Command,
+  MoveCommand,
+  StopCommand,
+  SpawnUnitCommand,
+} from './application/commands/command.js';
 
 // Simulation + snapshot
 export { Simulation } from './application/simulation.js';
@@ -71,6 +82,7 @@ export { buildSnapshot, hashState } from './application/snapshot.js';
 export type {
   Snapshot,
   EntitySnapshot,
+  ProductionSnapshot,
   PlayerSnapshot,
   FogSnapshot,
   EntityKind,

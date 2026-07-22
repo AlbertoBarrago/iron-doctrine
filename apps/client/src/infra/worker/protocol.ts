@@ -5,6 +5,7 @@ export interface InitConfig {
   seed: number;
   aiPlayers?: AIPlayerConfig[];
   startingCredits?: Record<number, number>;
+  startingTech?: Record<number, string[]>;
 }
 
 export type ToWorker =
@@ -13,6 +14,4 @@ export type ToWorker =
   | { t: 'pause' }
   | { t: 'command'; cmd: Command };
 
-export type FromWorker =
-  | { t: 'ready' }
-  | { t: 'snapshot'; snapshot: Snapshot };
+export type FromWorker = { t: 'ready' } | { t: 'snapshot'; snapshot: Snapshot };

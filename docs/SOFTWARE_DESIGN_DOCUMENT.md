@@ -693,6 +693,14 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 15  | Networking transport          | WS lockstep relay + **client transport + lockstep coordinator (tested) + NetworkClient**                              | ✅ done (headless server sim: pending)             |
 | 16  | UI polish, audio, effects     | HUD, **minimap**, **particle explosions**, **synth spatial audio**                                                    | ✅ done                                            |
 | 17  | Map editor                    | terrain painting, resources, spawns, **JSON export + validation**                                                     | ✅ done (triggers/scripted events: pending)        |
+| 18  | Playable production           | select production structures, pay unit costs, queue/progress UI, cancel/refund, rally points                          | ✅ done                                            |
+| 19  | Match lifecycle               | explicit playing/victory/defeat states, deterministic win conditions, end screen, restart                             | planned                                            |
+| 20  | Base construction             | placement preview, footprint validation, costs, build time and power consequences                                     | planned                                            |
+| 21  | Maps and scenarios            | load editor maps into matches, deterministic triggers, objectives and scripted events                                 | planned                                            |
+| 22  | Authoritative multiplayer     | headless server simulation, command ownership validation, periodic checksums and desync handling                      | planned                                            |
+| 23  | Tactical AI                   | scouting, expansion, harassment, threat response and deterministic difficulty tuning                                  | planned                                            |
+| 24  | Content vertical slice        | two original factions, balanced roster, production-quality visual/audio assets and one representative map             | planned                                            |
+| 25  | Release hardening             | performance budgets, end-to-end match tests, accessibility pass and reproducible production deployment                | planned                                            |
 
 ---
 
