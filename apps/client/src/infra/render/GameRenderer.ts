@@ -19,7 +19,7 @@ import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import { useGameStore } from '../../state/gameStore.js';
 
-const OWNER_COLORS = [0x4ade80, 0xf87171, 0x60a5fa, 0xfbbf24];
+const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
 
 export class GameRenderer {
@@ -62,7 +62,7 @@ export class GameRenderer {
 
   async start(seed = 123456789): Promise<void> {
     await this.app.init({
-      background: 0x0b0f0d,
+      background: 0x283224,
       resizeTo: this.container,
       antialias: true,
     });
@@ -273,13 +273,20 @@ export class GameRenderer {
       const { sx, sy } = this.camera.worldToScreen(wx, wy);
 
       if (e.kind === 'projectile') {
-        this.units.circle(sx, sy, Math.max(2, 0.15 * this.camera.scale)).fill({ color: 0xfde047 });
+        this.units.circle(sx, sy, Math.max(2, 0.15 * this.camera.scale)).fill({ color: 0xf2be4c });
         continue;
       }
 
       if (e.kind === 'resource') {
         const rr = Math.max(3, e.radius * this.camera.scale);
-        this.units.rect(sx - rr, sy - rr, rr * 2, rr * 2).fill({ color: 0x8b6f2e });
+        this.units
+          .moveTo(sx, sy - rr)
+          .lineTo(sx + rr, sy)
+          .lineTo(sx, sy + rr)
+          .lineTo(sx - rr, sy)
+          .closePath()
+          .fill({ color: 0x9b742a })
+          .stroke({ width: 2, color: 0x4a3514 });
         continue;
       }
 
@@ -291,7 +298,7 @@ export class GameRenderer {
         if (this.selected.has(e.id)) {
           this.units
             .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)
-            .stroke({ width: 2, color: 0xffffff });
+            .stroke({ width: 2, color: 0xf0c85a });
         }
         this.units
           .rect(sx - s, sy - s, s * 2, s * 2)
@@ -301,19 +308,19 @@ export class GameRenderer {
         if (e.construction) {
           const progress = e.construction.progressTicks / e.construction.buildTicks;
           this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
-          this.units.rect(sx - s, sy + s + 4, s * 2 * progress, 4).fill({ color: 0x60a5fa });
+          this.units.rect(sx - s, sy + s + 4, s * 2 * progress, 4).fill({ color: 0xd1a63a });
         }
         if (e.maxHp > 0 && e.hp < e.maxHp) {
           const ratio = Math.max(0, e.hp / e.maxHp);
           this.units.rect(sx - s, sy - s - 8, s * 2, 3).fill({ color: 0x000000, alpha: 0.5 });
-          this.units.rect(sx - s, sy - s - 8, s * 2 * ratio, 3).fill({ color: 0x4ade80 });
+          this.units.rect(sx - s, sy - s - 8, s * 2 * ratio, 3).fill({ color: 0xa4a957 });
         }
         continue;
       }
 
       // Selection ring.
       if (this.selected.has(e.id)) {
-        this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xffffff, alpha: 0.9 });
+        this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
       }
       this.drawUnitBody(e, sx, sy, r, color);
       // Facing tick.
@@ -329,7 +336,7 @@ export class GameRenderer {
         this.units.rect(sx - r, sy - r - 8, w, 3).fill({ color: 0x000000, alpha: 0.5 });
         this.units
           .rect(sx - r, sy - r - 8, w * ratio, 3)
-          .fill({ color: ratio > 0.5 ? 0x4ade80 : ratio > 0.25 ? 0xfbbf24 : 0xf87171 });
+          .fill({ color: ratio > 0.5 ? 0x92994c : ratio > 0.25 ? 0xd1a63a : 0xa9412e });
       }
     }
   }
@@ -410,9 +417,35 @@ export class GameRenderer {
 
   private drawGrid(): void {
     this.grid.clear();
-    const step = this.camera.scale; // one world unit
     const w = this.app.renderer.width;
     const h = this.app.renderer.height;
+    this.grid.rect(0, 0, w, h).fill({ color: 0x2d3827 });
+
+    // Deterministic cosmetic terrain. This never enters authoritative sim state.
+    const tileWorld = 8;
+    const topLeft = this.camera.screenToWorld(0, 0);
+    const bottomRight = this.camera.screenToWorld(w, h);
+    const minX = Math.floor(topLeft.wx / tileWorld) - 1;
+    const maxX = Math.ceil(bottomRight.wx / tileWorld) + 1;
+    const minY = Math.floor(topLeft.wy / tileWorld) - 1;
+    const maxY = Math.ceil(bottomRight.wy / tileWorld) + 1;
+    for (let ty = minY; ty <= maxY; ty++) {
+      for (let tx = minX; tx <= maxX; tx++) {
+        const hash = Math.imul(tx, 73856093) ^ Math.imul(ty, 19349663);
+        if ((hash & 3) === 0) continue;
+        const screen = this.camera.worldToScreen(tx * tileWorld, ty * tileWorld);
+        const size = tileWorld * this.camera.scale;
+        const color = (hash & 1) === 0 ? 0x35402c : 0x293323;
+        this.grid.rect(screen.sx, screen.sy, size + 1, size + 1).fill({ color, alpha: 0.38 });
+        if ((hash & 7) === 3) {
+          this.grid
+            .circle(screen.sx + size * 0.55, screen.sy + size * 0.45, size * 0.22)
+            .fill({ color: 0x4a3c25, alpha: 0.26 });
+        }
+      }
+    }
+
+    const step = this.camera.scale * 4;
     const origin = this.camera.worldToScreen(0, 0);
     const startX = origin.sx % step;
     const startY = origin.sy % step;
@@ -422,7 +455,7 @@ export class GameRenderer {
     for (let y = startY; y < h; y += step) {
       this.grid.moveTo(0, y).lineTo(w, y);
     }
-    this.grid.stroke({ width: 1, color: 0x1c2b24, alpha: 0.6 });
+    this.grid.stroke({ width: 1, color: 0x78805a, alpha: 0.09 });
   }
 
   /** Draws hidden/explored fog over cells within the viewport (visible cells clear). */
@@ -472,7 +505,7 @@ export class GameRenderer {
       my: ((wy - fog.originY) / worldH) * H,
     });
 
-    ctx.fillStyle = '#0b0f0d';
+    ctx.fillStyle = '#11170e';
     ctx.fillRect(0, 0, W, H);
 
     // Fog: darken hidden/explored using a coarse cell step to stay cheap.
@@ -492,7 +525,7 @@ export class GameRenderer {
     for (const e of curr.entities) {
       if (e.kind === 'projectile') continue;
       const { mx, my } = toMap(e.x, e.y);
-      ctx.fillStyle = e.kind === 'resource' ? '#8b6f2e' : e.owner === 0 ? '#4ade80' : '#f87171';
+      ctx.fillStyle = e.kind === 'resource' ? '#a67b29' : e.owner === 0 ? '#d0b94f' : '#b2452f';
       const size = e.kind === 'building' ? 4 : 2;
       ctx.fillRect(mx - size / 2, my - size / 2, size, size);
     }
@@ -502,7 +535,7 @@ export class GameRenderer {
     const br = this.camera.screenToWorld(this.app.renderer.width, this.app.renderer.height);
     const a = toMap(tl.wx, tl.wy);
     const b = toMap(br.wx, br.wy);
-    ctx.strokeStyle = '#dff5ea';
+    ctx.strokeStyle = '#f0cc68';
     ctx.lineWidth = 1;
     ctx.strokeRect(a.mx, a.my, b.mx - a.mx, b.my - a.my);
   }
@@ -517,8 +550,8 @@ export class GameRenderer {
       const h = Math.abs(this.dragNow.y - this.dragStart.y);
       this.overlay
         .rect(x, y, w, h)
-        .fill({ color: 0x4ade80, alpha: 0.1 })
-        .stroke({ width: 1, color: 0x4ade80 });
+        .fill({ color: 0xd5a83c, alpha: 0.14 })
+        .stroke({ width: 1, color: 0xf0cc68 });
     }
   }
 
@@ -544,8 +577,8 @@ export class GameRenderer {
     const valid = this.isPlacementValid(building, position, snapshot);
     this.overlay
       .rect(topLeft.sx, topLeft.sy, size, size)
-      .fill({ color: valid ? 0x4ade80 : 0xf87171, alpha: 0.22 })
-      .stroke({ width: 2, color: valid ? 0x4ade80 : 0xf87171 });
+      .fill({ color: valid ? 0xc5a238 : 0xa93427, alpha: 0.32 })
+      .stroke({ width: 2, color: valid ? 0xf0cc68 : 0xe4543d });
   }
 
   private confirmBuildingPlacement(sx: number, sy: number): void {

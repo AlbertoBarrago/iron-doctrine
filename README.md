@@ -58,7 +58,7 @@ docker compose -f docker/docker-compose.yml up --build
 - ✅ Economy (ore nodes, harvester gather→deposit loop, per-player credits)
 - ✅ Base building + production (footprints on navgrid, build queues, construction time, rally points, cancel/refund)
 - ✅ Base construction (placement preview, authoritative footprint validation, costs, build progress and deferred activation)
-- ✅ Playable UX shell (mission briefing, command panel, contextual selection, guided first-match tutorial)
+- ✅ Playable UX shell (industrial military HUD, tactical radar, mission briefing, contextual selection and guided tutorial)
 - ✅ Playable production UI (select barracks/factory, pay costs, inspect progress/queue, cancel/refund, set rally point)
 - ✅ Match lifecycle (deterministic victory/defeat/draw, simulation freeze, end screen and restart)
 - ✅ Energy (per-player power balance; **power deficit disables defensive turrets**)

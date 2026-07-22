@@ -9,7 +9,7 @@ export function StartScreen({
     <main className="start-screen">
       <div className="start-screen__scanline" />
       <section className="start-screen__content">
-        <div className="eyebrow">FIELD COMMAND // SKIRMISH 01</div>
+        <div className="eyebrow">OPERATION IRON DAWN // 06:00 HOURS</div>
         <h1>
           IRON
           <br />
@@ -48,6 +48,11 @@ export function StartScreen({
       </section>
 
       <aside className="start-screen__objective">
+        <div className="start-screen__stamp">
+          FIELD ORDER
+          <br />
+          ID-001
+        </div>
         <span>PRIMARY OBJECTIVE</span>
         <strong>Destroy the enemy construction yard</strong>
         <p>Green forces are yours. Red forces are hostile. Protect your own command structure.</p>

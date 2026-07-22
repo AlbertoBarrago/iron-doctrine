@@ -16,7 +16,9 @@ export class AudioBus {
   private ensure(): AudioContext | null {
     if (this.muted) return null;
     if (!this.ctx) {
-      const Ctor = globalThis.AudioContext ?? (globalThis as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const Ctor =
+        globalThis.AudioContext ??
+        (globalThis as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return null;
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
@@ -36,13 +38,15 @@ export class AudioBus {
     const now = ctx.currentTime;
     switch (kind) {
       case 'select':
-        this.blip(ctx, now, 660, 0.06);
+        this.blip(ctx, now, 260, 0.035, 'square');
+        this.blip(ctx, now + 0.045, 390, 0.035, 'square');
         break;
       case 'move':
-        this.blip(ctx, now, 440, 0.05);
+        this.blip(ctx, now, 185, 0.07, 'sawtooth');
         break;
       case 'build':
-        this.blip(ctx, now, 330, 0.12);
+        this.blip(ctx, now, 150, 0.1, 'square');
+        this.blip(ctx, now + 0.09, 225, 0.11, 'square');
         break;
       case 'explosion':
         this.noiseBurst(ctx, now, 0.35);
@@ -50,10 +54,16 @@ export class AudioBus {
     }
   }
 
-  private blip(ctx: AudioContext, now: number, freq: number, dur: number): void {
+  private blip(
+    ctx: AudioContext,
+    now: number,
+    freq: number,
+    dur: number,
+    type: OscillatorType,
+  ): void {
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = 'square';
+    osc.type = type;
     osc.frequency.value = freq;
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(0.5, now + 0.005);

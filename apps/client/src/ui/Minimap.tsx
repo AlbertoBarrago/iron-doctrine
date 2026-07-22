@@ -20,27 +20,27 @@ export function Minimap({
   }, [onCanvas]);
 
   return (
-    <div style={wrap}>
-      <canvas
-        ref={ref}
-        width={192}
-        height={192}
-        style={{ width: 192, height: 192, display: 'block', borderRadius: 4 }}
-        onPointerDown={(e) => {
-          const r = e.currentTarget.getBoundingClientRect();
-          onClick((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
-        }}
-      />
+    <div className="minimap-frame steel-panel">
+      <div className="minimap-frame__header">
+        <span>TACTICAL RADAR</span>
+        <span>ONLINE</span>
+      </div>
+      <div className="minimap-frame__screen">
+        <canvas
+          ref={ref}
+          width={192}
+          height={192}
+          aria-label="Tactical radar; click to move camera"
+          onPointerDown={(e) => {
+            const r = e.currentTarget.getBoundingClientRect();
+            onClick((e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height);
+          }}
+        />
+      </div>
+      <div className="minimap-frame__footer">
+        <span>SECTOR 7G</span>
+        <span>ZOOM 1:5000</span>
+      </div>
     </div>
   );
 }
-
-const wrap: React.CSSProperties = {
-  position: 'absolute',
-  left: 12,
-  bottom: 36,
-  padding: 6,
-  background: 'rgba(11,15,13,0.85)',
-  border: '1px solid #2a4034',
-  borderRadius: 6,
-};
