@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
   commandAvailability,
@@ -82,6 +82,12 @@ const TUTORIAL: Record<TutorialStep, { number: string; title: string; instructio
 
 interface HudProps {
   minimap: ReactNode;
+  setupOpen: boolean;
+  audioMuted: boolean;
+  audioVolume: number;
+  onSetupChange(open: boolean): void;
+  onAudioMutedChange(muted: boolean): void;
+  onAudioVolumeChange(volume: number): void;
   onQueueProduction(unit: string): void;
   onCancelProduction(): void;
   onPlaceBuilding(building: string): void;
@@ -93,7 +99,6 @@ interface HudProps {
 
 /** Industrial RTS command surface and progressive first-match guidance. */
 export function Hud(props: HudProps): JSX.Element {
-  const [statsOpen, setStatsOpen] = useState(false);
   const fps = useGameStore((state) => state.fps);
   const entityCount = useGameStore((state) => state.entityCount);
   const credits = useGameStore((state) => state.credits);
@@ -107,6 +112,14 @@ export function Hud(props: HudProps): JSX.Element {
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
   const baseOperational = scenario?.phase === 'operational';
+  useEffect(() => {
+    if (!props.setupOpen) return;
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') props.onSetupChange(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [props.setupOpen, props.onSetupChange]);
 
   return (
     <>
@@ -134,28 +147,13 @@ export function Hud(props: HudProps): JSX.Element {
           </div>
           <button
             className="command-panel__menu"
-            aria-label="Toggle commander statistics"
-            aria-expanded={statsOpen}
-            onClick={() => setStatsOpen((open) => !open)}
+            aria-label="Open game setup"
+            aria-expanded={props.setupOpen}
+            onClick={() => props.onSetupChange(true)}
           >
-            ☰
+            SETUP
           </button>
         </header>
-
-        {statsOpen ? (
-          <section className="commander-stats">
-            <span>COMMANDER STATUS</span>
-            <dl>
-              <div><dt>Field assets</dt><dd>{entityCount}</dd></div>
-              <div><dt>Render link</dt><dd>{fps} FPS</dd></div>
-              <div>
-                <dt>Hostile mobilization</dt>
-                <dd>{aiActivationSeconds > 0 ? `${aiActivationSeconds}s` : 'ACTIVE'}</dd>
-              </div>
-              <div><dt>Command uplink</dt><dd>{baseOperational ? 'ONLINE' : 'OFFLINE'}</dd></div>
-            </dl>
-          </section>
-        ) : null}
 
         <div className="command-panel__resources">
           <Stat label="Credits" value={`$${credits}`} accent />
@@ -280,16 +278,20 @@ export function Hud(props: HudProps): JSX.Element {
         </div>
       ) : null}
 
-      <div className="controls-strip steel-panel">
-        <Control keyName="LMB" text="Select" />
-        <Control keyName="DRAG" text="Box" />
-        <Control keyName="RMB" text="Order / pan" />
-        <Control keyName="WHEEL" text="Zoom" />
-        <Control keyName="EDGE" text="Pan" />
-        <Control keyName="MMB" text="Drag" />
-        <Control keyName="2×LMB" text="Center" />
-        <Control keyName="WASD" text="Pan" />
-      </div>
+      {props.setupOpen ? (
+        <SetupOverlay
+          audioMuted={props.audioMuted}
+          audioVolume={props.audioVolume}
+          assets={entityCount}
+          fps={fps}
+          baseOperational={baseOperational}
+          aiActivationSeconds={aiActivationSeconds}
+          objective={scenario?.objective ?? 'Establishing tactical link'}
+          onClose={() => props.onSetupChange(false)}
+          onMutedChange={props.onAudioMutedChange}
+          onVolumeChange={props.onAudioVolumeChange}
+        />
+      ) : null}
 
       {match?.status === 'finished' ? (
         <div className="match-overlay">
@@ -484,12 +486,114 @@ function Stat({
   );
 }
 
-function Control({ keyName, text }: { keyName: string; text: string }): JSX.Element {
+function SetupOverlay({
+  audioMuted,
+  audioVolume,
+  assets,
+  fps,
+  baseOperational,
+  aiActivationSeconds,
+  objective,
+  onClose,
+  onMutedChange,
+  onVolumeChange,
+}: {
+  audioMuted: boolean;
+  audioVolume: number;
+  assets: number;
+  fps: number;
+  baseOperational: boolean;
+  aiActivationSeconds: number;
+  objective: string;
+  onClose(): void;
+  onMutedChange(muted: boolean): void;
+  onVolumeChange(volume: number): void;
+}): JSX.Element {
+  const controls = [
+    ['LMB', 'Select unit'],
+    ['LMB drag', 'Select squad'],
+    ['RMB', 'Move or attack'],
+    ['RMB drag', 'Pan camera'],
+    ['MMB drag', 'Pan camera'],
+    ['Double LMB', 'Center camera'],
+    ['Wheel', 'Zoom'],
+    ['WASD / edges', 'Pan camera'],
+  ];
   return (
-    <span className="control">
-      <kbd>{keyName}</kbd>
-      {text}
-    </span>
+    <div
+      className="setup-overlay"
+      role="presentation"
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+      <section className="setup-dialog steel-panel" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+        <header className="setup-dialog__header">
+          <div>
+            <span className="panel-kicker">SIMULATION PAUSED</span>
+            <h2 id="setup-title">Field setup</h2>
+          </div>
+          <button className="metal-button" onClick={onClose}>Return to battle</button>
+        </header>
+        <div className="setup-grid">
+          <section className="setup-section">
+            <PanelHeading eyebrow="INPUT REFERENCE" title="Controls" code="CTRL" />
+            <div className="setup-controls">
+              {controls.map(([key, action]) => (
+                <div key={key}>
+                  <kbd>{key}</kbd>
+                  <span>{action}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+          <section className="setup-section">
+            <PanelHeading eyebrow="SIGNAL MIXER" title="Audio" code="SFX" />
+            <label className="setup-toggle">
+              <input
+                type="checkbox"
+                checked={!audioMuted}
+                onChange={(event) => onMutedChange(!event.target.checked)}
+              />
+              <span>Sound effects enabled</span>
+            </label>
+            <label className="setup-volume">
+              <span>Effects volume</span>
+              <strong>{Math.round(audioVolume * 100)}%</strong>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={audioVolume}
+                disabled={audioMuted}
+                onChange={(event) => onVolumeChange(Number(event.target.value))}
+              />
+            </label>
+          </section>
+          <section className="setup-section">
+            <PanelHeading eyebrow="OPERATION STATUS" title="Mission" code="INFO" />
+            <dl className="setup-mission">
+              <div><dt>Objective</dt><dd>{objective}</dd></div>
+              <div><dt>Field assets</dt><dd>{assets}</dd></div>
+              <div><dt>Command uplink</dt><dd>{baseOperational ? 'ONLINE' : 'OFFLINE'}</dd></div>
+              <div>
+                <dt>Hostile forces</dt>
+                <dd>
+                  {!baseOperational
+                    ? 'HOLDING'
+                    : aiActivationSeconds > 0
+                      ? `${aiActivationSeconds}s`
+                      : 'ACTIVE'}
+                </dd>
+              </div>
+              <div><dt>Render link</dt><dd>{fps} FPS</dd></div>
+            </dl>
+          </section>
+        </div>
+        <footer>ESC closes setup · simulation resumes on return</footer>
+      </section>
+    </div>
   );
 }
 

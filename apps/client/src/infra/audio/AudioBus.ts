@@ -8,10 +8,13 @@
  */
 export type SoundKind = 'select' | 'move' | 'explosion' | 'build';
 
+export const normalizeVolume = (volume: number): number => Math.min(1, Math.max(0, volume));
+
 export class AudioBus {
   private ctx: AudioContext | null = null;
   private master: GainNode | null = null;
   private muted = false;
+  private volume = 0.7;
 
   private ensure(): AudioContext | null {
     if (this.muted) return null;
@@ -22,7 +25,7 @@ export class AudioBus {
       if (!Ctor) return null;
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
-      this.master.gain.value = 0.25;
+      this.master.gain.value = this.volume * 0.35;
       this.master.connect(this.ctx.destination);
     }
     return this.ctx;
@@ -30,6 +33,11 @@ export class AudioBus {
 
   setMuted(muted: boolean): void {
     this.muted = muted;
+  }
+
+  setVolume(volume: number): void {
+    this.volume = normalizeVolume(volume);
+    if (this.master) this.master.gain.value = this.volume * 0.35;
   }
 
   play(kind: SoundKind): void {

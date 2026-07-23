@@ -226,6 +226,19 @@ export class GameRenderer {
     this.camera.y = fog.originY + ny * fog.height * fog.cellSize;
   }
 
+  setPaused(paused: boolean): void {
+    if (paused) this.bridge.pause();
+    else this.bridge.start();
+  }
+
+  setAudioMuted(muted: boolean): void {
+    this.audio.setMuted(muted);
+  }
+
+  setAudioVolume(volume: number): void {
+    this.audio.setVolume(volume);
+  }
+
   /** Queue a unit in the currently selected production building. */
   queueProduction(unit: string): void {
     const building = this.selectedProductionBuilding();

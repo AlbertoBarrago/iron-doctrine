@@ -51,6 +51,9 @@ export function App(): JSX.Element {
  */
 function Game({ config }: { config: SkirmishConfig }): JSX.Element {
   const [session, setSession] = useState(0);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(0.7);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -60,7 +63,11 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
     if (!el || rendererRef.current) return;
     const renderer = new GameRenderer(el);
     rendererRef.current = renderer;
-    void renderer.start(config).then(() => renderer.attachMinimap(minimapCanvasRef.current));
+    void renderer.start(config).then(() => {
+      renderer.attachMinimap(minimapCanvasRef.current);
+      renderer.setAudioMuted(audioMuted);
+      renderer.setAudioVolume(audioVolume);
+    });
     return () => {
       renderer.dispose();
       rendererRef.current = null;
@@ -80,13 +87,31 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
       <div ref={containerRef} className="game-canvas" />
       <Hud
         minimap={<Minimap onCanvas={attachMinimap} onClick={minimapClick} />}
+        setupOpen={setupOpen}
+        audioMuted={audioMuted}
+        audioVolume={audioVolume}
+        onSetupChange={(open) => {
+          setSetupOpen(open);
+          rendererRef.current?.setPaused(open);
+        }}
+        onAudioMutedChange={(muted) => {
+          setAudioMuted(muted);
+          rendererRef.current?.setAudioMuted(muted);
+        }}
+        onAudioVolumeChange={(volume) => {
+          setAudioVolume(volume);
+          rendererRef.current?.setAudioVolume(volume);
+        }}
         onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
         onCancelProduction={() => rendererRef.current?.cancelProduction()}
         onPlaceBuilding={(building) => rendererRef.current?.beginBuildingPlacement(building)}
         onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
         onGather={() => rendererRef.current?.gatherWithSelectedHarvesters()}
         onStop={() => rendererRef.current?.stopSelectedUnits()}
-        onRestart={() => setSession((current) => current + 1)}
+        onRestart={() => {
+          setSetupOpen(false);
+          setSession((current) => current + 1);
+        }}
       />
     </div>
   );
