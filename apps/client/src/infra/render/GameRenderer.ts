@@ -13,7 +13,7 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
-import { Camera } from './camera.js';
+import { Camera, edgePanDirection } from './camera.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
@@ -58,6 +58,8 @@ export class GameRenderer {
   private dragNow: { x: number; y: number } | null = null;
   private placingBuilding: string | null = null;
   private placementPointer: { x: number; y: number } | null = null;
+  private navigationPointer: { x: number; y: number } | null = null;
+  private cameraDrag: { x: number; y: number; pointerId: number } | null = null;
 
   private minimapCtx: CanvasRenderingContext2D | null = null;
   private minimapFrame = 0;
@@ -753,6 +755,10 @@ export class GameRenderer {
     canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
     canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
     canvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
+    canvas.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+    canvas.addEventListener('pointerleave', () => {
+      if (!this.cameraDrag) this.navigationPointer = null;
+    });
     canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
@@ -769,6 +775,12 @@ export class GameRenderer {
   }
 
   private onPointerDown(e: PointerEvent): void {
+    if (e.button === 1) {
+      e.preventDefault();
+      this.cameraDrag = { x: e.offsetX, y: e.offsetY, pointerId: e.pointerId };
+      if (e.currentTarget instanceof Element) e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
     if (this.placingBuilding) {
       if (e.button === 0) this.confirmBuildingPlacement(e.offsetX, e.offsetY);
       else if (e.button === 2) this.cancelBuildingPlacement();
@@ -784,11 +796,28 @@ export class GameRenderer {
 
   private onPointerMove(e: PointerEvent): void {
     this.placementPointer = { x: e.offsetX, y: e.offsetY };
+    this.navigationPointer = { x: e.offsetX, y: e.offsetY };
+    if (this.cameraDrag) {
+      this.camera.panByScreenDelta(
+        e.offsetX - this.cameraDrag.x,
+        e.offsetY - this.cameraDrag.y,
+      );
+      this.cameraDrag = { x: e.offsetX, y: e.offsetY, pointerId: e.pointerId };
+      this.clampCamera();
+      return;
+    }
     this.updatePointerCursor(e.offsetX, e.offsetY);
     if (this.dragStart) this.dragNow = { x: e.offsetX, y: e.offsetY };
   }
 
   private onPointerUp(e: PointerEvent): void {
+    if (e.button === 1 && this.cameraDrag) {
+      if (e.currentTarget instanceof Element && e.currentTarget.hasPointerCapture(e.pointerId)) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+      this.cameraDrag = null;
+      return;
+    }
     if (e.button !== 0 || !this.dragStart) return;
     const additive = e.ctrlKey || e.shiftKey;
     if (!additive) this.selected.clear();
@@ -1027,10 +1056,34 @@ export class GameRenderer {
 
   private updatePan(dtMs: number): void {
     const d = (PAN_SPEED * dtMs) / 1000 / this.camera.zoom;
-    if (this.keys.has('w') || this.keys.has('arrowup')) this.camera.pan(0, -d);
-    if (this.keys.has('s') || this.keys.has('arrowdown')) this.camera.pan(0, d);
-    if (this.keys.has('a') || this.keys.has('arrowleft')) this.camera.pan(-d, 0);
-    if (this.keys.has('d') || this.keys.has('arrowright')) this.camera.pan(d, 0);
+    const edge = this.cameraDrag
+      ? { x: 0, y: 0 }
+      : edgePanDirection(
+          this.navigationPointer,
+          this.app.renderer.width,
+          this.app.renderer.height,
+        );
+    const horizontal =
+      (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) -
+      (this.keys.has('a') || this.keys.has('arrowleft') ? 1 : 0) +
+      edge.x;
+    const vertical =
+      (this.keys.has('s') || this.keys.has('arrowdown') ? 1 : 0) -
+      (this.keys.has('w') || this.keys.has('arrowup') ? 1 : 0) +
+      edge.y;
+    if (horizontal || vertical) {
+      const length = Math.hypot(horizontal, vertical);
+      this.camera.pan((horizontal / length) * d, (vertical / length) * d);
+      this.clampCamera();
+    }
+  }
+
+  private clampCamera(): void {
+    if (!this.activeMap) return;
+    this.camera.clampToWorld(
+      this.activeMap.width * this.activeMap.cellSize,
+      this.activeMap.height * this.activeMap.cellSize,
+    );
   }
 
   private updateFps(dtMs: number): void {

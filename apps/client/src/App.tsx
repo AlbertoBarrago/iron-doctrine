@@ -41,7 +41,7 @@ export function App(): JSX.Element {
   if (!skirmish) {
     throw new Error('Game mode requires a skirmish configuration');
   }
-  return <Game config={skirmish} onOpenEditor={() => setMode('editor')} />;
+  return <Game config={skirmish} />;
 }
 
 /**
@@ -49,13 +49,7 @@ export function App(): JSX.Element {
  * overlays the React HUD/minimap. Unmounting disposes the renderer (used when switching
  * to the editor). StrictMode double-invokes effects in dev, hence the duplicate guard.
  */
-function Game({
-  config,
-  onOpenEditor,
-}: {
-  config: SkirmishConfig;
-  onOpenEditor: () => void;
-}): JSX.Element {
+function Game({ config }: { config: SkirmishConfig }): JSX.Element {
   const [session, setSession] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
@@ -91,7 +85,6 @@ function Game({
         onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
         onGather={() => rendererRef.current?.gatherWithSelectedHarvesters()}
         onStop={() => rendererRef.current?.stopSelectedUnits()}
-        onOpenEditor={onOpenEditor}
         onRestart={() => setSession((current) => current + 1)}
       />
       <Minimap onCanvas={attachMinimap} onClick={minimapClick} />

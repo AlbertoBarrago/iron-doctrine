@@ -4,6 +4,20 @@
  * uses it to translate pointer positions back into world space for commands.
  */
 export const PIXELS_PER_UNIT = 32;
+export const EDGE_PAN_MARGIN = 18;
+
+export function edgePanDirection(
+  pointer: { x: number; y: number } | null,
+  width: number,
+  height: number,
+  margin = EDGE_PAN_MARGIN,
+): { x: -1 | 0 | 1; y: -1 | 0 | 1 } {
+  if (!pointer) return { x: 0, y: 0 };
+  return {
+    x: pointer.x <= margin ? -1 : pointer.x >= width - margin ? 1 : 0,
+    y: pointer.y <= margin ? -1 : pointer.y >= height - margin ? 1 : 0,
+  };
+}
 
 export class Camera {
   /** World-space position of the viewport centre, in units. */
@@ -24,6 +38,21 @@ export class Camera {
   pan(dxUnits: number, dyUnits: number): void {
     this.x += dxUnits;
     this.y += dyUnits;
+  }
+
+  panByScreenDelta(dxPixels: number, dyPixels: number): void {
+    this.pan(-dxPixels / this.scale, -dyPixels / this.scale);
+  }
+
+  clampToWorld(widthUnits: number, heightUnits: number): void {
+    const halfViewW = this.viewW / 2 / this.scale;
+    const halfViewH = this.viewH / 2 / this.scale;
+    const halfWorldW = widthUnits / 2;
+    const halfWorldH = heightUnits / 2;
+    const maxX = Math.max(0, halfWorldW - halfViewW);
+    const maxY = Math.max(0, halfWorldH - halfViewH);
+    this.x = Math.min(maxX, Math.max(-maxX, this.x));
+    this.y = Math.min(maxY, Math.max(-maxY, this.y));
   }
 
   zoomBy(factor: number): void {

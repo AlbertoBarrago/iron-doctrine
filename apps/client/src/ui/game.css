@@ -1555,6 +1555,34 @@ kbd {
   border: 1px solid #536057;
   font-size: 18px;
 }
+.commander-stats {
+  margin: -4px 0 10px;
+  padding: 9px;
+  background: #0e1511;
+  border: 1px inset #4d5851;
+}
+.commander-stats > span {
+  color: #78d46a;
+  font: 800 8px var(--body);
+  letter-spacing: 0.14em;
+}
+.commander-stats dl {
+  margin: 7px 0 0;
+}
+.commander-stats dl div {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  border-top: 1px solid #28312c;
+  font: 9px var(--body);
+}
+.commander-stats dt {
+  color: #77827a;
+}
+.commander-stats dd {
+  margin: 0;
+  color: #cbd4c5;
+}
 .command-panel__resources {
   display: grid;
   grid-template-columns: 1.2fr 1fr 0.75fr;

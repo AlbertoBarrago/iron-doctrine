@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
   commandAvailability,
@@ -86,12 +87,12 @@ interface HudProps {
   onCancelPlacement(): void;
   onGather(): void;
   onStop(): void;
-  onOpenEditor(): void;
   onRestart(): void;
 }
 
 /** Industrial RTS command surface and progressive first-match guidance. */
 export function Hud(props: HudProps): JSX.Element {
+  const [statsOpen, setStatsOpen] = useState(false);
   const fps = useGameStore((state) => state.fps);
   const entityCount = useGameStore((state) => state.entityCount);
   const credits = useGameStore((state) => state.credits);
@@ -132,12 +133,28 @@ export function Hud(props: HudProps): JSX.Element {
           </div>
           <button
             className="command-panel__menu"
-            aria-label="Open map editor"
-            onClick={props.onOpenEditor}
+            aria-label="Toggle commander statistics"
+            aria-expanded={statsOpen}
+            onClick={() => setStatsOpen((open) => !open)}
           >
             ☰
           </button>
         </header>
+
+        {statsOpen ? (
+          <section className="commander-stats">
+            <span>COMMANDER STATUS</span>
+            <dl>
+              <div><dt>Field assets</dt><dd>{entityCount}</dd></div>
+              <div><dt>Render link</dt><dd>{fps} FPS</dd></div>
+              <div>
+                <dt>Hostile mobilization</dt>
+                <dd>{aiActivationSeconds > 0 ? `${aiActivationSeconds}s` : 'ACTIVE'}</dd>
+              </div>
+              <div><dt>Command uplink</dt><dd>{baseOperational ? 'ONLINE' : 'OFFLINE'}</dd></div>
+            </dl>
+          </section>
+        ) : null}
 
         <div className="command-panel__resources">
           <Stat label="Credits" value={`$${credits}`} accent />
@@ -261,6 +278,8 @@ export function Hud(props: HudProps): JSX.Element {
         <Control keyName="DRAG" text="Box select" />
         <Control keyName="RMB" text="Move / attack" />
         <Control keyName="WHEEL" text="Zoom" />
+        <Control keyName="EDGE" text="Pan camera" />
+        <Control keyName="MMB" text="Drag camera" />
         <Control keyName="WASD" text="Camera" />
       </div>
 
