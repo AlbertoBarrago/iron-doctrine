@@ -7,7 +7,7 @@
  * their radius as Visible. Teams share one grid (allied vision). Fully deterministic:
  * integer cell math, order-independent stamping.
  */
-import { NavGrid } from '../pathfinding/nav-grid.js';
+import type { NavGrid } from '../pathfinding/nav-grid.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { Fixed } from '../../domain/math/fixed.js';
 

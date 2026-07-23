@@ -280,7 +280,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
           {validationErrors.length ? `${validationErrors.length} ISSUES` : 'MAP VALID'}
         </div>
         {storageStatus ? <span className="editor-storage-status">{storageStatus}</span> : null}
-        <button className="metal-button metal-button--primary" onClick={saveMap}>
+        <button type="button" className="metal-button metal-button--primary" onClick={saveMap}>
           Save level
         </button>
         <label className="metal-button editor-import">
@@ -294,10 +294,10 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
             }}
           />
         </label>
-        <button className="metal-button metal-button--primary" onClick={exportJson}>
+        <button type="button" className="metal-button metal-button--primary" onClick={exportJson}>
           Export JSON
         </button>
-        <button className="metal-button" onClick={onExit}>
+        <button type="button" className="metal-button" onClick={onExit}>
           Exit editor
         </button>
       </header>
@@ -309,6 +309,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
         <div className="editor-tool-list">
           {TOOLS.map((candidate) => (
             <button
+              type="button"
               key={candidate.id}
               className={`editor-tool${tool === candidate.id ? ' is-active' : ''}`}
               onClick={() => setTool(candidate.id)}
@@ -329,12 +330,14 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
             <span className="panel-kicker">SPAWN OWNER</span>
             <div className="editor-spawn-players">
               <button
+                type="button"
                 className={spawnPlayer === 0 ? 'is-active friendly' : ''}
                 onClick={() => setSpawnPlayer(0)}
               >
                 PLAYER 1
               </button>
               <button
+                type="button"
                 className={spawnPlayer === 1 ? 'is-active hostile' : ''}
                 onClick={() => setSpawnPlayer(1)}
               >
@@ -348,6 +351,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
             <div className="editor-brushes">
               {BRUSH_SIZES.map((size) => (
                 <button
+                  type="button"
                   key={size}
                   className={brushSize === size ? 'is-active' : ''}
                   onClick={() => setBrushSize(size)}
@@ -389,10 +393,16 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
             </strong>
           </div>
           <div className="editor-zoom">
-            <button onClick={() => changeZoom(-0.25)}>−</button>
+            <button type="button" onClick={() => changeZoom(-0.25)}>
+              −
+            </button>
             <span>{Math.round(zoom * 100)}%</span>
-            <button onClick={() => changeZoom(0.25)}>+</button>
-            <button onClick={() => setZoom(1)}>FIT MAP</button>
+            <button type="button" onClick={() => changeZoom(0.25)}>
+              +
+            </button>
+            <button type="button" onClick={() => setZoom(1)}>
+              FIT MAP
+            </button>
           </div>
         </div>
         <div

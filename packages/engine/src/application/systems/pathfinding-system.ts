@@ -10,7 +10,7 @@
 import type { System } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
 import { Position, Movement, Path } from '../../domain/components/index.js';
-import { NavGrid } from '../pathfinding/nav-grid.js';
+import type { NavGrid } from '../pathfinding/nav-grid.js';
 import { findPath } from '../pathfinding/a-star.js';
 import { smoothPath } from '../pathfinding/path-smoother.js';
 import * as v2 from '../../domain/math/vec2.js';

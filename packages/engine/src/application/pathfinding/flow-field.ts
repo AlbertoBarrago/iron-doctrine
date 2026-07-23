@@ -6,7 +6,7 @@
  * of units can follow the same field in O(1) per unit, avoiding N independent A*
  * searches. Fully deterministic: integer costs, fixed neighbour order.
  */
-import { NavGrid, type Cell } from './nav-grid.js';
+import type { NavGrid, Cell } from './nav-grid.js';
 import * as fp from '../../domain/math/fixed.js';
 import { normalize, type Vec2 } from '../../domain/math/vec2.js';
 
@@ -62,7 +62,11 @@ export class FlowField {
         const nx = cx + dx;
         const ny = cy + dy;
         if (this.grid.isBlocked(nx, ny)) continue;
-        if (dx !== 0 && dy !== 0 && (this.grid.isBlocked(cx + dx, cy) || this.grid.isBlocked(cx, cy + dy))) {
+        if (
+          dx !== 0 &&
+          dy !== 0 &&
+          (this.grid.isBlocked(cx + dx, cy) || this.grid.isBlocked(cx, cy + dy))
+        ) {
           continue; // no diagonal corner cutting
         }
         const nIdx = this.grid.index(nx, ny);
@@ -93,7 +97,11 @@ export class FlowField {
           const ny = cy + dy;
           if (this.grid.isBlocked(nx, ny)) continue;
           // Never steer diagonally through a blocked corner.
-          if (dx !== 0 && dy !== 0 && (this.grid.isBlocked(cx + dx, cy) || this.grid.isBlocked(cx, cy + dy))) {
+          if (
+            dx !== 0 &&
+            dy !== 0 &&
+            (this.grid.isBlocked(cx + dx, cy) || this.grid.isBlocked(cx, cy + dy))
+          ) {
             continue;
           }
           const nCost = this.cost[this.grid.index(nx, ny)]!;

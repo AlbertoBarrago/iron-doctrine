@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { GameRenderer } from './infra/render/GameRenderer.js';
 import { Hud } from './ui/Hud.js';
 import { Minimap } from './ui/Minimap.js';
@@ -13,9 +13,9 @@ type Mode = 'menu' | 'game' | 'editor';
 /** Root: switches between the live game and the map editor. */
 export function App(): JSX.Element {
   const [mode, setMode] = useState<Mode>('menu');
-  const [catalogRevision, setCatalogRevision] = useState(0);
+  const [, setCatalogRevision] = useState(0);
   const [skirmish, setSkirmish] = useState<SkirmishConfig | null>(null);
-  const maps = useMemo(() => loadMapCatalog(localStorage), [catalogRevision]);
+  const maps = loadMapCatalog(localStorage);
   if (mode === 'menu') {
     return (
       <StartScreen
@@ -57,16 +57,18 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const initialAudio = useRef({ muted: audioMuted, volume: audioVolume });
 
   useEffect(() => {
+    void session;
     const el = containerRef.current;
     if (!el || rendererRef.current) return;
     const renderer = new GameRenderer(el);
     rendererRef.current = renderer;
     void renderer.start(config).then(() => {
       renderer.attachMinimap(minimapCanvasRef.current);
-      renderer.setAudioMuted(audioMuted);
-      renderer.setAudioVolume(audioVolume);
+      renderer.setAudioMuted(initialAudio.current.muted);
+      renderer.setAudioVolume(initialAudio.current.volume);
     });
     return () => {
       renderer.dispose();

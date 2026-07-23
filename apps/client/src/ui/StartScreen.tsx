@@ -115,6 +115,7 @@ export function StartScreen({
 
         <div className="start-screen__actions">
           <button
+            type="button"
             className="primary-action"
             disabled={!selectedMap}
             onClick={() => {
@@ -129,7 +130,7 @@ export function StartScreen({
           >
             Start skirmish
           </button>
-          <button className="secondary-action" onClick={onOpenEditor}>
+          <button type="button" className="secondary-action" onClick={onOpenEditor}>
             Open map editor
           </button>
         </div>

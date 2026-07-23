@@ -80,7 +80,9 @@ export class EntityManager {
 
   alive(): EntityId[] {
     const out: EntityId[] = [];
-    this.forEach((id) => out.push(id));
+    this.forEach((id) => {
+      out.push(id);
+    });
     return out;
   }
 

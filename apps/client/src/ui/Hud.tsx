@@ -152,6 +152,7 @@ export function Hud(props: HudProps): JSX.Element {
             <span>IRON DOCTRINE</span>
           </div>
           <button
+            type="button"
             className="command-panel__menu"
             aria-label="Open game setup"
             aria-expanded={props.setupOpen}
@@ -196,6 +197,7 @@ export function Hud(props: HudProps): JSX.Element {
           <div className="command-tabs" role="tablist" aria-label="Command sections">
             {(['orders', 'build', 'production'] as const).map((tab) => (
               <button
+                type="button"
                 key={tab}
                 role="tab"
                 aria-selected={activeTab === tab}
@@ -226,6 +228,7 @@ export function Hud(props: HudProps): JSX.Element {
                   const availability = commandAvailability(credits, stats.cost);
                   return (
                     <button
+                      type="button"
                       key={id}
                       className={`command-button${active ? ' command-button--active' : ''}`}
                       disabled={!availability.available}
@@ -281,7 +284,11 @@ export function Hud(props: HudProps): JSX.Element {
             <strong>DEPLOYING {humanize(placingBuilding)}</strong>
             <small>Left-click confirm · Right-click / Esc abort</small>
           </div>
-          <button className="metal-button metal-button--danger" onClick={props.onCancelPlacement}>
+          <button
+            type="button"
+            className="metal-button metal-button--danger"
+            onClick={props.onCancelPlacement}
+          >
             Abort
           </button>
         </div>
@@ -317,7 +324,11 @@ export function Hud(props: HudProps): JSX.Element {
                   ? 'Both command structures were destroyed.'
                   : 'Your command structure has been destroyed.'}
             </p>
-            <button className="metal-button metal-button--primary" onClick={props.onRestart}>
+            <button
+              type="button"
+              className="metal-button metal-button--primary"
+              onClick={props.onRestart}
+            >
               Restart skirmish
             </button>
           </div>
@@ -375,6 +386,7 @@ function ProductionPanel({
             : { available: false as const, label: 'Unavailable' };
           return (
             <button
+              type="button"
               key={unit}
               className="unit-button"
               disabled={!availability.available}
@@ -401,6 +413,7 @@ function ProductionPanel({
         <div className="queue-items">{production.queue.map(humanize).join('  ›  ')}</div>
       ) : null}
       <button
+        type="button"
         className="metal-button metal-button--wide"
         disabled={!production.queue.length}
         onClick={onCancel}
@@ -483,7 +496,7 @@ function OrdersPanel({
         const help = COMMAND_HELP[command];
         const action = command === 'gather' ? onGather : command === 'stop' ? onStop : null;
         return action ? (
-          <button key={command} onClick={action}>
+          <button type="button" key={command} onClick={action}>
             <strong>{help.label}</strong>
             <small>{help.instruction}</small>
           </button>
@@ -579,7 +592,7 @@ function SetupOverlay({
             <span className="panel-kicker">SIMULATION PAUSED</span>
             <h2 id="setup-title">Field setup</h2>
           </div>
-          <button className="metal-button" onClick={onClose}>
+          <button type="button" className="metal-button" onClick={onClose}>
             Return to battle
           </button>
         </header>

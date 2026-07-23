@@ -3,7 +3,7 @@
  * cell centres; this collapses runs of waypoints wherever a straight line between two
  * cells crosses only passable cells, yielding natural diagonal movement.
  */
-import { NavGrid, type Cell } from './nav-grid.js';
+import type { NavGrid, Cell } from './nav-grid.js';
 
 /** True if a straight line between two cell centres crosses no blocked cell. */
 export function hasLineOfSight(grid: NavGrid, a: Cell, b: Cell): boolean {

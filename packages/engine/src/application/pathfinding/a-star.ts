@@ -6,7 +6,7 @@
  * For large groups sharing a goal, prefer a flow field (see `flow-field.ts`) to avoid
  * N independent A* searches; A* remains ideal for single-unit / sparse requests.
  */
-import { NavGrid, type Cell } from './nav-grid.js';
+import type { NavGrid, Cell } from './nav-grid.js';
 
 const ORTHO = 10;
 const DIAG = 14;

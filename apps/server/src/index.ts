@@ -35,7 +35,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('message', (data) => {
-    let msg;
+    let msg: ReturnType<typeof decodeClient>;
     try {
       msg = decodeClient(data.toString());
     } catch {
