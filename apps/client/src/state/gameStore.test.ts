@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { nextTutorialStep, selectionCommands } from './gameStore.js';
+import { commandAvailability, nextTutorialStep, selectionCommands } from './gameStore.js';
+
+describe('command availability', () => {
+  it('reports when a command is affordable', () => {
+    expect(commandAvailability(800, 800)).toEqual({ available: true, label: 'Ready' });
+  });
+
+  it('reports the missing credits', () => {
+    expect(commandAvailability(550, 800)).toEqual({
+      available: false,
+      label: 'Requires $250 more',
+    });
+  });
+});
 
 describe('tutorial progression', () => {
   it('advances only when the current instruction is completed', () => {

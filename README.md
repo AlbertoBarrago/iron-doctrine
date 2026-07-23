@@ -57,7 +57,7 @@ The next work is ordered around player value rather than subsystem novelty.
 
 ### Now — make the match understandable and enjoyable
 
-- [ ] Clarify what every structure unlocks and why the player should build it.
+- [x] Clarify what every structure unlocks and why the player should build it.
 - [ ] Tune economy, construction timings, unit costs and AI pressure through playtesting.
 - [ ] Improve battlefield readability, silhouettes, scale and selection feedback.
 - [ ] Replace remaining prototype presentation with a coherent original visual language.

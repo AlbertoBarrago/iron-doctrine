@@ -1,5 +1,6 @@
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
+  commandAvailability,
   useGameStore,
   type SelectedEntitySummary,
   type SelectedProduction,
@@ -8,11 +9,36 @@ import {
 } from '../state/gameStore.js';
 
 const BUILDABLE_STRUCTURES = [
-  { id: 'power_plant', label: 'Power plant', purpose: 'Provides 100 power' },
-  { id: 'refinery', label: 'Refinery', purpose: 'Processes harvested ore' },
-  { id: 'barracks', label: 'Barracks', purpose: 'Produces infantry' },
-  { id: 'factory', label: 'War factory', purpose: 'Produces vehicles' },
-  { id: 'turret', label: 'Defense turret', purpose: 'Automated base defense' },
+  {
+    id: 'power_plant',
+    label: 'Power plant',
+    purpose: 'Keeps powered defenses operational',
+    unlocks: '+100 power',
+  },
+  {
+    id: 'refinery',
+    label: 'Refinery',
+    purpose: 'Accepts ore deliveries from harvesters',
+    unlocks: 'Unlocks income',
+  },
+  {
+    id: 'barracks',
+    label: 'Barracks',
+    purpose: 'Trains inexpensive ground forces',
+    unlocks: 'Riflemen · Engineers',
+  },
+  {
+    id: 'factory',
+    label: 'War factory',
+    purpose: 'Builds armored and economy vehicles',
+    unlocks: 'Tanks · Harvesters',
+  },
+  {
+    id: 'turret',
+    label: 'Defense turret',
+    purpose: 'Automatically engages nearby hostiles',
+    unlocks: 'Requires 40 power',
+  },
 ] as const;
 
 const TUTORIAL: Record<TutorialStep, { number: string; title: string; instruction: string }> = {
@@ -120,22 +146,30 @@ export function Hud(props: HudProps): JSX.Element {
         <div className="hazard-stripe" />
         <PanelHeading eyebrow="CONSTRUCTION YARD" title="Structures" code="BUILD" />
         <div className="build-list">
-          {BUILDABLE_STRUCTURES.map(({ id, label, purpose }) => {
+          {BUILDABLE_STRUCTURES.map(({ id, label, purpose, unlocks }) => {
             const stats = BUILDING_STATS[id]!;
             const active = placingBuilding === id;
+            const availability = commandAvailability(credits, stats.cost);
             return (
               <button
                 key={id}
                 className={`command-button${active ? ' command-button--active' : ''}`}
-                disabled={credits < stats.cost}
+                disabled={!availability.available}
                 onClick={() => props.onPlaceBuilding(id)}
+                title={availability.label}
               >
                 <span className="command-button__icon">{buildingSymbol(id)}</span>
                 <span className="command-button__copy">
                   <strong>{label}</strong>
                   <small>{purpose}</small>
+                  <small className="command-button__unlocks">{unlocks}</small>
                 </span>
-                <span className="command-button__cost">${stats.cost}</span>
+                <span className="command-button__meta">
+                  <span className="command-button__cost">${stats.cost}</span>
+                  <small className={availability.available ? 'is-ready' : 'is-blocked'}>
+                    {availability.label}
+                  </small>
+                </span>
               </button>
             );
           })}
@@ -259,16 +293,22 @@ function ProductionPanel({
       <div className="production-grid">
         {production.produces.map((unit) => {
           const stats = UNIT_STATS[unit];
+          const availability = stats
+            ? commandAvailability(credits, stats.cost)
+            : { available: false as const, label: 'Unavailable' };
           return (
             <button
               key={unit}
               className="unit-button"
-              disabled={!stats || credits < stats.cost}
+              disabled={!availability.available}
               onClick={() => onQueue(unit)}
+              title={availability.label}
             >
               <span className="unit-button__icon">{unitSymbol(unit)}</span>
               <strong>{humanize(unit)}</strong>
-              <small>${stats?.cost ?? '?'}</small>
+              <small>
+                ${stats?.cost ?? '?'} · {availability.label}
+              </small>
             </button>
           );
         })}

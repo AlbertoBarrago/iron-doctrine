@@ -26,6 +26,15 @@ export interface SelectedProduction {
   produces: string[];
 }
 
+export type CommandAvailability =
+  | { available: true; label: 'Ready' }
+  | { available: false; label: string };
+
+export function commandAvailability(credits: number, cost: number): CommandAvailability {
+  if (credits >= cost) return { available: true, label: 'Ready' };
+  return { available: false, label: `Requires $${cost - credits} more` };
+}
+
 interface GameUiState {
   fps: number;
   playing: boolean;

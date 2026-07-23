@@ -563,15 +563,40 @@ kbd {
   letter-spacing: 0.04em;
 }
 .command-button__copy small {
-  overflow: hidden;
   color: #9d9b82;
   font: 9px var(--body);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.25;
+}
+.command-button__copy .command-button__unlocks {
+  color: #c1aa62;
+  font-size: 8px;
+  letter-spacing: 0.04em;
+}
+.command-button__meta {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 4px;
 }
 .command-button__cost {
   color: var(--amber-light);
   font: 800 11px var(--body);
+}
+.command-button__meta small {
+  font: 7px var(--body);
+  text-align: right;
+  text-transform: uppercase;
+}
+.command-button__meta .is-ready {
+  color: #9fb36b;
+}
+.command-button__meta .is-blocked {
+  color: #c47a62;
+}
+.command-button:disabled,
+.unit-button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.45) brightness(0.65);
 }
 .panel-separator {
   display: flex;
