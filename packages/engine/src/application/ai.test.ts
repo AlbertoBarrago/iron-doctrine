@@ -60,6 +60,27 @@ describe('AIDirector', () => {
     expect(sim.economy.credits(1)).toBeLessThan(start);
   });
 
+  it('respects build time and the difficulty army cap', () => {
+    const sim = new Simulation({
+      seed: 1,
+      aiPlayers: [{ player: 1, difficulty: 'easy' }],
+      startingCredits: { 1: 20_000 },
+    });
+    sim.enqueue({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 1,
+      at: at(10, 10),
+    });
+    sim.step();
+
+    for (let i = 0; i < 179; i++) sim.step();
+    expect(countOwned(sim, 1, (entity) => sim.world.has(entity, Weapon))).toBe(0);
+
+    for (let i = 0; i < 2_000; i++) sim.step();
+    expect(countOwned(sim, 1, (entity) => sim.world.has(entity, Weapon))).toBeLessThanOrEqual(6);
+  });
+
   it('does not activate before the configured tick', () => {
     const sim = new Simulation({
       seed: 1,

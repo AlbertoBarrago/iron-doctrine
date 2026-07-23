@@ -8,9 +8,9 @@
  *   - Aggression: once its army reaches a threshold, order every combat unit to
  *     attack the nearest enemy — units, then buildings.
  *
- * Production is modelled as an instant spend-and-spawn (build queues land in a later
- * milestone). All randomness flows through the seeded per-tick RNG so two peers make
- * identical decisions. Difficulty scales income cadence and army thresholds.
+ * Production uses archetype build times as a deterministic cooldown. All randomness
+ * flows through the seeded per-tick RNG so two peers make identical decisions.
+ * Difficulty scales decision cadence, attack size and the standing-army limit.
  */
 import type { System, TickContext } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
@@ -45,12 +45,28 @@ interface Tuning {
   decisionInterval: number; // ticks between economy/production decisions
   attackInterval: number; // ticks between aggression re-evaluation
   armyThreshold: number; // combat units before attacking
+  maxCombatUnits: number; // hard ceiling to prevent runaway unit floods
 }
 
 const TUNING: Record<Difficulty, Tuning> = {
-  easy: { decisionInterval: 60, attackInterval: 200, armyThreshold: 6 },
-  normal: { decisionInterval: 40, attackInterval: 140, armyThreshold: 4 },
-  hard: { decisionInterval: 20, attackInterval: 100, armyThreshold: 3 },
+  easy: {
+    decisionInterval: 100,
+    attackInterval: 240,
+    armyThreshold: 4,
+    maxCombatUnits: 6,
+  },
+  normal: {
+    decisionInterval: 80,
+    attackInterval: 180,
+    armyThreshold: 5,
+    maxCombatUnits: 10,
+  },
+  hard: {
+    decisionInterval: 60,
+    attackInterval: 140,
+    armyThreshold: 6,
+    maxCombatUnits: 14,
+  },
 };
 
 export function createAISystem(
@@ -60,17 +76,25 @@ export function createAISystem(
   grid: NavGrid,
   activationOrigin?: () => number | null,
 ): System {
+  const nextProductionTick = new Map<number, number>();
   return {
     name: 'AIDirector',
     update(world: World, ctx: TickContext): void {
       for (const ai of ais) {
         const origin = activationOrigin ? activationOrigin() : 0;
         if (origin === null) continue;
-        if (ctx.tick < origin + (ai.activationTick ?? 0)) continue;
+        const activationTick = origin + (ai.activationTick ?? 0);
+        if (ctx.tick < activationTick) continue;
         const tuning = TUNING[ai.difficulty];
-        if (ctx.tick % tuning.decisionInterval === 0)
-          manageEconomyAndProduction(world, ctx, ai, economy, grid);
-        if (ctx.tick % tuning.attackInterval === 0) manageAggression(world, ai, teamOf, tuning);
+        const activeTick = ctx.tick - activationTick;
+        if (
+          activeTick % tuning.decisionInterval === 0 &&
+          ctx.tick >= (nextProductionTick.get(ai.player) ?? activationTick)
+        ) {
+          const buildTicks = manageEconomyAndProduction(world, ctx, ai, economy, grid, tuning);
+          if (buildTicks !== null) nextProductionTick.set(ai.player, ctx.tick + buildTicks);
+        }
+        if (activeTick % tuning.attackInterval === 0) manageAggression(world, ai, teamOf, tuning);
       }
     },
   };
@@ -98,7 +122,8 @@ function manageEconomyAndProduction(
   ai: AIPlayerConfig,
   economy: PlayerEconomy,
   grid: NavGrid,
-): void {
+  tuning: Tuning,
+): number | null {
   const player = ai.player;
   const base = basePoint(world, player);
   const units = ownUnits(world, player);
@@ -107,17 +132,23 @@ function manageEconomyAndProduction(
   // Economy: always keep one harvester.
   if (harvesters === 0 && economy.spend(player, UNIT_STATS.harvester!.cost)) {
     spawnNear(world, ctx, grid, 'harvester', player, base);
-    return; // one action per decision keeps spending paced
+    return UNIT_STATS.harvester!.buildTicks;
   }
+
+  const combatUnits = units.filter((entity) => world.has(entity, Weapon)).length;
+  if (combatUnits >= tuning.maxCombatUnits) return null;
 
   // Production: buy the best affordable combat unit, keeping a small reserve.
   const tank = UNIT_STATS.tank!;
   const rifle = UNIT_STATS.rifleman!;
   if (economy.credits(player) >= tank.cost + 200 && economy.spend(player, tank.cost)) {
     spawnNear(world, ctx, grid, 'tank', player, base);
+    return tank.buildTicks;
   } else if (economy.credits(player) >= rifle.cost + 100 && economy.spend(player, rifle.cost)) {
     spawnNear(world, ctx, grid, 'rifleman', player, base);
+    return rifle.buildTicks;
   }
+  return null;
 }
 
 function spawnNear(
