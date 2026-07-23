@@ -17,6 +17,11 @@ import { Camera, edgePanDirection } from './camera.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
+import {
+  commandFeedbackFrame,
+  type CommandFeedback,
+  type CommandFeedbackKind,
+} from './commandFeedback.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
 import {
   firstContactLayout,
@@ -69,6 +74,7 @@ export class GameRenderer {
     button: 1 | 2;
     moved: boolean;
   } | null = null;
+  private commandFeedback: CommandFeedback | null = null;
 
   private minimapCtx: CanvasRenderingContext2D | null = null;
   private minimapFrame = 0;
@@ -685,6 +691,7 @@ export class GameRenderer {
   private drawSelectionBox(): void {
     this.overlay.clear();
     this.drawObjectiveDirection();
+    this.drawCommandFeedback();
     this.drawPlacementPreview();
     if (this.dragStart && this.dragNow) {
       const x = Math.min(this.dragStart.x, this.dragNow.x);
@@ -696,6 +703,57 @@ export class GameRenderer {
         .fill({ color: 0xd5a83c, alpha: 0.14 })
         .stroke({ width: 1, color: 0xf0cc68 });
     }
+  }
+
+  private drawCommandFeedback(): void {
+    const feedback = this.commandFeedback;
+    if (!feedback) return;
+    const frame = commandFeedbackFrame(feedback, performance.now());
+    if (!frame) {
+      this.commandFeedback = null;
+      return;
+    }
+
+    const { sx, sy } = this.camera.worldToScreen(feedback.worldX, feedback.worldY);
+    const colors: Record<CommandFeedbackKind, number> = {
+      select: 0xf0cc68,
+      move: 0x78d46a,
+      attack: 0xe05a42,
+      gather: 0xd4a63a,
+      build: 0xf0cc68,
+      invalid: 0xe05a42,
+    };
+    const color = colors[feedback.kind];
+    const radius = 13 * frame.scale;
+    const gap = radius * 0.45;
+    const arm = radius * 0.72;
+    const alpha = frame.alpha;
+    this.overlay
+      .circle(sx, sy, radius)
+      .stroke({ width: 2, color, alpha })
+      .moveTo(sx - gap, sy - gap)
+      .lineTo(sx - arm, sy - arm)
+      .moveTo(sx + gap, sy - gap)
+      .lineTo(sx + arm, sy - arm)
+      .moveTo(sx + gap, sy + gap)
+      .lineTo(sx + arm, sy + arm)
+      .moveTo(sx - gap, sy + gap)
+      .lineTo(sx - arm, sy + arm)
+      .stroke({ width: feedback.kind === 'invalid' ? 3 : 2, color, alpha });
+  }
+
+  private showCommandFeedback(
+    sx: number,
+    sy: number,
+    kind: CommandFeedbackKind,
+  ): void {
+    const world = this.camera.screenToWorld(sx, sy);
+    this.commandFeedback = {
+      kind,
+      worldX: world.wx,
+      worldY: world.wy,
+      startedAt: performance.now(),
+    };
   }
 
   private drawObjectiveDirection(): void {
@@ -772,8 +830,12 @@ export class GameRenderer {
     const snapshot = this.bridge.latest.curr;
     if (!building || !snapshot) return;
     const position = this.snappedPlacement(sx, sy);
-    if (!this.isPlacementValid(building, position, snapshot)) return;
+    if (!this.isPlacementValid(building, position, snapshot)) {
+      this.showCommandFeedback(sx, sy, 'invalid');
+      return;
+    }
 
+    this.showCommandFeedback(sx, sy, 'build');
     this.bridge.command({
       type: 'placeBuilding',
       building,
@@ -922,6 +984,7 @@ export class GameRenderer {
     const box = { x0: this.dragStart.x, y0: this.dragStart.y, x1: e.offsetX, y1: e.offsetY };
     const isClick = Math.abs(box.x1 - box.x0) < 4 && Math.abs(box.y1 - box.y0) < 4;
     this.selectInBox(box, isClick);
+    if (isClick) this.showCommandFeedback(e.offsetX, e.offsetY, 'select');
 
     this.dragStart = null;
     this.dragNow = null;
@@ -963,6 +1026,7 @@ export class GameRenderer {
 
     const clicked = this.findOwnedUnitAt(e.offsetX, e.offsetY, curr);
     if (!clicked?.unitType) {
+      this.showCommandFeedback(e.offsetX, e.offsetY, 'select');
       const target = this.camera.screenToWorld(e.offsetX, e.offsetY);
       this.camera.x = target.wx;
       this.camera.y = target.wy;
@@ -1002,7 +1066,10 @@ export class GameRenderer {
   }
 
   private issueMove(sx: number, sy: number): void {
-    if (this.selected.size === 0) return;
+    if (this.selected.size === 0) {
+      this.showCommandFeedback(sx, sy, 'invalid');
+      return;
+    }
     const { wx, wy } = this.camera.screenToWorld(sx, sy);
     const curr = this.bridge.latest.curr;
     const units = curr?.entities.filter((entity) => {
@@ -1011,6 +1078,7 @@ export class GameRenderer {
     if (!units || units.length === 0) {
       const building = this.selectedProductionBuilding();
       if (building) {
+        this.showCommandFeedback(sx, sy, 'move');
         this.audio.play('move');
         this.bridge.command({
           type: 'setRally',
@@ -1023,6 +1091,7 @@ export class GameRenderer {
 
     const resource = curr ? this.findResourceAt(sx, sy, curr) : null;
     if (resource && units.some((entity) => entity.unitType === 'harvester')) {
+      this.showCommandFeedback(sx, sy, 'gather');
       this.audio.play('move');
       this.gatherWithSelectedHarvesters(resource);
       return;
@@ -1030,6 +1099,7 @@ export class GameRenderer {
 
     const enemy = curr ? this.findEnemyAt(sx, sy, curr) : null;
     if (enemy) {
+      this.showCommandFeedback(sx, sy, 'attack');
       this.audio.play('move');
       this.bridge.command({
         type: 'attack',
@@ -1039,6 +1109,7 @@ export class GameRenderer {
       useGameStore.getState().advanceTutorial('attack');
       return;
     }
+    this.showCommandFeedback(sx, sy, 'move');
     this.audio.play('move');
     this.bridge.command({
       type: 'move',
@@ -1086,7 +1157,12 @@ export class GameRenderer {
 
   private updatePointerCursor(sx: number, sy: number): void {
     if (this.placingBuilding) {
-      this.app.canvas.style.cursor = 'crosshair';
+      const snapshot = this.bridge.latest.curr;
+      const position = this.snappedPlacement(sx, sy);
+      this.app.canvas.style.cursor =
+        snapshot && this.isPlacementValid(this.placingBuilding, position, snapshot)
+          ? 'crosshair'
+          : 'not-allowed';
       return;
     }
     const snapshot = this.bridge.latest.curr;
@@ -1098,10 +1174,12 @@ export class GameRenderer {
     );
     this.app.canvas.style.cursor =
       hasSelectedHarvester && snapshot && this.findResourceAt(sx, sy, snapshot)
-        ? 'cell'
-        : hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot)
-          ? 'crosshair'
-          : 'default';
+          ? 'cell'
+          : hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot)
+            ? 'crosshair'
+            : hasSelectedUnits
+              ? 'move'
+              : 'pointer';
   }
 
   private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
