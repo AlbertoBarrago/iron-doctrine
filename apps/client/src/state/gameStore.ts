@@ -31,9 +31,19 @@ export interface SelectedProduction {
   produces: string[];
 }
 
+export type CommandTab = 'orders' | 'build' | 'production';
+
+export function preferredCommandTab(
+  selected: SelectedEntitySummary | null,
+  production: SelectedProduction | null,
+): CommandTab {
+  if (production) return 'production';
+  if (selected?.commands.includes('build')) return 'build';
+  return 'orders';
+}
+
 export type CommandAvailability =
-  | { available: true; label: 'Ready' }
-  | { available: false; label: string };
+  { available: true; label: 'Ready' } | { available: false; label: string };
 
 export function commandAvailability(credits: number, cost: number): CommandAvailability {
   if (credits >= cost) return { available: true, label: 'Ready' };

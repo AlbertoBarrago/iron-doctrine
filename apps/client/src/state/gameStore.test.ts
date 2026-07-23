@@ -1,5 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { commandAvailability, nextTutorialStep, selectionCommands } from './gameStore.js';
+import {
+  commandAvailability,
+  nextTutorialStep,
+  preferredCommandTab,
+  selectionCommands,
+} from './gameStore.js';
+
+describe('contextual command tabs', () => {
+  const selected = (commands: Array<'move' | 'build'>) => ({
+    label: 'Selection',
+    kind: 'unit' as const,
+    count: 1,
+    commands,
+  });
+
+  it('opens build controls for a construction yard', () => {
+    expect(preferredCommandTab(selected(['build']), null)).toBe('build');
+  });
+
+  it('prioritizes production facilities and defaults units to orders', () => {
+    expect(
+      preferredCommandTab(selected([]), {
+        building: 1,
+        buildingType: 'barracks',
+        queue: [],
+        progressTicks: 0,
+        currentBuildTicks: 0,
+        produces: ['rifleman'],
+      }),
+    ).toBe('production');
+    expect(preferredCommandTab(selected(['move']), null)).toBe('orders');
+  });
+});
 
 describe('command availability', () => {
   it('reports when a command is affordable', () => {

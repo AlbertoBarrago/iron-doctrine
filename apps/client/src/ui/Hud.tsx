@@ -1,8 +1,10 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
   commandAvailability,
+  preferredCommandTab,
   useGameStore,
+  type CommandTab,
   type SelectedEntitySummary,
   type SelectedProduction,
   type SelectionCommand,
@@ -99,6 +101,7 @@ interface HudProps {
 
 /** Industrial RTS command surface and progressive first-match guidance. */
 export function Hud(props: HudProps): JSX.Element {
+  const [activeTab, setActiveTab] = useState<CommandTab>('orders');
   const fps = useGameStore((state) => state.fps);
   const entityCount = useGameStore((state) => state.entityCount);
   const credits = useGameStore((state) => state.credits);
@@ -120,6 +123,9 @@ export function Hud(props: HudProps): JSX.Element {
     window.addEventListener('keydown', closeOnEscape);
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [props.setupOpen, props.onSetupChange]);
+  useEffect(() => {
+    setActiveTab(preferredCommandTab(selectedEntity, selectedProduction));
+  }, [selectedEntity, selectedProduction]);
 
   return (
     <>
@@ -165,19 +171,19 @@ export function Hud(props: HudProps): JSX.Element {
           <Stat label="Force" value={String(entityCount)} />
         </div>
 
-        {baseOperational ? props.minimap : null}
-
         <section className="field-directive">
-          <span>{tutorial.number}</span>
+          <span>!</span>
           <div>
-            <small>FIELD DIRECTIVE</small>
-            <strong>{tutorial.title}</strong>
+            <small>PRIMARY MISSION</small>
+            <strong>{scenario?.objective ?? tutorial.title}</strong>
             <p>{tutorial.instruction}</p>
           </div>
         </section>
 
+        {baseOperational ? props.minimap : null}
+
         {selectedEntity ? (
-          <SelectionCard entity={selectedEntity} onGather={props.onGather} onStop={props.onStop} />
+          <SelectionCard entity={selectedEntity} />
         ) : (
           <div className="panel-empty panel-empty--selection">
             <span className="panel-empty__icon">⌖</span>
@@ -188,44 +194,62 @@ export function Hud(props: HudProps): JSX.Element {
           </div>
         )}
 
-        <div className="panel-separator"><span /></div>
-
-        {baseOperational ? (
-          <>
-            <PanelHeading eyebrow="CONSTRUCTION YARD" title="Structures" code="BUILD" />
-            <div className="build-list">
-              {BUILDABLE_STRUCTURES.map(({ id, label, purpose, unlocks }) => {
-                const stats = BUILDING_STATS[id]!;
-                const active = placingBuilding === id;
-                const availability = commandAvailability(credits, stats.cost);
-                return (
-                  <button
-                    key={id}
-                    className={`command-button${active ? ' command-button--active' : ''}`}
-                    disabled={!availability.available}
-                    onClick={() => props.onPlaceBuilding(id)}
-                    title={availability.label}
-                  >
-                    <span className="command-button__icon">{buildingSymbol(id)}</span>
-                    <span className="command-button__copy">
-                      <strong>{label}</strong>
-                      <small>{purpose}</small>
-                      <small className="command-button__unlocks">{unlocks}</small>
-                    </span>
-                    <span className="command-button__meta">
-                      <span className="command-button__cost">${stats.cost}</span>
-                      <small className={availability.available ? 'is-ready' : 'is-blocked'}>
-                        {availability.label}
-                      </small>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="panel-separator"><span /></div>
-            <PanelHeading eyebrow="SELECTED FACILITY" title="Production" code="QUEUE" />
-            {selectedProduction ? (
+        <section className="command-workspace">
+          <div className="command-tabs" role="tablist" aria-label="Command sections">
+            {(['orders', 'build', 'production'] as const).map((tab) => (
+              <button
+                key={tab}
+                role="tab"
+                aria-selected={activeTab === tab}
+                className={activeTab === tab ? 'is-active' : ''}
+                disabled={tab !== 'orders' && !baseOperational}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="command-workspace__pane">
+            {activeTab === 'orders' ? (
+              selectedEntity ? (
+                <OrdersPanel
+                  entity={selectedEntity}
+                  onGather={props.onGather}
+                  onStop={props.onStop}
+                />
+              ) : (
+                <WorkspaceEmpty title="No selection" copy="Select a unit or structure." />
+              )
+            ) : activeTab === 'build' ? (
+              <div className="build-list">
+                {BUILDABLE_STRUCTURES.map(({ id, label, purpose, unlocks }) => {
+                  const stats = BUILDING_STATS[id]!;
+                  const active = placingBuilding === id;
+                  const availability = commandAvailability(credits, stats.cost);
+                  return (
+                    <button
+                      key={id}
+                      className={`command-button${active ? ' command-button--active' : ''}`}
+                      disabled={!availability.available}
+                      onClick={() => props.onPlaceBuilding(id)}
+                      title={`${purpose}. ${unlocks}. ${availability.label}.`}
+                    >
+                      <span className="command-button__icon">{buildingSymbol(id)}</span>
+                      <span className="command-button__copy">
+                        <strong>{label}</strong>
+                        <small className="command-button__unlocks">{unlocks}</small>
+                      </span>
+                      <span className="command-button__meta">
+                        <span className="command-button__cost">${stats.cost}</span>
+                        <small className={availability.available ? 'is-ready' : 'is-blocked'}>
+                          {availability.label}
+                        </small>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : selectedProduction ? (
               <ProductionPanel
                 credits={credits}
                 production={selectedProduction}
@@ -233,25 +257,10 @@ export function Hud(props: HudProps): JSX.Element {
                 onCancel={props.onCancelProduction}
               />
             ) : (
-              <div className="panel-empty">
-                <span className="panel-empty__icon">!</span>
-                <div>
-                  <strong>Facility required</strong>
-                  <small>Select a barracks or war factory.</small>
-                </div>
-              </div>
+              <WorkspaceEmpty title="Facility required" copy="Select a barracks or war factory." />
             )}
-          </>
-        ) : (
-          <section className="command-lock">
-            <div className="command-lock__emblem">ID</div>
-            <span>COMMAND UPLINK OFFLINE</span>
-            <strong>
-              {scenario?.phase === 'recovering' ? 'Base recovery in progress' : 'Find the base'}
-            </strong>
-            <small>Construction, production and radar will activate after recovery.</small>
-          </section>
-        )}
+          </div>
+        </section>
 
         <div className="command-panel__footer">
           <span>
@@ -412,15 +421,7 @@ const COMMAND_HELP: Record<SelectionCommand, { label: string; instruction: strin
   rally: { label: 'Rally point', instruction: 'Right-click terrain to set it' },
 };
 
-function SelectionCard({
-  entity,
-  onGather,
-  onStop,
-}: {
-  entity: SelectedEntitySummary;
-  onGather: () => void;
-  onStop: () => void;
-}): JSX.Element {
+function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Element {
   const health = entity.maxHp && entity.hp !== undefined ? (entity.hp / entity.maxHp) * 100 : null;
   return (
     <section className="selection-card steel-panel">
@@ -445,25 +446,47 @@ function SelectionCard({
           {entity.status}
         </div>
       ) : null}
-      <div className="selection-card__orders">
-        <span className="panel-kicker">AVAILABLE ORDERS</span>
-        {entity.commands.map((command) => {
-          const help = COMMAND_HELP[command];
-          const action = command === 'gather' ? onGather : command === 'stop' ? onStop : null;
-          return action ? (
-            <button key={command} onClick={action}>
-              <strong>{help.label}</strong>
-              <small>{help.instruction}</small>
-            </button>
-          ) : (
-            <div key={command} className="selection-card__order">
-              <strong>{help.label}</strong>
-              <small>{help.instruction}</small>
-            </div>
-          );
-        })}
-      </div>
     </section>
+  );
+}
+
+function OrdersPanel({
+  entity,
+  onGather,
+  onStop,
+}: {
+  entity: SelectedEntitySummary;
+  onGather(): void;
+  onStop(): void;
+}): JSX.Element {
+  return (
+    <div className="quick-orders">
+      {entity.commands.map((command) => {
+        const help = COMMAND_HELP[command];
+        const action = command === 'gather' ? onGather : command === 'stop' ? onStop : null;
+        return action ? (
+          <button key={command} onClick={action}>
+            <strong>{help.label}</strong>
+            <small>{help.instruction}</small>
+          </button>
+        ) : (
+          <div key={command}>
+            <strong>{help.label}</strong>
+            <small>{help.instruction}</small>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WorkspaceEmpty({ title, copy }: { title: string; copy: string }): JSX.Element {
+  return (
+    <div className="workspace-empty">
+      <span>!</span>
+      <strong>{title}</strong>
+      <small>{copy}</small>
+    </div>
   );
 }
 
@@ -527,13 +550,20 @@ function SetupOverlay({
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="setup-dialog steel-panel" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+      <section
+        className="setup-dialog steel-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="setup-title"
+      >
         <header className="setup-dialog__header">
           <div>
             <span className="panel-kicker">SIMULATION PAUSED</span>
             <h2 id="setup-title">Field setup</h2>
           </div>
-          <button className="metal-button" onClick={onClose}>Return to battle</button>
+          <button className="metal-button" onClick={onClose}>
+            Return to battle
+          </button>
         </header>
         <div className="setup-grid">
           <section className="setup-section">
@@ -574,9 +604,18 @@ function SetupOverlay({
           <section className="setup-section">
             <PanelHeading eyebrow="OPERATION STATUS" title="Mission" code="INFO" />
             <dl className="setup-mission">
-              <div><dt>Objective</dt><dd>{objective}</dd></div>
-              <div><dt>Field assets</dt><dd>{assets}</dd></div>
-              <div><dt>Command uplink</dt><dd>{baseOperational ? 'ONLINE' : 'OFFLINE'}</dd></div>
+              <div>
+                <dt>Objective</dt>
+                <dd>{objective}</dd>
+              </div>
+              <div>
+                <dt>Field assets</dt>
+                <dd>{assets}</dd>
+              </div>
+              <div>
+                <dt>Command uplink</dt>
+                <dd>{baseOperational ? 'ONLINE' : 'OFFLINE'}</dd>
+              </div>
               <div>
                 <dt>Hostile forces</dt>
                 <dd>
@@ -587,7 +626,10 @@ function SetupOverlay({
                       : 'ACTIVE'}
                 </dd>
               </div>
-              <div><dt>Render link</dt><dd>{fps} FPS</dd></div>
+              <div>
+                <dt>Render link</dt>
+                <dd>{fps} FPS</dd>
+              </div>
             </dl>
           </section>
         </div>
