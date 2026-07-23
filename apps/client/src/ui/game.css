@@ -1715,7 +1715,11 @@ kbd {
   aspect-ratio: 1;
 }
 .controls-strip {
-  right: 336px;
+  right: 326px;
+  left: 12px;
+  transform: none;
+  justify-content: center;
+  gap: 9px;
 }
 
 @media (max-width: 860px) {
@@ -1734,6 +1738,6 @@ kbd {
     height: auto;
   }
   .controls-strip {
-    right: 290px;
+    right: 286px;
   }
 }
