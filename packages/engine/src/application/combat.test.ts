@@ -18,9 +18,13 @@ function spawn(sim: Simulation, unit: string, player: number, x: number, y: numb
 describe('Combat', () => {
   it('a rifleman auto-acquires and kills an adjacent enemy (hitscan)', () => {
     const sim = new Simulation({ seed: 1 });
-    spawn(sim, 'rifleman', 0, 0, 0); // damage 8, range 6, instant
+    const rifleman = spawn(sim, 'rifleman', 0, 0, 0); // damage 8, range 6, instant
     const enemy = spawn(sim, 'engineer', 1, 3, 0); // 60 hp, unarmed
     expect(sim.world.get(enemy, Health)!.max).toBe(60);
+    expect(sim.snapshot().entities.find((entity) => entity.id === rifleman)).toMatchObject({
+      attackTarget: enemy,
+      weaponCooldownLeft: 12,
+    });
 
     let killed = false;
     for (let i = 0; i < 200; i++) {

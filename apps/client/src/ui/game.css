@@ -1530,7 +1530,7 @@ kbd {
     -10px 0 28px rgba(0, 0, 0, 0.52);
 }
 .command-panel.is-operational {
-  padding-bottom: 258px;
+  padding-bottom: 54px;
 }
 .command-panel__masthead {
   position: sticky;
@@ -1700,11 +1700,9 @@ kbd {
   padding: 10px 12px;
 }
 .minimap-frame {
-  z-index: 23;
-  right: 17px;
-  bottom: 42px;
-  left: auto;
-  width: 280px;
+  position: static;
+  width: auto;
+  margin-bottom: 10px;
   padding: 8px;
   box-shadow: none;
 }
@@ -1712,8 +1710,9 @@ kbd {
   display: none;
 }
 .minimap-frame canvas {
-  width: 258px;
-  height: 174px;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
 }
 .controls-strip {
   right: 336px;
@@ -1728,12 +1727,11 @@ kbd {
     grid-template-columns: 6px minmax(0, 1fr);
   }
   .minimap-frame {
-    right: 12px;
-    width: 252px;
+    width: auto;
   }
   .minimap-frame canvas {
-    width: 230px;
-    height: 156px;
+    width: 100%;
+    height: auto;
   }
   .controls-strip {
     right: 290px;

@@ -79,6 +79,7 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
     <div className="game-shell">
       <div ref={containerRef} className="game-canvas" />
       <Hud
+        minimap={<Minimap onCanvas={attachMinimap} onClick={minimapClick} />}
         onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
         onCancelProduction={() => rendererRef.current?.cancelProduction()}
         onPlaceBuilding={(building) => rendererRef.current?.beginBuildingPlacement(building)}
@@ -87,7 +88,6 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
         onStop={() => rendererRef.current?.stopSelectedUnits()}
         onRestart={() => setSession((current) => current + 1)}
       />
-      <Minimap onCanvas={attachMinimap} onClick={minimapClick} />
     </div>
   );
 }

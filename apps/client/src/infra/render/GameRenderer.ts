@@ -369,6 +369,24 @@ export class GameRenderer {
       const r = e.radius * this.camera.scale;
       const color = OWNER_COLORS[e.owner % OWNER_COLORS.length]!;
 
+      if (
+        e.unitType === 'rifleman' &&
+        e.attackTarget !== undefined &&
+        e.weaponCooldownLeft !== undefined &&
+        e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0)
+      ) {
+        const target = curr.entities.find((candidate) => candidate.id === e.attackTarget);
+        if (target) {
+          const targetScreen = this.camera.worldToScreen(target.x, target.y);
+          this.units
+            .moveTo(sx, sy)
+            .lineTo(targetScreen.sx, targetScreen.sy)
+            .stroke({ width: 1.5, color: 0xf4d77a, alpha: 0.85 })
+            .circle(sx + Math.cos(e.angle) * r, sy + Math.sin(e.angle) * r, 3)
+            .fill({ color: 0xffe29a, alpha: 0.95 });
+        }
+      }
+
       if (e.kind === 'building') {
         const s = r;
         if (this.selected.has(e.id)) {

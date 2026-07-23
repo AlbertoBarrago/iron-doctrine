@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
   commandAvailability,
@@ -81,6 +81,7 @@ const TUTORIAL: Record<TutorialStep, { number: string; title: string; instructio
 };
 
 interface HudProps {
+  minimap: ReactNode;
   onQueueProduction(unit: string): void;
   onCancelProduction(): void;
   onPlaceBuilding(building: string): void;
@@ -165,6 +166,8 @@ export function Hud(props: HudProps): JSX.Element {
           />
           <Stat label="Force" value={String(entityCount)} />
         </div>
+
+        {baseOperational ? props.minimap : null}
 
         <section className="field-directive">
           <span>{tutorial.number}</span>

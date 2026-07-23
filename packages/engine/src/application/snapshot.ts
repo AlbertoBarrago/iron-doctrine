@@ -17,6 +17,8 @@ import {
   ResourceNode,
   Production,
   Construction,
+  Weapon,
+  Attack,
 } from '../domain/components/index.js';
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
@@ -44,6 +46,9 @@ export interface EntitySnapshot {
   production?: ProductionSnapshot;
   /** Present while a placed building is not operational yet. */
   construction?: ConstructionSnapshot;
+  /** Presentation-only combat timing used for muzzle and tracer feedback. */
+  weaponCooldownLeft?: number;
+  attackTarget?: number;
 }
 
 export interface ConstructionSnapshot {
@@ -101,6 +106,8 @@ export function buildSnapshot(
     const building = world.get(e, Building);
     const production = world.get(e, Production);
     const construction = world.get(e, Construction);
+    const weapon = world.get(e, Weapon);
+    const attack = world.get(e, Attack);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
       : building
@@ -134,6 +141,8 @@ export function buildSnapshot(
           buildTicks: construction.buildTicks,
         },
       }),
+      ...(weapon && { weaponCooldownLeft: weapon.cooldownLeft }),
+      ...(attack && attack.target !== -1 && { attackTarget: attack.target }),
     });
   }
   return { tick, entities, players };
