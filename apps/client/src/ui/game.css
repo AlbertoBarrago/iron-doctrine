@@ -50,7 +50,7 @@ kbd {
 }
 .game-canvas {
   position: absolute;
-  inset: 0;
+  inset: 0 314px 0 0;
 }
 
 .steel-panel {
@@ -1821,6 +1821,7 @@ kbd {
 }
 .command-panel .field-directive,
 .command-panel .minimap-frame {
+  order: 4;
   margin-bottom: 8px;
 }
 .command-panel .minimap-frame__screen {
@@ -1968,6 +1969,9 @@ kbd {
   }
 }
 @media (max-width: 860px) {
+  .game-canvas {
+    right: 276px;
+  }
   .command-panel {
     width: 276px;
   }

@@ -180,8 +180,6 @@ export function Hud(props: HudProps): JSX.Element {
           </div>
         </section>
 
-        {baseOperational ? props.minimap : null}
-
         {selectedEntity ? (
           <SelectionCard entity={selectedEntity} />
         ) : (
@@ -261,6 +259,8 @@ export function Hud(props: HudProps): JSX.Element {
             )}
           </div>
         </section>
+
+        {baseOperational ? props.minimap : null}
 
         <div className="command-panel__footer">
           <span>

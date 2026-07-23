@@ -14,6 +14,7 @@ import { Application, Container, Graphics } from 'pixi.js';
 import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
 import { Camera, edgePanDirection, exceedsDragThreshold } from './camera.js';
+import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
@@ -673,19 +674,18 @@ export class GameRenderer {
       my: ((wy - fog.originY) / worldH) * H,
     });
 
-    ctx.fillStyle = '#11170e';
+    ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, W, H);
 
-    // Fog: darken hidden/explored using a coarse cell step to stay cheap.
-    const step = Math.max(1, Math.floor(fog.width / 64));
-    const cw = (W / fog.width) * step + 1;
-    const ch = (H / fog.height) * step + 1;
-    for (let cy = 0; cy < fog.height; cy += step) {
-      for (let cx = 0; cx < fog.width; cx += step) {
-        const s = fog.cells[cy * fog.width + cx]!;
-        if (s === 2) continue;
-        ctx.fillStyle = s === 0 ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.4)';
-        ctx.fillRect((cx / fog.width) * W, (cy / fog.height) * H, cw, ch);
+    // Draw every fog cell so narrow explored paths are never lost by coarse sampling.
+    const cw = W / fog.width;
+    const ch = H / fog.height;
+    const blocked = new Set(this.activeMap?.blocked.map((cell) => `${cell.x}:${cell.y}`) ?? []);
+    for (let cy = 0; cy < fog.height; cy++) {
+      for (let cx = 0; cx < fog.width; cx++) {
+        const visibility = fog.cells[cy * fog.width + cx]!;
+        ctx.fillStyle = minimapTerrainColor(visibility, blocked.has(`${cx}:${cy}`));
+        ctx.fillRect(cx * cw, cy * ch, Math.ceil(cw + 0.25), Math.ceil(ch + 0.25));
       }
     }
 
