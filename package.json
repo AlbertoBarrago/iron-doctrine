@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Browser-based real-time strategy engine (original C&C-inspired gameplay).",
+  "description": "Original browser-based real-time strategy game.",
   "engines": {
     "node": ">=20"
   },

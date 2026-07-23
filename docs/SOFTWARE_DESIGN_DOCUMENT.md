@@ -1,6 +1,6 @@
 # Software Design Document — Project "Iron Doctrine"
 
-> Browser-based, real-time strategy engine inspired by classic Command & Conquer gameplay.
+> Original browser-based real-time strategy game with deterministic simulation.
 > Original code and assets only. No copyrighted names, factions, artwork or audio.
 
 - **Status:** Draft v1.0 — architecture baseline
@@ -131,7 +131,7 @@ Ports (interfaces) live in `application`; adapters in `infrastructure`. Example 
 pnpm workspaces. Three publishable-shape packages + two apps.
 
 ```
-command-and-conquere/
+iron-doctrine/
 ├─ pnpm-workspace.yaml
 ├─ package.json                 # root scripts, shared devDeps
 ├─ tsconfig.base.json           # strict, project references
