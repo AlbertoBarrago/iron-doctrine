@@ -52,12 +52,14 @@ export function App(): JSX.Element {
 function Game({ config }: { config: SkirmishConfig }): JSX.Element {
   const [session, setSession] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
+  const [manualPaused, setManualPaused] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.7);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const initialAudio = useRef({ muted: audioMuted, volume: audioVolume });
+  const paused = setupOpen || manualPaused;
 
   useEffect(() => {
     void session;
@@ -76,6 +78,28 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
     };
   }, [config, session]);
 
+  useEffect(() => {
+    rendererRef.current?.setPaused(paused);
+  }, [paused]);
+
+  useEffect(() => {
+    const togglePause = (event: KeyboardEvent): void => {
+      const target = event.target;
+      if (
+        event.repeat ||
+        event.key.toLowerCase() !== 'p' ||
+        (target instanceof HTMLElement &&
+          (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)))
+      ) {
+        return;
+      }
+      event.preventDefault();
+      setManualPaused((current) => !current);
+    };
+    window.addEventListener('keydown', togglePause);
+    return () => window.removeEventListener('keydown', togglePause);
+  }, []);
+
   const attachMinimap = useCallback((c: HTMLCanvasElement | null) => {
     minimapCanvasRef.current = c;
     rendererRef.current?.attachMinimap(c);
@@ -90,12 +114,13 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
       <Hud
         minimap={<Minimap onCanvas={attachMinimap} onClick={minimapClick} />}
         setupOpen={setupOpen}
+        paused={manualPaused}
         audioMuted={audioMuted}
         audioVolume={audioVolume}
         onSetupChange={(open) => {
           setSetupOpen(open);
-          rendererRef.current?.setPaused(open);
         }}
+        onPausedChange={setManualPaused}
         onAudioMutedChange={(muted) => {
           setAudioMuted(muted);
           rendererRef.current?.setAudioMuted(muted);
@@ -112,6 +137,7 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
         onStop={() => rendererRef.current?.stopSelectedUnits()}
         onRestart={() => {
           setSetupOpen(false);
+          setManualPaused(false);
           setSession((current) => current + 1);
         }}
       />

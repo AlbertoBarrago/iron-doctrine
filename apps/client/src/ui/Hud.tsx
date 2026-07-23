@@ -85,9 +85,11 @@ const TUTORIAL: Record<TutorialStep, { number: string; title: string; instructio
 interface HudProps {
   minimap: ReactNode;
   setupOpen: boolean;
+  paused: boolean;
   audioMuted: boolean;
   audioVolume: number;
   onSetupChange(open: boolean): void;
+  onPausedChange(paused: boolean): void;
   onAudioMutedChange(muted: boolean): void;
   onAudioVolumeChange(volume: number): void;
   onQueueProduction(unit: string): void;
@@ -307,6 +309,30 @@ export function Hud(props: HudProps): JSX.Element {
           onMutedChange={props.onAudioMutedChange}
           onVolumeChange={props.onAudioVolumeChange}
         />
+      ) : null}
+
+      {props.paused && !props.setupOpen && match?.status !== 'finished' ? (
+        <div
+          className="pause-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pause-title"
+        >
+          <div className="pause-dialog steel-panel">
+            <span className="panel-kicker">SIMULATION HALTED</span>
+            <strong id="pause-title">Paused</strong>
+            <span>
+              Press <kbd>P</kbd> to resume
+            </span>
+            <button
+              type="button"
+              className="metal-button metal-button--primary"
+              onClick={() => props.onPausedChange(false)}
+            >
+              Resume battle
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {match?.status === 'finished' ? (
@@ -572,6 +598,7 @@ function SetupOverlay({
     ['Double LMB', 'Center camera'],
     ['Wheel', 'Zoom'],
     ['WASD / edges', 'Pan camera'],
+    ['P', 'Pause or resume'],
   ];
   return (
     <div
