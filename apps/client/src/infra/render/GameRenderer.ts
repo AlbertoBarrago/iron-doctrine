@@ -680,7 +680,7 @@ export class GameRenderer {
     // Draw every fog cell so narrow explored paths are never lost by coarse sampling.
     const cw = W / fog.width;
     const ch = H / fog.height;
-    const blocked = new Set(this.activeMap?.blocked.map((cell) => `${cell.x}:${cell.y}`) ?? []);
+    const blocked = new Set(this.activeMap?.blocked.map(([x, y]) => `${x}:${y}`) ?? []);
     for (let cy = 0; cy < fog.height; cy++) {
       for (let cx = 0; cx < fog.width; cx++) {
         const visibility = fog.cells[cy * fog.width + cx]!;
