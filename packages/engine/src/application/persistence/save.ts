@@ -15,6 +15,10 @@ import type { EntityManagerState } from '../ecs/entity.js';
 import type { PlayerResources } from '../../domain/economy/player-economy.js';
 import type { AIPlayerConfig } from '../ai/ai-director.js';
 import type { MatchStateSnapshot } from '../match/match-state.js';
+import type {
+  FirstContactConfig,
+  FirstContactPhase,
+} from '../scenario/first-contact.js';
 
 interface ComponentBlock {
   name: string;
@@ -34,6 +38,10 @@ export interface SaveState {
   economy: Array<[number, PlayerResources]>;
   tech: Array<[number, string[]]>;
   match?: { players: number[]; state: MatchStateSnapshot };
+  firstContact?: {
+    config: FirstContactConfig;
+    state: { phase: FirstContactPhase; elapsedTicks: number };
+  };
 }
 
 /** Serialize a running simulation into a plain, JSON-safe object. */
@@ -68,6 +76,12 @@ export function saveSimulation(
     ...(sim.match && {
       match: { players: [...sim.match.players], state: sim.match.snapshot() },
     }),
+    ...(sim.firstContact && {
+      firstContact: {
+        config: sim.firstContact.config,
+        state: sim.firstContact.serialize(),
+      },
+    }),
   };
 }
 
@@ -86,6 +100,7 @@ export function loadSimulation(save: SaveState): Simulation {
     grid,
     aiPlayers: save.aiPlayers,
     ...(save.match && { matchPlayers: save.match.players }),
+    ...(save.firstContact && { firstContact: save.firstContact.config }),
   });
 
   sim.world.entities.restore(save.entityManager);
@@ -103,6 +118,7 @@ export function loadSimulation(save: SaveState): Simulation {
   sim.rng.setState(save.rngState);
   sim.setTick(save.tick);
   if (save.match && sim.match) sim.match.restore(save.match.state);
+  if (save.firstContact && sim.firstContact) sim.firstContact.restore(save.firstContact.state);
   return sim;
 }
 

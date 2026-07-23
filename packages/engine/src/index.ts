@@ -85,6 +85,12 @@ export type {
 // Simulation + snapshot
 export { Simulation } from './application/simulation.js';
 export type { SimulationConfig } from './application/simulation.js';
+export { FirstContactState } from './application/scenario/first-contact.js';
+export type {
+  FirstContactConfig,
+  FirstContactPhase,
+  FirstContactSnapshot,
+} from './application/scenario/first-contact.js';
 export { buildSnapshot, hashState } from './application/snapshot.js';
 export type {
   Snapshot,

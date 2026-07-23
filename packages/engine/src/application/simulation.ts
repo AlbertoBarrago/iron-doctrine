@@ -29,6 +29,11 @@ import * as fp from '../domain/math/fixed.js';
 import { buildSnapshot, hashState, type Snapshot } from './snapshot.js';
 import { SIM_HZ, asPlayerId, asTick } from '@iron/shared';
 import { createMatchSystem, MatchState } from './match/match-state.js';
+import {
+  createFirstContactSystem,
+  FirstContactState,
+  type FirstContactConfig,
+} from './scenario/first-contact.js';
 
 export interface SimulationConfig {
   seed: number;
@@ -44,6 +49,8 @@ export interface SimulationConfig {
   startingTech?: Record<number, string[]>;
   /** Enables deterministic victory rules for the listed match participants. */
   matchPlayers?: number[];
+  /** Optional authored opening that recovers the player's base through exploration. */
+  firstContact?: FirstContactConfig;
 }
 
 interface Deps {
@@ -55,12 +62,16 @@ interface Deps {
   teamOf: TeamResolver;
   aiPlayers: AIPlayerConfig[];
   match: MatchState | null;
+  firstContact: FirstContactState | null;
 }
 
 /** Default ordered pipeline for the current milestone. */
 const defaultSystems = (d: Deps): System[] => [
   createCommandSystem(d.bus, d.grid, d.economy, d.tech),
   ConstructionSystem,
+  ...(d.firstContact
+    ? [createFirstContactSystem(d.firstContact, d.grid, d.economy)]
+    : []),
   createAISystem(d.aiPlayers, d.economy, d.teamOf, d.grid),
   // Energy is recomputed before combat so power-gated defenses see the current balance.
   createEnergySystem(d.economy),
@@ -85,6 +96,7 @@ export class Simulation {
   readonly teamOf: TeamResolver;
   readonly rng: Random;
   readonly match: MatchState | null;
+  readonly firstContact: FirstContactState | null;
   private readonly scheduler = new Scheduler();
   private readonly dt = fp.fromFloat(1 / SIM_HZ);
   private currentTick = 0;
@@ -97,6 +109,7 @@ export class Simulation {
     this.match = config.matchPlayers?.length
       ? new MatchState(config.matchPlayers.map((player) => asPlayerId(player)))
       : null;
+    this.firstContact = config.firstContact ? new FirstContactState(config.firstContact) : null;
     if (config.startingCredits) {
       for (const [player, amount] of Object.entries(config.startingCredits)) {
         this.economy.addCredits(Number(player), amount);
@@ -116,6 +129,7 @@ export class Simulation {
       teamOf: this.teamOf,
       aiPlayers: config.aiPlayers ?? [],
       match: this.match,
+      firstContact: this.firstContact,
     });
     for (const s of systems) this.scheduler.add(s);
   }
@@ -155,6 +169,7 @@ export class Simulation {
     });
     const snap = buildSnapshot(this.world, this.currentTick, players);
     if (this.match) snap.match = this.match.snapshot();
+    if (this.firstContact) snap.scenario = this.firstContact.snapshot();
     snap.fog = {
       width: this.fog.width,
       height: this.fog.height,

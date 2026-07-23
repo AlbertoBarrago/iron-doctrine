@@ -21,6 +21,7 @@ import {
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
 import type { MatchStateSnapshot } from './match/match-state.js';
+import type { FirstContactSnapshot } from './scenario/first-contact.js';
 
 export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource';
 
@@ -81,6 +82,7 @@ export interface Snapshot {
   players: PlayerSnapshot[];
   fog?: FogSnapshot;
   match?: MatchStateSnapshot;
+  scenario?: FirstContactSnapshot;
 }
 
 export function buildSnapshot(
