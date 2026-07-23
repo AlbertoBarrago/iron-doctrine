@@ -13,7 +13,7 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
-import { Camera, edgePanDirection } from './camera.js';
+import { Camera, edgePanDirection, exceedsDragThreshold } from './camera.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
@@ -65,6 +65,8 @@ export class GameRenderer {
   private placementPointer: { x: number; y: number } | null = null;
   private navigationPointer: { x: number; y: number } | null = null;
   private cameraDrag: {
+    startX: number;
+    startY: number;
     x: number;
     y: number;
     pointerId: number;
@@ -927,8 +929,18 @@ export class GameRenderer {
     canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
     canvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
     canvas.addEventListener('pointercancel', (e) => this.onPointerUp(e));
-    canvas.addEventListener('pointerleave', () => {
-      if (!this.cameraDrag) this.navigationPointer = null;
+    canvas.addEventListener('pointerleave', (event) => {
+      if (this.cameraDrag) return;
+      const point = this.canvasPoint(event);
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      const leftViewport = point.x <= 0 || point.x >= width || point.y <= 0 || point.y >= height;
+      this.navigationPointer = leftViewport
+        ? {
+            x: Math.min(width, Math.max(0, point.x)),
+            y: Math.min(height, Math.max(0, point.y)),
+          }
+        : null;
     });
     canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
     canvas.addEventListener('wheel', (e) => {
@@ -946,16 +958,19 @@ export class GameRenderer {
   }
 
   private onPointerDown(e: PointerEvent): void {
+    const point = this.canvasPoint(e);
     if (this.placingBuilding) {
-      if (e.button === 0) this.confirmBuildingPlacement(e.offsetX, e.offsetY);
+      if (e.button === 0) this.confirmBuildingPlacement(point.x, point.y);
       else if (e.button === 2) this.cancelBuildingPlacement();
       return;
     }
     if (e.button === 1 || e.button === 2) {
       e.preventDefault();
       this.cameraDrag = {
-        x: e.offsetX,
-        y: e.offsetY,
+        startX: point.x,
+        startY: point.y,
+        x: point.x,
+        y: point.y,
         pointerId: e.pointerId,
         button: e.button,
         moved: e.button === 1,
@@ -964,47 +979,51 @@ export class GameRenderer {
       return;
     }
     if (e.button === 0) {
-      this.dragStart = { x: e.offsetX, y: e.offsetY };
-      this.dragNow = { x: e.offsetX, y: e.offsetY };
+      this.dragStart = point;
+      this.dragNow = point;
     }
   }
 
   private onPointerMove(e: PointerEvent): void {
-    this.placementPointer = { x: e.offsetX, y: e.offsetY };
-    this.navigationPointer = { x: e.offsetX, y: e.offsetY };
+    const point = this.canvasPoint(e);
+    this.placementPointer = point;
+    this.navigationPointer = point;
     if (this.cameraDrag) {
-      const dx = e.offsetX - this.cameraDrag.x;
-      const dy = e.offsetY - this.cameraDrag.y;
-      const moved = this.cameraDrag.moved || Math.hypot(dx, dy) >= 3;
+      const dx = point.x - this.cameraDrag.x;
+      const dy = point.y - this.cameraDrag.y;
+      const moved =
+        this.cameraDrag.moved ||
+        exceedsDragThreshold({ x: this.cameraDrag.startX, y: this.cameraDrag.startY }, point);
       if (moved) {
         this.camera.panByScreenDelta(dx, dy);
         this.clampCamera();
       }
-      this.cameraDrag = { ...this.cameraDrag, x: e.offsetX, y: e.offsetY, moved };
+      this.cameraDrag = { ...this.cameraDrag, x: point.x, y: point.y, moved };
       return;
     }
-    this.updatePointerCursor(e.offsetX, e.offsetY);
-    if (this.dragStart) this.dragNow = { x: e.offsetX, y: e.offsetY };
+    this.updatePointerCursor(point.x, point.y);
+    if (this.dragStart) this.dragNow = point;
   }
 
   private onPointerUp(e: PointerEvent): void {
+    const point = this.canvasPoint(e);
     if ((e.button === 1 || e.button === 2) && this.cameraDrag) {
       const drag = this.cameraDrag;
       if (e.currentTarget instanceof Element && e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
       }
       this.cameraDrag = null;
-      if (drag.button === 2 && !drag.moved) this.issueMove(e.offsetX, e.offsetY);
+      if (drag.button === 2 && !drag.moved) this.issueMove(point.x, point.y);
       return;
     }
     if (e.button !== 0 || !this.dragStart) return;
     const additive = e.ctrlKey || e.shiftKey;
     if (!additive) this.selected.clear();
 
-    const box = { x0: this.dragStart.x, y0: this.dragStart.y, x1: e.offsetX, y1: e.offsetY };
+    const box = { x0: this.dragStart.x, y0: this.dragStart.y, x1: point.x, y1: point.y };
     const isClick = Math.abs(box.x1 - box.x0) < 4 && Math.abs(box.y1 - box.y0) < 4;
     this.selectInBox(box, isClick);
-    if (isClick) this.showCommandFeedback(e.offsetX, e.offsetY, 'select');
+    if (isClick) this.showCommandFeedback(point.x, point.y, 'select');
 
     this.dragStart = null;
     this.dragNow = null;
@@ -1043,11 +1062,12 @@ export class GameRenderer {
   private onDoubleClick(e: MouseEvent): void {
     const curr = this.bridge.latest.curr;
     if (!curr) return;
+    const point = this.canvasPoint(e);
 
-    const clicked = this.findOwnedUnitAt(e.offsetX, e.offsetY, curr);
+    const clicked = this.findOwnedUnitAt(point.x, point.y, curr);
     if (!clicked?.unitType) {
-      this.showCommandFeedback(e.offsetX, e.offsetY, 'select');
-      const target = this.camera.screenToWorld(e.offsetX, e.offsetY);
+      this.showCommandFeedback(point.x, point.y, 'select');
+      const target = this.camera.screenToWorld(point.x, point.y);
       this.camera.x = target.wx;
       this.camera.y = target.wy;
       this.clampCamera();
@@ -1069,6 +1089,11 @@ export class GameRenderer {
 
     this.audio.play('select');
     this.syncSelectionState(curr);
+  }
+
+  private canvasPoint(event: MouseEvent): { x: number; y: number } {
+    const bounds = this.app.canvas.getBoundingClientRect();
+    return { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   }
 
   private findOwnedUnitAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {

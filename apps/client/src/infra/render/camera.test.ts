@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Camera, edgePanDirection } from './camera.js';
+import { CAMERA_DRAG_THRESHOLD, Camera, edgePanDirection, exceedsDragThreshold } from './camera.js';
 
 describe('mouse camera navigation', () => {
   it('detects viewport edges without moving in the safe centre', () => {
@@ -14,6 +14,12 @@ describe('mouse camera navigation', () => {
     camera.panByScreenDelta(64, -32);
     expect(camera.x).toBe(-2);
     expect(camera.y).toBe(1);
+  });
+
+  it('classifies a gesture from its origin instead of individual move events', () => {
+    const start = { x: 20, y: 20 };
+    expect(exceedsDragThreshold(start, { x: 24, y: 23 })).toBe(false);
+    expect(exceedsDragThreshold(start, { x: 20 + CAMERA_DRAG_THRESHOLD, y: 20 })).toBe(true);
   });
 
   it('keeps the viewport centre inside world bounds', () => {

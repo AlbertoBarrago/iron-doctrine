@@ -4,7 +4,16 @@
  * uses it to translate pointer positions back into world space for commands.
  */
 export const PIXELS_PER_UNIT = 32;
-export const EDGE_PAN_MARGIN = 18;
+export const EDGE_PAN_MARGIN = 36;
+export const CAMERA_DRAG_THRESHOLD = 6;
+
+export function exceedsDragThreshold(
+  start: { x: number; y: number },
+  current: { x: number; y: number },
+  threshold = CAMERA_DRAG_THRESHOLD,
+): boolean {
+  return Math.hypot(current.x - start.x, current.y - start.y) >= threshold;
+}
 
 export function edgePanDirection(
   pointer: { x: number; y: number } | null,
