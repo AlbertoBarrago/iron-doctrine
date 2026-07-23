@@ -58,12 +58,15 @@ export function createAISystem(
   economy: PlayerEconomy,
   teamOf: TeamResolver,
   grid: NavGrid,
+  activationOrigin?: () => number | null,
 ): System {
   return {
     name: 'AIDirector',
     update(world: World, ctx: TickContext): void {
       for (const ai of ais) {
-        if (ctx.tick < (ai.activationTick ?? 0)) continue;
+        const origin = activationOrigin ? activationOrigin() : 0;
+        if (origin === null) continue;
+        if (ctx.tick < origin + (ai.activationTick ?? 0)) continue;
         const tuning = TUNING[ai.difficulty];
         if (ctx.tick % tuning.decisionInterval === 0)
           manageEconomyAndProduction(world, ctx, ai, economy, grid);

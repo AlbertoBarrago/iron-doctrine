@@ -72,7 +72,13 @@ const defaultSystems = (d: Deps): System[] => [
   ...(d.firstContact
     ? [createFirstContactSystem(d.firstContact, d.grid, d.economy)]
     : []),
-  createAISystem(d.aiPlayers, d.economy, d.teamOf, d.grid),
+  createAISystem(
+    d.aiPlayers,
+    d.economy,
+    d.teamOf,
+    d.grid,
+    d.firstContact ? () => d.firstContact!.activationOriginTick : undefined,
+  ),
   // Energy is recomputed before combat so power-gated defenses see the current balance.
   createEnergySystem(d.economy),
   createResourceSystem(d.economy),
@@ -153,6 +159,12 @@ export class Simulation {
       rng: this.rng,
     };
     this.scheduler.tick(this.world, ctx);
+    if (this.firstContact?.phase === 'failed' && this.match) {
+      const winner = this.match.players.find(
+        (player) => player !== asPlayerId(this.firstContact!.config.player),
+      );
+      this.match.finish(winner ?? null);
+    }
     this.currentTick++;
   }
 

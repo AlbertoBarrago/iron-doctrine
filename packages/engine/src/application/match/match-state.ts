@@ -39,6 +39,11 @@ export class MatchState {
     this.winner = state.winner;
   }
 
+  finish(winner: PlayerId | null): void {
+    this.status = 'finished';
+    this.winner = winner;
+  }
+
   update(world: World): void {
     if (this.isFinished) return;
     const alive = this.players.filter((player) => hasObjective(world, player));

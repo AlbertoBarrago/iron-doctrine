@@ -254,7 +254,11 @@ export function Hud(props: HudProps): JSX.Element {
 
         <div className="command-panel__footer">
           <span>
-            {aiActivationSeconds > 0 ? `HOSTILE MOBILIZATION ${aiActivationSeconds}s` : 'CONTACT'}
+            {!baseOperational
+              ? 'HOSTILE FORCES HOLDING'
+              : aiActivationSeconds > 0
+                ? `HOSTILE MOBILIZATION ${aiActivationSeconds}s`
+                : 'CONTACT'}
           </span>
           <span>{fps} FPS</span>
         </div>

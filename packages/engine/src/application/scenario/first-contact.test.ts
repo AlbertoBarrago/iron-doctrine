@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { Simulation } from '../simulation.js';
 import { loadSimulation, saveSimulation } from '../persistence/save.js';
+import { Health } from '../../domain/components/index.js';
+import { asEntityId } from '@iron/shared';
 import * as fp from '../../domain/math/fixed.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
@@ -79,5 +81,28 @@ describe('first contact scenario', () => {
     loaded.step();
     loaded.step();
     expect(loaded.snapshot().scenario?.phase).toBe('operational');
+  });
+
+  it('ends the match when the deployed patrol is eliminated', () => {
+    const sim = new Simulation({
+      seed: 7,
+      matchPlayers: [0, 1],
+      firstContact: {
+        player: 0,
+        recoveryAt: at(8, 0),
+        recoveryTicks: 3,
+        recoveredCredits: 2200,
+      },
+    });
+    sim.enqueue({ type: 'spawnUnit', unit: 'rifleman', player: 0, at: at(0, 0) });
+    sim.step();
+    const patrol = sim.snapshot().entities.find((entity) => entity.owner === 0)!;
+    const health = sim.world.get(asEntityId(patrol.id), Health)!;
+    health.hp = 0;
+
+    sim.step();
+    sim.step();
+    expect(sim.snapshot().scenario?.phase).toBe('failed');
+    expect(sim.snapshot().match).toEqual({ status: 'finished', winner: 1 });
   });
 });

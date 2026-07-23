@@ -8,7 +8,7 @@ import { spawnUnit } from '../../domain/archetypes/units.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { Vec2 } from '../../domain/math/vec2.js';
 
-export type FirstContactPhase = 'locate' | 'recovering' | 'operational';
+export type FirstContactPhase = 'locate' | 'recovering' | 'operational' | 'failed';
 
 export interface FirstContactConfig {
   player: number;
@@ -22,11 +22,14 @@ export interface FirstContactSnapshot {
   objective: string;
   progress: number;
   recoveryAt: { x: number; y: number };
+  operationalAtTick: number | null;
 }
 
 export class FirstContactState {
   phase: FirstContactPhase = 'locate';
   private elapsedTicks = 0;
+  private hasDeployedPatrol = false;
+  private operationalAtTick: number | null = null;
 
   constructor(readonly config: FirstContactConfig) {}
 
@@ -41,6 +44,7 @@ export class FirstContactState {
         objective: 'Locate the abandoned command base',
         progress: 0,
         recoveryAt,
+        operationalAtTick: this.operationalAtTick,
       };
     }
     if (this.phase === 'recovering') {
@@ -49,6 +53,16 @@ export class FirstContactState {
         objective: 'Secure the perimeter while engineers restore the base',
         progress: Math.min(1, this.elapsedTicks / this.config.recoveryTicks),
         recoveryAt,
+        operationalAtTick: this.operationalAtTick,
+      };
+    }
+    if (this.phase === 'failed') {
+      return {
+        phase: this.phase,
+        objective: 'Patrol eliminated',
+        progress: 0,
+        recoveryAt,
+        operationalAtTick: this.operationalAtTick,
       };
     }
     return {
@@ -56,19 +70,47 @@ export class FirstContactState {
       objective: 'Build the base and destroy hostile command',
       progress: 1,
       recoveryAt,
+      operationalAtTick: this.operationalAtTick,
     };
   }
 
-  restore(snapshot: { phase: FirstContactPhase; elapsedTicks: number }): void {
+  get activationOriginTick(): number | null {
+    return this.operationalAtTick;
+  }
+
+  restore(snapshot: {
+    phase: FirstContactPhase;
+    elapsedTicks: number;
+    hasDeployedPatrol?: boolean;
+    operationalAtTick?: number | null;
+  }): void {
     this.phase = snapshot.phase;
     this.elapsedTicks = snapshot.elapsedTicks;
+    this.hasDeployedPatrol = snapshot.hasDeployedPatrol ?? this.phase !== 'locate';
+    this.operationalAtTick = snapshot.operationalAtTick ?? null;
   }
 
-  serialize(): { phase: FirstContactPhase; elapsedTicks: number } {
-    return { phase: this.phase, elapsedTicks: this.elapsedTicks };
+  serialize(): {
+    phase: FirstContactPhase;
+    elapsedTicks: number;
+    hasDeployedPatrol: boolean;
+    operationalAtTick: number | null;
+  } {
+    return {
+      phase: this.phase,
+      elapsedTicks: this.elapsedTicks,
+      hasDeployedPatrol: this.hasDeployedPatrol,
+      operationalAtTick: this.operationalAtTick,
+    };
   }
 
-  update(world: World, grid: NavGrid, economy: PlayerEconomy): void {
+  update(world: World, grid: NavGrid, economy: PlayerEconomy, tick: number): void {
+    const patrolAlive = this.playerHasUnits(world);
+    if (patrolAlive) this.hasDeployedPatrol = true;
+    if (this.phase !== 'operational' && this.hasDeployedPatrol && !patrolAlive) {
+      this.phase = 'failed';
+      return;
+    }
     if (this.phase === 'locate') {
       if (this.playerUnitReachedBase(world)) this.phase = 'recovering';
       return;
@@ -86,6 +128,14 @@ export class FirstContactState {
     });
     economy.addCredits(this.config.player, this.config.recoveredCredits);
     this.phase = 'operational';
+    this.operationalAtTick = tick;
+  }
+
+  private playerHasUnits(world: World): boolean {
+    for (const entity of world.query(Owner, UnitType)) {
+      if (world.get(entity, Owner)!.player === this.config.player) return true;
+    }
+    return false;
   }
 
   private playerUnitReachedBase(world: World): boolean {
@@ -110,8 +160,8 @@ export function createFirstContactSystem(
 ): System {
   return {
     name: 'FirstContactSystem',
-    update(world) {
-      scenario.update(world, grid, economy);
+    update(world, ctx) {
+      scenario.update(world, grid, economy, ctx.tick);
     },
   };
 }

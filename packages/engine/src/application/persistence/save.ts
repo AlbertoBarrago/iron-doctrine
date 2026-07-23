@@ -40,7 +40,12 @@ export interface SaveState {
   match?: { players: number[]; state: MatchStateSnapshot };
   firstContact?: {
     config: FirstContactConfig;
-    state: { phase: FirstContactPhase; elapsedTicks: number };
+    state: {
+      phase: FirstContactPhase;
+      elapsedTicks: number;
+      hasDeployedPatrol: boolean;
+      operationalAtTick: number | null;
+    };
   };
 }
 

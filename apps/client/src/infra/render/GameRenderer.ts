@@ -18,7 +18,10 @@ import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
-import type { SkirmishConfig } from '../../game/skirmishConfig.js';
+import {
+  firstContactLayout,
+  type SkirmishConfig,
+} from '../../game/skirmishConfig.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
@@ -92,7 +95,8 @@ export class GameRenderer {
     if (!humanSpawn || !enemySpawn)
       throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
     const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
-    const recoveryAt = offsetSpawn(config.map, humanSpawn, 18, 18);
+    const firstContact = firstContactLayout(config.map);
+    const recoveryAt = mapPosition(config.map, firstContact.recovery.x, firstContact.recovery.y);
     const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
 
     await this.app.init({
@@ -153,21 +157,21 @@ export class GameRenderer {
     }
 
     // A strong patrol teaches control before the economy and construction layers unlock.
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 6; i++) {
       this.bridge.command({
         type: 'spawnUnit',
-        unit: i === 0 ? 'tank' : 'rifleman',
+        unit: i < 2 ? 'tank' : 'rifleman',
         player: 0,
         at: offsetSpawn(config.map, humanSpawn, (i % 3) * 2, Math.floor(i / 3) * 2),
       });
     }
     // Light resistance on the route: dangerous enough to teach focus fire, not attrition.
-    for (let i = 0; i < 3; i++) {
+    for (const position of firstContact.resistance.slice(0, 2)) {
       this.bridge.command({
         type: 'spawnUnit',
         unit: 'rifleman',
         player: 1,
-        at: offsetSpawn(config.map, humanSpawn, 9 + i * 2, 9 + (i % 2) * 2),
+        at: mapPosition(config.map, position.x, position.y),
       });
     }
 
@@ -296,8 +300,14 @@ export class GameRenderer {
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
         store.setScenario(curr.scenario ?? null);
+        const activationOrigin = curr.scenario?.operationalAtTick;
         store.setAiActivationSeconds(
-          Math.max(0, Math.ceil((this.aiActivationTick - curr.tick) / SIM_HZ)),
+          activationOrigin === null || activationOrigin === undefined
+            ? 0
+            : Math.max(
+                0,
+                Math.ceil((activationOrigin + this.aiActivationTick - curr.tick) / SIM_HZ),
+              ),
         );
         this.syncSelectionState(curr);
       }
@@ -674,6 +684,7 @@ export class GameRenderer {
 
   private drawSelectionBox(): void {
     this.overlay.clear();
+    this.drawObjectiveDirection();
     this.drawPlacementPreview();
     if (this.dragStart && this.dragNow) {
       const x = Math.min(this.dragStart.x, this.dragNow.x);
@@ -685,6 +696,49 @@ export class GameRenderer {
         .fill({ color: 0xd5a83c, alpha: 0.14 })
         .stroke({ width: 1, color: 0xf0cc68 });
     }
+  }
+
+  private drawObjectiveDirection(): void {
+    const scenario = this.bridge.latest.curr?.scenario;
+    if (!scenario || scenario.phase === 'operational' || scenario.phase === 'failed') return;
+
+    const target = this.camera.worldToScreen(scenario.recoveryAt.x, scenario.recoveryAt.y);
+    const width = this.app.screen.width;
+    const height = this.app.screen.height;
+    const rightLimit = Math.max(80, width - 338);
+    const margin = 42;
+    const targetOnScreen =
+      target.sx >= margin &&
+      target.sx <= rightLimit - margin &&
+      target.sy >= margin &&
+      target.sy <= height - margin;
+    if (targetOnScreen) return;
+
+    const centre = { x: rightLimit / 2, y: height / 2 };
+    const angle = Math.atan2(target.sy - centre.y, target.sx - centre.x);
+    const radiusX = Math.max(10, centre.x - margin);
+    const radiusY = Math.max(10, centre.y - margin);
+    const scale = Math.min(
+      Math.abs(radiusX / Math.max(0.001, Math.cos(angle))),
+      Math.abs(radiusY / Math.max(0.001, Math.sin(angle))),
+    );
+    const x = centre.x + Math.cos(angle) * scale;
+    const y = centre.y + Math.sin(angle) * scale;
+    const pulse = 1 + Math.sin(performance.now() / 140) * 0.16;
+    const size = 13 * pulse;
+
+    this.overlay
+      .moveTo(x + Math.cos(angle) * size, y + Math.sin(angle) * size)
+      .lineTo(x + Math.cos(angle + 2.45) * size, y + Math.sin(angle + 2.45) * size)
+      .lineTo(x + Math.cos(angle - 2.45) * size, y + Math.sin(angle - 2.45) * size)
+      .closePath()
+      .fill({ color: 0x78d46a, alpha: 0.92 })
+      .stroke({ width: 2, color: 0xd5e6cb });
+    this.overlay.circle(x, y, size + 7).stroke({
+      width: 1,
+      color: 0x78d46a,
+      alpha: 0.45,
+    });
   }
 
   private drawPlacementPreview(): void {

@@ -200,7 +200,8 @@ export const useGameStore = create<GameUiState>((set) => ({
       state.scenario?.objective === scenario?.objective &&
       state.scenario?.progress === scenario?.progress &&
       state.scenario?.recoveryAt.x === scenario?.recoveryAt.x &&
-      state.scenario?.recoveryAt.y === scenario?.recoveryAt.y
+      state.scenario?.recoveryAt.y === scenario?.recoveryAt.y &&
+      state.scenario?.operationalAtTick === scenario?.operationalAtTick
         ? state
         : { scenario },
     ),

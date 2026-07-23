@@ -79,6 +79,34 @@ describe('AIDirector', () => {
     expect(countOwned(sim, 1, (entity) => !sim.world.has(entity, Building))).toBe(1);
   });
 
+  it('starts its activation delay only after First Contact recovery', () => {
+    const sim = new Simulation({
+      seed: 1,
+      aiPlayers: [{ player: 1, difficulty: 'hard', activationTick: 20 }],
+      startingCredits: { 1: 5000 },
+      firstContact: {
+        player: 0,
+        recoveryAt: at(20, 0),
+        recoveryTicks: 1,
+        recoveredCredits: 2000,
+      },
+    });
+    sim.enqueue({ type: 'spawnUnit', unit: 'tank', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: at(30, 0) });
+    for (let i = 0; i < 100; i++) sim.step();
+    expect(countOwned(sim, 1, (entity) => !sim.world.has(entity, Building))).toBe(0);
+
+    sim.enqueue({ type: 'spawnUnit', unit: 'rifleman', player: 0, at: at(20, 0) });
+    sim.step();
+    sim.step();
+    const creditsAtRecovery = sim.economy.credits(1);
+    for (let i = 0; i < 19; i++) sim.step();
+    expect(sim.economy.credits(1)).toBe(creditsAtRecovery);
+
+    for (let i = 0; i < 20; i++) sim.step();
+    expect(sim.economy.credits(1)).toBeLessThan(creditsAtRecovery);
+  });
+
   it('sends its army to attack the human player', () => {
     const sim = makeSim();
     sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: at(20, 0) });
