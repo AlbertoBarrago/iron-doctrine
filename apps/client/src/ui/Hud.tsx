@@ -276,10 +276,11 @@ export function Hud(props: HudProps): JSX.Element {
       <div className="controls-strip steel-panel">
         <Control keyName="LMB" text="Select" />
         <Control keyName="DRAG" text="Box select" />
-        <Control keyName="RMB" text="Move / attack" />
+        <Control keyName="RMB" text="Order / drag camera" />
         <Control keyName="WHEEL" text="Zoom" />
         <Control keyName="EDGE" text="Pan camera" />
         <Control keyName="MMB" text="Drag camera" />
+        <Control keyName="2×LMB" text="Center view" />
         <Control keyName="WASD" text="Camera" />
       </div>
 

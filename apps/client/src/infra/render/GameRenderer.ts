@@ -59,7 +59,13 @@ export class GameRenderer {
   private placingBuilding: string | null = null;
   private placementPointer: { x: number; y: number } | null = null;
   private navigationPointer: { x: number; y: number } | null = null;
-  private cameraDrag: { x: number; y: number; pointerId: number } | null = null;
+  private cameraDrag: {
+    x: number;
+    y: number;
+    pointerId: number;
+    button: 1 | 2;
+    moved: boolean;
+  } | null = null;
 
   private minimapCtx: CanvasRenderingContext2D | null = null;
   private minimapFrame = 0;
@@ -136,6 +142,7 @@ export class GameRenderer {
     useGameStore.getState().setScenario(null);
     this.camera.x = fp.toFloat(humanBase.x);
     this.camera.y = fp.toFloat(humanBase.y);
+    this.clampCamera();
 
     for (const resource of config.map.resources) {
       this.bridge.command({
@@ -557,6 +564,34 @@ export class GameRenderer {
 
     const w = this.app.renderer.width;
     const h = this.app.renderer.height;
+    const mapTopLeft = this.camera.worldToScreen(fog.originX, fog.originY);
+    const mapBottomRight = this.camera.worldToScreen(
+      fog.originX + fog.width * fog.cellSize,
+      fog.originY + fog.height * fog.cellSize,
+    );
+    if (mapTopLeft.sy > 0) {
+      this.fogGfx.rect(0, 0, w, mapTopLeft.sy).fill({ color: 0x000000 });
+    }
+    if (mapBottomRight.sy < h) {
+      this.fogGfx
+        .rect(0, mapBottomRight.sy, w, h - mapBottomRight.sy)
+        .fill({ color: 0x000000 });
+    }
+    if (mapTopLeft.sx > 0) {
+      this.fogGfx
+        .rect(0, Math.max(0, mapTopLeft.sy), mapTopLeft.sx, mapBottomRight.sy - mapTopLeft.sy)
+        .fill({ color: 0x000000 });
+    }
+    if (mapBottomRight.sx < w) {
+      this.fogGfx
+        .rect(
+          mapBottomRight.sx,
+          Math.max(0, mapTopLeft.sy),
+          w - mapBottomRight.sx,
+          mapBottomRight.sy - mapTopLeft.sy,
+        )
+        .fill({ color: 0x000000 });
+    }
     const topLeft = this.camera.screenToWorld(0, 0);
     const botRight = this.camera.screenToWorld(w, h);
     const toCell = (wx: number, wy: number) => ({
@@ -775,22 +810,26 @@ export class GameRenderer {
   }
 
   private onPointerDown(e: PointerEvent): void {
-    if (e.button === 1) {
-      e.preventDefault();
-      this.cameraDrag = { x: e.offsetX, y: e.offsetY, pointerId: e.pointerId };
-      if (e.currentTarget instanceof Element) e.currentTarget.setPointerCapture(e.pointerId);
-      return;
-    }
     if (this.placingBuilding) {
       if (e.button === 0) this.confirmBuildingPlacement(e.offsetX, e.offsetY);
       else if (e.button === 2) this.cancelBuildingPlacement();
       return;
     }
+    if (e.button === 1 || e.button === 2) {
+      e.preventDefault();
+      this.cameraDrag = {
+        x: e.offsetX,
+        y: e.offsetY,
+        pointerId: e.pointerId,
+        button: e.button,
+        moved: e.button === 1,
+      };
+      if (e.currentTarget instanceof Element) e.currentTarget.setPointerCapture(e.pointerId);
+      return;
+    }
     if (e.button === 0) {
       this.dragStart = { x: e.offsetX, y: e.offsetY };
       this.dragNow = { x: e.offsetX, y: e.offsetY };
-    } else if (e.button === 2) {
-      this.issueMove(e.offsetX, e.offsetY);
     }
   }
 
@@ -798,12 +837,14 @@ export class GameRenderer {
     this.placementPointer = { x: e.offsetX, y: e.offsetY };
     this.navigationPointer = { x: e.offsetX, y: e.offsetY };
     if (this.cameraDrag) {
-      this.camera.panByScreenDelta(
-        e.offsetX - this.cameraDrag.x,
-        e.offsetY - this.cameraDrag.y,
-      );
-      this.cameraDrag = { x: e.offsetX, y: e.offsetY, pointerId: e.pointerId };
-      this.clampCamera();
+      const dx = e.offsetX - this.cameraDrag.x;
+      const dy = e.offsetY - this.cameraDrag.y;
+      const moved = this.cameraDrag.moved || Math.hypot(dx, dy) >= 3;
+      if (moved) {
+        this.camera.panByScreenDelta(dx, dy);
+        this.clampCamera();
+      }
+      this.cameraDrag = { ...this.cameraDrag, x: e.offsetX, y: e.offsetY, moved };
       return;
     }
     this.updatePointerCursor(e.offsetX, e.offsetY);
@@ -811,11 +852,13 @@ export class GameRenderer {
   }
 
   private onPointerUp(e: PointerEvent): void {
-    if (e.button === 1 && this.cameraDrag) {
+    if ((e.button === 1 || e.button === 2) && this.cameraDrag) {
+      const drag = this.cameraDrag;
       if (e.currentTarget instanceof Element && e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
       }
       this.cameraDrag = null;
+      if (drag.button === 2 && !drag.moved) this.issueMove(e.offsetX, e.offsetY);
       return;
     }
     if (e.button !== 0 || !this.dragStart) return;
@@ -865,11 +908,17 @@ export class GameRenderer {
     if (!curr) return;
 
     const clicked = this.findOwnedUnitAt(e.offsetX, e.offsetY, curr);
-    if (!clicked?.unitType) return;
+    if (!clicked?.unitType) {
+      const target = this.camera.screenToWorld(e.offsetX, e.offsetY);
+      this.camera.x = target.wx;
+      this.camera.y = target.wy;
+      this.clampCamera();
+      return;
+    }
     if (!e.ctrlKey && !e.shiftKey) this.selected.clear();
 
-    const viewportWidth = this.app.renderer.width;
-    const viewportHeight = this.app.renderer.height;
+    const viewportWidth = this.app.canvas.clientWidth;
+    const viewportHeight = this.app.canvas.clientHeight;
     for (const entity of curr.entities) {
       if (entity.kind !== 'unit' || entity.owner !== 0 || entity.unitType !== clicked.unitType) {
         continue;
@@ -1060,8 +1109,8 @@ export class GameRenderer {
       ? { x: 0, y: 0 }
       : edgePanDirection(
           this.navigationPointer,
-          this.app.renderer.width,
-          this.app.renderer.height,
+          this.app.canvas.clientWidth,
+          this.app.canvas.clientHeight,
         );
     const horizontal =
       (this.keys.has('d') || this.keys.has('arrowright') ? 1 : 0) -
