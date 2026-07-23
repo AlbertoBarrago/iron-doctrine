@@ -99,6 +99,20 @@ describe('Harvester economy loop', () => {
     });
   });
 
+  it('exposes harvester cargo and phase in snapshots', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnResource', amount: 500, at: at(5, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(2, 0) });
+    sim.step();
+    const harvester = sim.snapshot().entities.find((entity) => entity.unitType === 'harvester');
+
+    expect(harvester?.cargo).toEqual({
+      amount: 0,
+      capacity: 200,
+      phase: 'toNode',
+    });
+  });
+
   it('aggregates power from buildings', () => {
     const sim = makeSim();
     sim.enqueue({ type: 'spawnBuilding', building: 'power_plant', player: 0, at: at(0, 0) }); // +100

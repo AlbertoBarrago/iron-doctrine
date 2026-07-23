@@ -23,10 +23,7 @@ import {
   type CommandFeedbackKind,
 } from './commandFeedback.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
-import {
-  firstContactLayout,
-  type SkirmishConfig,
-} from '../../game/skirmishConfig.js';
+import { firstContactLayout, type SkirmishConfig } from '../../game/skirmishConfig.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
@@ -445,16 +442,14 @@ export class GameRenderer {
           .rect(sx - r, sy - r - 8, w * ratio, 3)
           .fill({ color: ratio > 0.5 ? 0x92994c : ratio > 0.25 ? 0xd1a63a : 0xa9412e });
       }
+      if (e.cargo) this.drawCargoBar(e, sx, sy, r);
     }
   }
 
   private drawScenarioSite(curr: Snapshot): void {
     const scenario = curr.scenario;
     if (!scenario || scenario.phase === 'operational') return;
-    const { sx, sy } = this.camera.worldToScreen(
-      scenario.recoveryAt.x,
-      scenario.recoveryAt.y,
-    );
+    const { sx, sy } = this.camera.worldToScreen(scenario.recoveryAt.x, scenario.recoveryAt.y);
     const size = Math.max(16, this.camera.scale * 1.5);
     this.units
       .rect(sx - size, sy - size, size * 2, size * 2)
@@ -620,9 +615,7 @@ export class GameRenderer {
       this.fogGfx.rect(0, 0, w, mapTopLeft.sy).fill({ color: 0x000000 });
     }
     if (mapBottomRight.sy < h) {
-      this.fogGfx
-        .rect(0, mapBottomRight.sy, w, h - mapBottomRight.sy)
-        .fill({ color: 0x000000 });
+      this.fogGfx.rect(0, mapBottomRight.sy, w, h - mapBottomRight.sy).fill({ color: 0x000000 });
     }
     if (mapTopLeft.sx > 0) {
       this.fogGfx
@@ -773,11 +766,7 @@ export class GameRenderer {
       .stroke({ width: feedback.kind === 'invalid' ? 3 : 2, color, alpha });
   }
 
-  private showCommandFeedback(
-    sx: number,
-    sy: number,
-    kind: CommandFeedbackKind,
-  ): void {
+  private showCommandFeedback(sx: number, sy: number, kind: CommandFeedbackKind): void {
     const world = this.camera.screenToWorld(sx, sy);
     this.commandFeedback = {
       kind,
@@ -1205,12 +1194,12 @@ export class GameRenderer {
     );
     this.app.canvas.style.cursor =
       hasSelectedHarvester && snapshot && this.findResourceAt(sx, sy, snapshot)
-          ? 'cell'
-          : hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot)
-            ? 'crosshair'
-            : hasSelectedUnits
-              ? 'move'
-              : 'pointer';
+        ? 'cell'
+        : hasSelectedUnits && snapshot && this.findEnemyAt(sx, sy, snapshot)
+          ? 'crosshair'
+          : hasSelectedUnits
+            ? 'move'
+            : 'pointer';
   }
 
   private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
@@ -1244,6 +1233,9 @@ export class GameRenderer {
         commands: selectionCommands(selected),
         hp: entity.hp,
         maxHp: entity.maxHp,
+        ...(entity.cargo && {
+          cargo: { amount: entity.cargo.amount, capacity: entity.cargo.capacity },
+        }),
         status: construction
           ? `Under construction · ${Math.round((construction.progressTicks / construction.buildTicks) * 100)}%`
           : entity.production?.queue.length
@@ -1264,6 +1256,22 @@ export class GameRenderer {
           }
         : null,
     );
+  }
+
+  private drawCargoBar(entity: EntitySnapshot, sx: number, sy: number, radius: number): void {
+    if (!entity.cargo) return;
+    const segments = 10;
+    const width = radius * 2;
+    const gap = 1;
+    const segmentWidth = (width - gap * (segments - 1)) / segments;
+    const filled = Math.ceil((entity.cargo.amount / entity.cargo.capacity) * segments);
+    const y = sy - radius - 13;
+
+    for (let index = 0; index < segments; index++) {
+      this.units
+        .rect(sx - radius + index * (segmentWidth + gap), y, segmentWidth, 3)
+        .fill({ color: index < filled ? 0xd1a63a : 0x20251d, alpha: index < filled ? 1 : 0.8 });
+    }
   }
 
   private updatePan(dtMs: number): void {

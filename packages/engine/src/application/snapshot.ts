@@ -19,6 +19,8 @@ import {
   Construction,
   Weapon,
   Attack,
+  ResourceCarrier,
+  Harvest,
 } from '../domain/components/index.js';
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
@@ -49,6 +51,14 @@ export interface EntitySnapshot {
   /** Presentation-only combat timing used for muzzle and tracer feedback. */
   weaponCooldownLeft?: number;
   attackTarget?: number;
+  /** Present for harvesters so presentation can render their authoritative cargo. */
+  cargo?: CargoSnapshot;
+}
+
+export interface CargoSnapshot {
+  amount: number;
+  capacity: number;
+  phase: 'idle' | 'toNode' | 'gathering' | 'toBase' | 'depositing' | 'paused';
 }
 
 export interface ConstructionSnapshot {
@@ -108,6 +118,8 @@ export function buildSnapshot(
     const construction = world.get(e, Construction);
     const weapon = world.get(e, Weapon);
     const attack = world.get(e, Attack);
+    const carrier = world.get(e, ResourceCarrier);
+    const harvest = world.get(e, Harvest);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
       : building
@@ -143,6 +155,14 @@ export function buildSnapshot(
       }),
       ...(weapon && { weaponCooldownLeft: weapon.cooldownLeft }),
       ...(attack && attack.target !== -1 && { attackTarget: attack.target }),
+      ...(carrier &&
+        harvest && {
+          cargo: {
+            amount: carrier.amount,
+            capacity: carrier.capacity,
+            phase: harvest.phase,
+          },
+        }),
     });
   }
   return { tick, entities, players };

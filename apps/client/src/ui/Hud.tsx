@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
   commandAvailability,
@@ -438,6 +438,24 @@ function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Eleme
           <div className="meter meter--health">
             <div style={{ width: `${health}%` }} />
           </div>
+        </>
+      ) : null}
+      {entity.cargo ? (
+        <>
+          <div className="selection-card__meta selection-card__meta--cargo">
+            <span>ORE CARGO</span>
+            <span>
+              {entity.cargo.amount} / {entity.cargo.capacity}
+            </span>
+          </div>
+          <div
+            className="meter meter--cargo"
+            style={
+              {
+                '--cargo-fill': `${(entity.cargo.amount / entity.cargo.capacity) * 100}%`,
+              } as CSSProperties
+            }
+          />
         </>
       ) : null}
       {entity.status ? (

@@ -19,6 +19,7 @@ export interface SelectedEntitySummary {
   hp?: number;
   maxHp?: number;
   status?: string;
+  cargo?: { amount: number; capacity: number };
   commands: SelectionCommand[];
 }
 
@@ -105,6 +106,8 @@ function sameSelectedEntity(
     left.hp === right.hp &&
     left.maxHp === right.maxHp &&
     left.status === right.status &&
+    left.cargo?.amount === right.cargo?.amount &&
+    left.cargo?.capacity === right.cargo?.capacity &&
     left.commands.join() === right.commands.join()
   );
 }

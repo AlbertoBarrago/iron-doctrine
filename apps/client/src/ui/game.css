@@ -747,6 +747,14 @@ kbd {
 .meter--health > div {
   background: repeating-linear-gradient(90deg, #777c3e 0 9px, #aeb45f 9px 11px);
 }
+.selection-card__meta--cargo {
+  margin-top: 8px;
+}
+.meter--cargo {
+  background:
+    repeating-linear-gradient(90deg, transparent 0 8px, #11130e 8px 10px),
+    linear-gradient(90deg, #c59b2f 0 var(--cargo-fill), #25291f var(--cargo-fill) 100%);
+}
 .queue-items {
   color: #aaa68c;
   font: 11px var(--body);
