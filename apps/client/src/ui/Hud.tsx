@@ -99,6 +99,7 @@ interface HudProps {
   onGather(): void;
   onStop(): void;
   onRestart(): void;
+  onExit(): void;
 }
 
 /** Industrial RTS command surface and progressive first-match guidance. */
@@ -350,13 +351,18 @@ export function Hud(props: HudProps): JSX.Element {
                   ? 'Both command structures were destroyed.'
                   : 'Your command structure has been destroyed.'}
             </p>
-            <button
-              type="button"
-              className="metal-button metal-button--primary"
-              onClick={props.onRestart}
-            >
-              Restart skirmish
-            </button>
+            <div className="match-dialog__actions">
+              <button
+                type="button"
+                className="metal-button metal-button--primary"
+                onClick={props.onRestart}
+              >
+                Restart skirmish
+              </button>
+              <button type="button" className="metal-button" onClick={props.onExit}>
+                Return to main menu
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

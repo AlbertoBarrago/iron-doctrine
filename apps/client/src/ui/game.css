@@ -1705,6 +1705,11 @@ kbd {
   color: #aeb5a6;
   font: 13px var(--body);
 }
+.match-dialog__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
 .setup-dialog {
   width: min(1050px, 100%);
   max-height: calc(100vh - 56px);

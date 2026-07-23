@@ -41,7 +41,15 @@ export function App(): JSX.Element {
   if (!skirmish) {
     throw new Error('Game mode requires a skirmish configuration');
   }
-  return <Game config={skirmish} />;
+  return (
+    <Game
+      config={skirmish}
+      onExit={() => {
+        setSkirmish(null);
+        setMode('menu');
+      }}
+    />
+  );
 }
 
 /**
@@ -49,7 +57,7 @@ export function App(): JSX.Element {
  * overlays the React HUD/minimap. Unmounting disposes the renderer (used when switching
  * to the editor). StrictMode double-invokes effects in dev, hence the duplicate guard.
  */
-function Game({ config }: { config: SkirmishConfig }): JSX.Element {
+function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): JSX.Element {
   const [session, setSession] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
   const [manualPaused, setManualPaused] = useState(false);
@@ -140,6 +148,7 @@ function Game({ config }: { config: SkirmishConfig }): JSX.Element {
           setManualPaused(false);
           setSession((current) => current + 1);
         }}
+        onExit={onExit}
       />
     </div>
   );
