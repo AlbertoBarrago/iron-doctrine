@@ -929,18 +929,8 @@ export class GameRenderer {
     canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
     canvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
     canvas.addEventListener('pointercancel', (e) => this.onPointerUp(e));
-    canvas.addEventListener('pointerleave', (event) => {
-      if (this.cameraDrag) return;
-      const point = this.canvasPoint(event);
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
-      const leftViewport = point.x <= 0 || point.x >= width || point.y <= 0 || point.y >= height;
-      this.navigationPointer = leftViewport
-        ? {
-            x: Math.min(width, Math.max(0, point.x)),
-            y: Math.min(height, Math.max(0, point.y)),
-          }
-        : null;
+    canvas.addEventListener('pointerleave', () => {
+      if (!this.cameraDrag) this.navigationPointer = null;
     });
     canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
     canvas.addEventListener('wheel', (e) => {
