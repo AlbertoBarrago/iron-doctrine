@@ -1,6 +1,11 @@
 /** Zustand store for PRESENTATION state only. Never holds authoritative sim state. */
 import { create } from 'zustand';
-import { UNIT_STATS, type EntitySnapshot, type MatchStateSnapshot } from '@iron/engine';
+import {
+  UNIT_STATS,
+  type EntitySnapshot,
+  type FirstContactSnapshot,
+  type MatchStateSnapshot,
+} from '@iron/engine';
 
 export type TutorialStep =
   'select' | 'move' | 'gather' | 'build' | 'produce' | 'attack' | 'complete';
@@ -46,6 +51,7 @@ interface GameUiState {
   selectedProduction: SelectedProduction | null;
   placingBuilding: string | null;
   match: MatchStateSnapshot | null;
+  scenario: FirstContactSnapshot | null;
   aiActivationSeconds: number;
   tutorialStep: TutorialStep;
   setFps: (fps: number) => void;
@@ -57,6 +63,7 @@ interface GameUiState {
   setSelectedProduction: (production: SelectedProduction | null) => void;
   setPlacingBuilding: (building: string | null) => void;
   setMatch: (match: MatchStateSnapshot | null) => void;
+  setScenario: (scenario: FirstContactSnapshot | null) => void;
   setAiActivationSeconds: (seconds: number) => void;
   advanceTutorial: (expected: TutorialStep) => void;
 }
@@ -150,6 +157,7 @@ export const useGameStore = create<GameUiState>((set) => ({
   selectedProduction: null,
   placingBuilding: null,
   match: null,
+  scenario: null,
   aiActivationSeconds: 0,
   tutorialStep: 'select',
   setFps: (fps) =>
@@ -185,6 +193,16 @@ export const useGameStore = create<GameUiState>((set) => ({
       state.match?.status === match?.status && state.match?.winner === match?.winner
         ? state
         : { match },
+    ),
+  setScenario: (scenario) =>
+    set((state) =>
+      state.scenario?.phase === scenario?.phase &&
+      state.scenario?.objective === scenario?.objective &&
+      state.scenario?.progress === scenario?.progress &&
+      state.scenario?.recoveryAt.x === scenario?.recoveryAt.x &&
+      state.scenario?.recoveryAt.y === scenario?.recoveryAt.y
+        ? state
+        : { scenario },
     ),
   setAiActivationSeconds: (aiActivationSeconds) =>
     set((state) =>

@@ -41,6 +41,7 @@ The objective is to destroy the enemy construction yard without losing your own.
 ## What works today
 
 - Configurable skirmishes with AI difficulty, preparation time and enemy starting force.
+- First Contact opening: lead a strong patrol through the fog and recover the command base.
 - Base construction, power management, resource harvesting and unit production.
 - Infantry, vehicles, defensive turrets, combat, fog of war and victory conditions.
 - Contextual unit and building orders with a guided first-match tutorial.
@@ -65,7 +66,7 @@ The next work is ordered around player value rather than subsystem novelty.
 
 ### Next — turn the sandbox into a game
 
-- [ ] Add scenario objectives, map triggers and authored mission events.
+- [ ] Expand First Contact into reusable scenario objectives, map triggers and authored events.
 - [ ] Expand AI with scouting, defense, expansion and threat-aware attacks.
 - [ ] Build a balanced original faction roster with meaningful counters.
 - [ ] Add terrain types, chokepoints and maps designed around strategic choices.

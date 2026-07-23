@@ -1464,3 +1464,250 @@ kbd {
     display: none;
   }
 }
+
+/* First Contact command layout: battlefield first, one persistent control rail. */
+.mission-notice {
+  position: absolute;
+  z-index: 24;
+  top: 14px;
+  left: 18px;
+  display: grid;
+  grid-template-columns: 7px minmax(260px, 430px);
+  gap: 11px;
+  padding: 10px 14px 11px 10px;
+  color: #a8e99d;
+  background: rgba(4, 9, 7, 0.92);
+  border: 1px solid #346c39;
+  box-shadow:
+    inset 0 0 0 1px rgba(117, 218, 105, 0.12),
+    0 5px 18px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+.mission-notice__signal {
+  background: #78d46a;
+  box-shadow: 0 0 12px rgba(120, 212, 106, 0.75);
+}
+.mission-notice span {
+  display: block;
+  color: #5e9160;
+  font: 800 8px var(--body);
+  letter-spacing: 0.16em;
+}
+.mission-notice strong {
+  display: block;
+  margin-top: 3px;
+  color: #d5e6cb;
+  font: 700 13px/1.3 var(--body);
+  letter-spacing: 0.035em;
+}
+.mission-notice__progress {
+  height: 3px;
+  margin-top: 8px;
+  overflow: hidden;
+  background: #142019;
+}
+.mission-notice__progress i {
+  display: block;
+  height: 100%;
+  background: #78d46a;
+  box-shadow: 0 0 8px #78d46a;
+}
+
+.command-panel {
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 314px;
+  max-height: none;
+  padding: 0 12px 54px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035), transparent 16%),
+    linear-gradient(#303835, #151a18 38%, #101512);
+  border-width: 0 0 0 3px;
+  border-left-color: #4d5851;
+  box-shadow:
+    inset 1px 0 #778079,
+    -10px 0 28px rgba(0, 0, 0, 0.52);
+}
+.command-panel.is-operational {
+  padding-bottom: 258px;
+}
+.command-panel__masthead {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 -12px 12px;
+  padding: 0 12px;
+  background: linear-gradient(#3c4641, #202824);
+  border-bottom: 2px solid #0a0e0c;
+  box-shadow: inset 0 -1px #59635c;
+}
+.command-panel__menu {
+  width: 34px;
+  height: 32px;
+  color: #83db72;
+  cursor: pointer;
+  background: #101713;
+  border: 1px solid #536057;
+  font-size: 18px;
+}
+.command-panel__resources {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr 0.75fr;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+.command-panel__resources .hud-stat {
+  padding: 7px;
+  background: #111713;
+  border: 1px inset #4a544d;
+}
+.command-panel__resources .hud-stat span {
+  font-size: 7px;
+}
+.command-panel__resources .hud-stat strong {
+  font-size: 14px;
+}
+.field-directive {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 9px;
+  margin-bottom: 9px;
+  padding: 8px;
+  background: rgba(9, 14, 11, 0.76);
+  border-left: 2px solid #65705e;
+}
+.field-directive > span {
+  display: grid;
+  place-items: center;
+  color: #101512;
+  background: #a8b36b;
+  font-size: 14px;
+}
+.field-directive small,
+.field-directive strong {
+  display: block;
+}
+.field-directive small {
+  color: #6f7d71;
+  font: 7px var(--body);
+  letter-spacing: 0.14em;
+}
+.field-directive strong {
+  margin-top: 2px;
+  color: #d4d6c5;
+  font: 10px var(--body);
+  text-transform: uppercase;
+}
+.field-directive p {
+  margin: 3px 0 0;
+  color: #8e978e;
+  font: 9px/1.3 var(--body);
+}
+.command-panel .selection-card {
+  position: static;
+  width: auto;
+  margin: 0;
+  padding: 10px;
+  background: #171e1a;
+  box-shadow: none;
+}
+.panel-empty--selection {
+  min-height: 68px;
+}
+.command-lock {
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+  align-content: center;
+  padding: 24px;
+  text-align: center;
+  background:
+    repeating-linear-gradient(135deg, transparent 0 10px, rgba(0, 0, 0, 0.12) 10px 20px),
+    #151b18;
+  border: 1px inset #4c554f;
+}
+.command-lock__emblem {
+  display: grid;
+  width: 108px;
+  height: 108px;
+  margin-bottom: 18px;
+  place-items: center;
+  color: #727c72;
+  border: 5px double #4e5850;
+  border-radius: 50%;
+  font-size: 34px;
+}
+.command-lock span,
+.command-lock strong,
+.command-lock small {
+  display: block;
+}
+.command-lock span {
+  color: #69736c;
+  font: 8px var(--body);
+  letter-spacing: 0.15em;
+}
+.command-lock strong {
+  margin: 6px 0;
+  color: #c2c6b5;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+.command-lock small {
+  max-width: 210px;
+  color: #858d85;
+  font: 9px/1.45 var(--body);
+}
+.command-panel__footer {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0;
+  padding: 10px 12px;
+}
+.minimap-frame {
+  z-index: 23;
+  right: 17px;
+  bottom: 42px;
+  left: auto;
+  width: 280px;
+  padding: 8px;
+  box-shadow: none;
+}
+.minimap-frame.is-offline {
+  display: none;
+}
+.minimap-frame canvas {
+  width: 258px;
+  height: 174px;
+}
+.controls-strip {
+  right: 336px;
+}
+
+@media (max-width: 860px) {
+  .command-panel {
+    width: 276px;
+  }
+  .mission-notice {
+    right: 292px;
+    grid-template-columns: 6px minmax(0, 1fr);
+  }
+  .minimap-frame {
+    right: 12px;
+    width: 252px;
+  }
+  .minimap-frame canvas {
+    width: 230px;
+    height: 156px;
+  }
+  .controls-strip {
+    right: 290px;
+  }
+}

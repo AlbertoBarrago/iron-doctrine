@@ -101,109 +101,148 @@ export function Hud(props: HudProps): JSX.Element {
   const placingBuilding = useGameStore((state) => state.placingBuilding);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
+  const scenario = useGameStore((state) => state.scenario);
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
+  const baseOperational = scenario?.phase === 'operational';
 
   return (
     <>
-      <header className="hud-topbar steel-panel">
-        <div className="hud-brand">
-          <span className="hud-brand__mark">ID</span>
-          <span>IRON DOCTRINE</span>
-        </div>
-        <Stat label="Credits" value={`$${credits}`} accent />
-        <Stat
-          label="Power"
-          value={`${power.produced} / ${power.consumed}`}
-          warning={power.consumed > power.produced}
-        />
-        <div className="hud-optional">
-          {aiActivationSeconds > 0 ? (
-            <Stat label="Enemy activation" value={`${aiActivationSeconds}s`} accent />
-          ) : null}
-          <Stat label="Assets" value={String(entityCount)} />
-          <Stat label="FPS" value={String(fps)} />
-        </div>
-        <div className="hud-spacer" />
-        <div className="hud-status">
-          <i /> UPLINK SECURE
-        </div>
-        <button className="metal-button metal-button--quiet" onClick={props.onOpenEditor}>
-          Map editor
-        </button>
-      </header>
-
-      <section className="tutorial-card steel-panel" aria-live="polite">
-        <div className="tutorial-card__step">{tutorial.number}</div>
+      <section className="mission-notice" aria-live="polite">
+        <span className="mission-notice__signal" />
         <div>
-          <span className="panel-kicker">FIELD TRAINING</span>
-          <strong>{tutorial.title}</strong>
-          <p>{tutorial.instruction}</p>
+          <span>PRIMARY OBJECTIVE</span>
+          <strong>{scenario?.objective ?? 'Establishing tactical link'}</strong>
+          {scenario?.phase === 'recovering' ? (
+            <div className="mission-notice__progress">
+              <i style={{ width: `${scenario.progress * 100}%` }} />
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <aside className="command-panel steel-panel" aria-label="Command panel">
-        <div className="hazard-stripe" />
-        <PanelHeading eyebrow="CONSTRUCTION YARD" title="Structures" code="BUILD" />
-        <div className="build-list">
-          {BUILDABLE_STRUCTURES.map(({ id, label, purpose, unlocks }) => {
-            const stats = BUILDING_STATS[id]!;
-            const active = placingBuilding === id;
-            const availability = commandAvailability(credits, stats.cost);
-            return (
-              <button
-                key={id}
-                className={`command-button${active ? ' command-button--active' : ''}`}
-                disabled={!availability.available}
-                onClick={() => props.onPlaceBuilding(id)}
-                title={availability.label}
-              >
-                <span className="command-button__icon">{buildingSymbol(id)}</span>
-                <span className="command-button__copy">
-                  <strong>{label}</strong>
-                  <small>{purpose}</small>
-                  <small className="command-button__unlocks">{unlocks}</small>
-                </span>
-                <span className="command-button__meta">
-                  <span className="command-button__cost">${stats.cost}</span>
-                  <small className={availability.available ? 'is-ready' : 'is-blocked'}>
-                    {availability.label}
-                  </small>
-                </span>
-              </button>
-            );
-          })}
+      <aside
+        className={`command-panel steel-panel${baseOperational ? ' is-operational' : ''}`}
+        aria-label="Command panel"
+      >
+        <header className="command-panel__masthead">
+          <div className="hud-brand">
+            <span className="hud-brand__mark">ID</span>
+            <span>IRON DOCTRINE</span>
+          </div>
+          <button
+            className="command-panel__menu"
+            aria-label="Open map editor"
+            onClick={props.onOpenEditor}
+          >
+            ☰
+          </button>
+        </header>
+
+        <div className="command-panel__resources">
+          <Stat label="Credits" value={`$${credits}`} accent />
+          <Stat
+            label="Power"
+            value={`${power.produced}/${power.consumed}`}
+            warning={power.consumed > power.produced}
+          />
+          <Stat label="Force" value={String(entityCount)} />
         </div>
 
-        <div className="panel-separator">
-          <span />
-        </div>
-        <PanelHeading eyebrow="SELECTED FACILITY" title="Production" code="QUEUE" />
-        {selectedProduction ? (
-          <ProductionPanel
-            credits={credits}
-            production={selectedProduction}
-            onQueue={props.onQueueProduction}
-            onCancel={props.onCancelProduction}
-          />
+        <section className="field-directive">
+          <span>{tutorial.number}</span>
+          <div>
+            <small>FIELD DIRECTIVE</small>
+            <strong>{tutorial.title}</strong>
+            <p>{tutorial.instruction}</p>
+          </div>
+        </section>
+
+        {selectedEntity ? (
+          <SelectionCard entity={selectedEntity} onGather={props.onGather} onStop={props.onStop} />
         ) : (
-          <div className="panel-empty">
-            <span className="panel-empty__icon">!</span>
+          <div className="panel-empty panel-empty--selection">
+            <span className="panel-empty__icon">⌖</span>
             <div>
-              <strong>Facility required</strong>
-              <small>Select a barracks or war factory.</small>
+              <strong>Patrol ready</strong>
+              <small>Select units on the battlefield.</small>
             </div>
           </div>
         )}
+
+        <div className="panel-separator"><span /></div>
+
+        {baseOperational ? (
+          <>
+            <PanelHeading eyebrow="CONSTRUCTION YARD" title="Structures" code="BUILD" />
+            <div className="build-list">
+              {BUILDABLE_STRUCTURES.map(({ id, label, purpose, unlocks }) => {
+                const stats = BUILDING_STATS[id]!;
+                const active = placingBuilding === id;
+                const availability = commandAvailability(credits, stats.cost);
+                return (
+                  <button
+                    key={id}
+                    className={`command-button${active ? ' command-button--active' : ''}`}
+                    disabled={!availability.available}
+                    onClick={() => props.onPlaceBuilding(id)}
+                    title={availability.label}
+                  >
+                    <span className="command-button__icon">{buildingSymbol(id)}</span>
+                    <span className="command-button__copy">
+                      <strong>{label}</strong>
+                      <small>{purpose}</small>
+                      <small className="command-button__unlocks">{unlocks}</small>
+                    </span>
+                    <span className="command-button__meta">
+                      <span className="command-button__cost">${stats.cost}</span>
+                      <small className={availability.available ? 'is-ready' : 'is-blocked'}>
+                        {availability.label}
+                      </small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="panel-separator"><span /></div>
+            <PanelHeading eyebrow="SELECTED FACILITY" title="Production" code="QUEUE" />
+            {selectedProduction ? (
+              <ProductionPanel
+                credits={credits}
+                production={selectedProduction}
+                onQueue={props.onQueueProduction}
+                onCancel={props.onCancelProduction}
+              />
+            ) : (
+              <div className="panel-empty">
+                <span className="panel-empty__icon">!</span>
+                <div>
+                  <strong>Facility required</strong>
+                  <small>Select a barracks or war factory.</small>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <section className="command-lock">
+            <div className="command-lock__emblem">ID</div>
+            <span>COMMAND UPLINK OFFLINE</span>
+            <strong>
+              {scenario?.phase === 'recovering' ? 'Base recovery in progress' : 'Find the base'}
+            </strong>
+            <small>Construction, production and radar will activate after recovery.</small>
+          </section>
+        )}
+
         <div className="command-panel__footer">
-          <span>FIELD OPS TERMINAL</span>
-          <span>v0.1</span>
+          <span>
+            {aiActivationSeconds > 0 ? `HOSTILE MOBILIZATION ${aiActivationSeconds}s` : 'CONTACT'}
+          </span>
+          <span>{fps} FPS</span>
         </div>
       </aside>
 
-      {selectedEntity ? (
-        <SelectionCard entity={selectedEntity} onGather={props.onGather} onStop={props.onStop} />
-      ) : null}
       {placingBuilding ? (
         <div className="placement-banner steel-panel">
           <span className="placement-banner__lamp" />

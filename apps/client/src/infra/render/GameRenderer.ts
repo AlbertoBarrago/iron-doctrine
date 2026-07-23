@@ -31,7 +31,9 @@ function mapPosition(map: MapDef, x: number, y: number): { x: fp.Fixed; y: fp.Fi
 }
 
 function offsetSpawn(map: MapDef, spawn: MapSpawn, dx: number, dy: number) {
-  return mapPosition(map, spawn.x + dx, spawn.y + dy);
+  const x = Math.min(map.width - 2, Math.max(1, spawn.x + dx));
+  const y = Math.min(map.height - 2, Math.max(1, spawn.y + dy));
+  return mapPosition(map, x, y);
 }
 
 export class GameRenderer {
@@ -77,6 +79,14 @@ export class GameRenderer {
   async start(config: SkirmishConfig, seed = 123456789): Promise<void> {
     this.activeMap = config.map;
     this.aiActivationTick = config.gracePeriodSeconds * SIM_HZ;
+    const humanSpawn = config.map.spawns.find((spawn) => spawn.player === 0);
+    const enemySpawn = config.map.spawns.find((spawn) => spawn.player === 1);
+    if (!humanSpawn || !enemySpawn)
+      throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
+    const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
+    const recoveryAt = offsetSpawn(config.map, humanSpawn, 18, 18);
+    const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
+
     await this.app.init({
       background: 0x283224,
       resizeTo: this.container,
@@ -108,21 +118,20 @@ export class GameRenderer {
           activationTick: this.aiActivationTick,
         },
       ],
-      startingCredits: { 0: 3500, 1: aiCredits },
-      startingTech: { 0: ['armor_doctrine'] },
+      startingCredits: { 0: 0, 1: aiCredits },
+      startingTech: { 0: ['infantry_doctrine', 'armor_doctrine'] },
       matchPlayers: [0, 1],
+      firstContact: {
+        player: 0,
+        recoveryAt,
+        recoveryTicks: SIM_HZ * 4,
+        recoveredCredits: 2600,
+      },
     });
     this.bridge.start();
     useGameStore.getState().setPlaying(true);
     useGameStore.getState().setMatch(null);
-
-    const humanSpawn = config.map.spawns.find((spawn) => spawn.player === 0);
-    const enemySpawn = config.map.spawns.find((spawn) => spawn.player === 1);
-    if (!humanSpawn || !enemySpawn)
-      throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
-
-    const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
-    const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
+    useGameStore.getState().setScenario(null);
     this.camera.x = fp.toFloat(humanBase.x);
     this.camera.y = fp.toFloat(humanBase.y);
 
@@ -134,31 +143,22 @@ export class GameRenderer {
       });
     }
 
-    // Player base and initial field team.
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'construction_yard',
-      player: 0,
-      at: humanBase,
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'power_plant',
-      player: 0,
-      at: offsetSpawn(config.map, humanSpawn, 5, 0),
-    });
-    this.bridge.command({
-      type: 'spawnUnit',
-      unit: 'harvester',
-      player: 0,
-      at: offsetSpawn(config.map, humanSpawn, 2, 2),
-    });
-    for (let i = 0; i < 3; i++) {
+    // A strong patrol teaches control before the economy and construction layers unlock.
+    for (let i = 0; i < 5; i++) {
       this.bridge.command({
         type: 'spawnUnit',
         unit: i === 0 ? 'tank' : 'rifleman',
         player: 0,
-        at: offsetSpawn(config.map, humanSpawn, 1 + i * 2, 5),
+        at: offsetSpawn(config.map, humanSpawn, (i % 3) * 2, Math.floor(i / 3) * 2),
+      });
+    }
+    // Light resistance on the route: dangerous enough to teach focus fire, not attrition.
+    for (let i = 0; i < 3; i++) {
+      this.bridge.command({
+        type: 'spawnUnit',
+        unit: 'rifleman',
+        player: 1,
+        at: offsetSpawn(config.map, humanSpawn, 9 + i * 2, 9 + (i % 2) * 2),
       });
     }
 
@@ -275,6 +275,7 @@ export class GameRenderer {
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
       this.drawEntities(prev, curr, alpha);
+      this.drawScenarioSite(curr);
       if (curr.tick !== this.lastUiTick) {
         this.lastUiTick = curr.tick;
         this.detectDeaths(curr);
@@ -285,6 +286,7 @@ export class GameRenderer {
         const me = curr.players.find((p) => p.player === 0);
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
+        store.setScenario(curr.scenario ?? null);
         store.setAiActivationSeconds(
           Math.max(0, Math.ceil((this.aiActivationTick - curr.tick) / SIM_HZ)),
         );
@@ -359,7 +361,7 @@ export class GameRenderer {
           this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
           this.units.rect(sx - s, sy + s + 4, s * 2 * progress, 4).fill({ color: 0xd1a63a });
         }
-        if (e.maxHp > 0 && e.hp < e.maxHp) {
+        if (e.maxHp > 0) {
           const ratio = Math.max(0, e.hp / e.maxHp);
           this.units.rect(sx - s, sy - s - 8, s * 2, 3).fill({ color: 0x000000, alpha: 0.5 });
           this.units.rect(sx - s, sy - s - 8, s * 2 * ratio, 3).fill({ color: 0xa4a957 });
@@ -379,7 +381,7 @@ export class GameRenderer {
         .stroke({ width: 2, color: 0x0b0f0d, alpha: 0.6 });
 
       // Health bar.
-      if (e.maxHp > 0 && e.hp < e.maxHp) {
+      if (e.maxHp > 0) {
         const w = r * 2;
         const ratio = Math.max(0, e.hp / e.maxHp);
         this.units.rect(sx - r, sy - r - 8, w, 3).fill({ color: 0x000000, alpha: 0.5 });
@@ -387,6 +389,32 @@ export class GameRenderer {
           .rect(sx - r, sy - r - 8, w * ratio, 3)
           .fill({ color: ratio > 0.5 ? 0x92994c : ratio > 0.25 ? 0xd1a63a : 0xa9412e });
       }
+    }
+  }
+
+  private drawScenarioSite(curr: Snapshot): void {
+    const scenario = curr.scenario;
+    if (!scenario || scenario.phase === 'operational') return;
+    const { sx, sy } = this.camera.worldToScreen(
+      scenario.recoveryAt.x,
+      scenario.recoveryAt.y,
+    );
+    const size = Math.max(16, this.camera.scale * 1.5);
+    this.units
+      .rect(sx - size, sy - size, size * 2, size * 2)
+      .fill({ color: 0x303733 })
+      .stroke({ width: 2, color: scenario.phase === 'recovering' ? 0x78d46a : 0x687068 });
+    this.units
+      .moveTo(sx - size * 0.55, sy - size * 0.55)
+      .lineTo(sx + size * 0.55, sy + size * 0.55)
+      .moveTo(sx + size * 0.55, sy - size * 0.55)
+      .lineTo(sx - size * 0.55, sy + size * 0.55)
+      .stroke({ width: 3, color: 0x111713 });
+    if (scenario.phase === 'recovering') {
+      this.units.rect(sx - size, sy + size + 5, size * 2, 4).fill({ color: 0x101512 });
+      this.units
+        .rect(sx - size, sy + size + 5, size * 2 * scenario.progress, 4)
+        .fill({ color: 0x78d46a });
     }
   }
 
@@ -546,7 +574,7 @@ export class GameRenderer {
         const { sx, sy } = this.camera.worldToScreen(wx, wy);
         this.fogGfx.rect(sx, sy, size + 1, size + 1).fill({
           color: 0x000000,
-          alpha: state === 0 ? 0.85 : 0.45, // hidden darker than explored
+          alpha: state === 0 ? 1 : 0.28,
         });
       }
     }
@@ -585,6 +613,12 @@ export class GameRenderer {
     // Blips.
     for (const e of curr.entities) {
       if (e.kind === 'projectile') continue;
+      const cx = Math.floor((e.x - fog.originX) / fog.cellSize);
+      const cy = Math.floor((e.y - fog.originY) / fog.cellSize);
+      const inBounds = cx >= 0 && cy >= 0 && cx < fog.width && cy < fog.height;
+      const visibility = inBounds ? fog.cells[cy * fog.width + cx]! : 0;
+      if (e.owner !== 0 && visibility !== 2) continue;
+      if (e.kind === 'resource' && visibility === 0) continue;
       const { mx, my } = toMap(e.x, e.y);
       ctx.fillStyle = e.kind === 'resource' ? '#a67b29' : e.owner === 0 ? '#d0b94f' : '#b2452f';
       const size = e.kind === 'building' ? 4 : 2;

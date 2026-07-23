@@ -21,6 +21,7 @@ export interface FirstContactSnapshot {
   phase: FirstContactPhase;
   objective: string;
   progress: number;
+  recoveryAt: { x: number; y: number };
 }
 
 export class FirstContactState {
@@ -30,11 +31,16 @@ export class FirstContactState {
   constructor(readonly config: FirstContactConfig) {}
 
   snapshot(): FirstContactSnapshot {
+    const recoveryAt = {
+      x: fp.toFloat(this.config.recoveryAt.x),
+      y: fp.toFloat(this.config.recoveryAt.y),
+    };
     if (this.phase === 'locate') {
       return {
         phase: this.phase,
         objective: 'Locate the abandoned command base',
         progress: 0,
+        recoveryAt,
       };
     }
     if (this.phase === 'recovering') {
@@ -42,12 +48,14 @@ export class FirstContactState {
         phase: this.phase,
         objective: 'Secure the perimeter while engineers restore the base',
         progress: Math.min(1, this.elapsedTicks / this.config.recoveryTicks),
+        recoveryAt,
       };
     }
     return {
       phase: this.phase,
       objective: 'Build the base and destroy hostile command',
       progress: 1,
+      recoveryAt,
     };
   }
 

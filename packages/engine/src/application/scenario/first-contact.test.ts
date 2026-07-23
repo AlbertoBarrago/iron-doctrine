@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Simulation } from '../simulation.js';
+import { loadSimulation, saveSimulation } from '../persistence/save.js';
 import * as fp from '../../domain/math/fixed.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
@@ -53,5 +54,30 @@ describe('first contact scenario', () => {
     sim.enqueue({ type: 'spawnUnit', unit: 'rifleman', player: 1, at: at(8, 0) });
     sim.step();
     expect(sim.snapshot().scenario?.phase).toBe('locate');
+  });
+
+  it('preserves recovery progress across save and load', () => {
+    const sim = new Simulation({
+      seed: 7,
+      firstContact: {
+        player: 0,
+        recoveryAt: at(8, 0),
+        recoveryTicks: 3,
+        recoveredCredits: 2200,
+      },
+    });
+    sim.enqueue({ type: 'spawnUnit', unit: 'tank', player: 0, at: at(8, 0) });
+    sim.step();
+    sim.step();
+
+    const loaded = loadSimulation(saveSimulation(sim, 7));
+    expect(loaded.snapshot().scenario).toMatchObject({
+      phase: 'recovering',
+      progress: 1 / 3,
+    });
+
+    loaded.step();
+    loaded.step();
+    expect(loaded.snapshot().scenario?.phase).toBe('operational');
   });
 });

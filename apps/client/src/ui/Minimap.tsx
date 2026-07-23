@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useGameStore } from '../state/gameStore.js';
 
 /**
  * Minimap surface. The component only owns the <canvas>; the GameRenderer draws blips,
@@ -13,6 +14,7 @@ export function Minimap({
   onClick: (nx: number, ny: number) => void;
 }): JSX.Element {
   const ref = useRef<HTMLCanvasElement>(null);
+  const operational = useGameStore((state) => state.scenario?.phase === 'operational');
 
   const navigate = (event: React.PointerEvent<HTMLCanvasElement>): void => {
     const bounds = event.currentTarget.getBoundingClientRect();
@@ -27,7 +29,7 @@ export function Minimap({
   }, [onCanvas]);
 
   return (
-    <div className="minimap-frame steel-panel">
+    <div className={`minimap-frame steel-panel${operational ? '' : ' is-offline'}`}>
       <div className="minimap-frame__header">
         <span>TACTICAL RADAR</span>
         <span>ONLINE</span>
