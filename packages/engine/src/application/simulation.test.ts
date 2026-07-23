@@ -47,6 +47,28 @@ describe('Simulation', () => {
     sim.step();
     expect(sim.world.get(e, Movement)!.target).toBeNull();
   });
+
+  it('moves every unit type in a mixed selection', () => {
+    const sim = new Simulation({ seed: 1 });
+    const units = [
+      spawnAndReturnId(sim, 'rifleman', -6, 0),
+      spawnAndReturnId(sim, 'engineer', -4, 0),
+      spawnAndReturnId(sim, 'tank', -2, 0),
+      spawnAndReturnId(sim, 'harvester', 0, 0),
+    ];
+    const starts = units.map((entity) => ({ ...sim.world.get(entity, Position)! }));
+
+    sim.enqueue({ type: 'move', entities: units, target: at(10, 0) });
+    sim.step();
+
+    for (const entity of units) {
+      expect(sim.world.get(entity, Movement)!.target).not.toBeNull();
+    }
+    for (let tick = 0; tick < 20; tick++) sim.step();
+    units.forEach((entity, index) => {
+      expect(sim.world.get(entity, Position)).not.toEqual(starts[index]);
+    });
+  });
 });
 
 describe('Determinism (core CI gate)', () => {
