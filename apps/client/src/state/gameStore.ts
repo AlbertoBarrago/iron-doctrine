@@ -8,16 +8,10 @@ import {
 } from '@iron/engine';
 
 export type TutorialMilestone =
-  | 'select'
-  | 'power'
-  | 'refinery'
-  | 'gather'
-  | 'barracks'
-  | 'produce'
-  | 'defense';
+  'select' | 'power' | 'refinery' | 'gather' | 'barracks' | 'produce' | 'defense';
 export type TutorialStep = TutorialMilestone | 'complete';
 export type SelectionCommand =
-  'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally';
+  'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally' | 'demolish' | 'recycle';
 
 export interface SelectedEntitySummary {
   label: string;
@@ -25,6 +19,8 @@ export interface SelectedEntitySummary {
   description?: string;
   tacticalNote?: string;
   kind: 'unit' | 'building' | 'group';
+  buildingType?: string;
+  constructionProgress?: number;
   count: number;
   hp?: number;
   maxHp?: number;
@@ -143,6 +139,8 @@ function sameSelectedEntity(
     left.description === right.description &&
     left.tacticalNote === right.tacticalNote &&
     left.kind === right.kind &&
+    left.buildingType === right.buildingType &&
+    left.constructionProgress === right.constructionProgress &&
     left.count === right.count &&
     left.hp === right.hp &&
     left.maxHp === right.maxHp &&
@@ -161,6 +159,8 @@ const COMMAND_ORDER: SelectionCommand[] = [
   'build',
   'produce',
   'rally',
+  'recycle',
+  'demolish',
 ];
 
 export function selectionCommands(entities: readonly EntitySnapshot[]): SelectionCommand[] {
@@ -181,6 +181,15 @@ export function selectionCommands(entities: readonly EntitySnapshot[]): Selectio
       available.add('produce');
       available.add('rally');
     }
+    if (entity.kind === 'building' && entity.owner === 0) available.add('demolish');
+  } else {
+    const ownBuildings = entities.filter(
+      (entity) => entity.kind === 'building' && entity.owner === 0,
+    );
+    const hasOwnEngineer = entities.some(
+      (entity) => entity.unitType === 'engineer' && entity.owner === 0,
+    );
+    if (ownBuildings.length === 1 && hasOwnEngineer) available.add('recycle');
   }
   return COMMAND_ORDER.filter((command) => available.has(command));
 }

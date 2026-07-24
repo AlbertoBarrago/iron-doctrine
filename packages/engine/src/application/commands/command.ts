@@ -81,6 +81,14 @@ export interface ResearchCommand {
   tech: string;
 }
 
+export interface RemoveBuildingCommand {
+  type: 'removeBuilding';
+  building: EntityId;
+  player: number;
+  /** Engineer authorizing salvage. Omit for demolition without a refund. */
+  engineer?: EntityId;
+}
+
 export type Command =
   | MoveCommand
   | StopCommand
@@ -93,7 +101,8 @@ export type Command =
   | QueueProductionCommand
   | CancelProductionCommand
   | SetRallyCommand
-  | ResearchCommand;
+  | ResearchCommand
+  | RemoveBuildingCommand;
 
 /**
  * Buffers commands to be applied on the next tick. The Simulation drains it via the

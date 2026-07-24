@@ -6,14 +6,8 @@ import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { CampaignScreen } from './ui/CampaignScreen.js';
 import { loadMapCatalog } from './maps/mapCatalog.js';
-import {
-  DEFAULT_SKIRMISH_SETTINGS,
-  type SkirmishConfig,
-} from './game/skirmishConfig.js';
-import {
-  completeCampaignMission,
-  loadCampaignProgress,
-} from './game/campaignProgress.js';
+import { DEFAULT_SKIRMISH_SETTINGS, type SkirmishConfig } from './game/skirmishConfig.js';
+import { completeCampaignMission, loadCampaignProgress } from './game/campaignProgress.js';
 import type { CampaignMissionId } from './game/campaign.js';
 import { useGameStore } from './state/gameStore.js';
 import './ui/game.css';
@@ -227,6 +221,7 @@ function Game({
         onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
         onGather={() => rendererRef.current?.gatherWithSelectedHarvesters()}
         onStop={() => rendererRef.current?.stopSelectedUnits()}
+        onRemoveBuilding={(recycle) => rendererRef.current?.removeSelectedBuilding(recycle)}
         onRestart={() => {
           setSetupOpen(false);
           setManualPaused(false);
@@ -246,11 +241,7 @@ function Game({
             <strong id="quit-confirmation-title">Quit mission?</strong>
             <span>Current battle progress will be lost.</span>
             <div className="match-dialog__actions">
-              <button
-                type="button"
-                className="metal-button metal-button--primary"
-                onClick={onExit}
-              >
+              <button type="button" className="metal-button metal-button--primary" onClick={onExit}>
                 Quit to main menu
               </button>
               <button

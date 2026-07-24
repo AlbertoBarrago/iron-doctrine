@@ -19,11 +19,15 @@ import {
   Owner,
   Position,
   ResourceNode,
+  Selectable,
+  Building,
+  UnitType,
 } from '../../domain/components/index.js';
 import { spawnUnit, UNIT_STATS } from '../../domain/archetypes/units.js';
 import {
   BUILDING_STATS,
   canPlaceBuilding,
+  clearBuildingFootprint,
   spawnBuilding,
 } from '../../domain/archetypes/buildings.js';
 import { spawnResourceNode } from '../../domain/archetypes/resources.js';
@@ -32,6 +36,7 @@ import { computeFormationSlots } from '../../domain/movement/formation.js';
 import { indexOf } from '../ecs/entity.js';
 import type { EntityId } from '@iron/shared';
 import type { Vec2 } from '../../domain/math/vec2.js';
+import * as fp from '../../domain/math/fixed.js';
 
 export function createCommandSystem(
   bus: CommandBus,
@@ -49,7 +54,7 @@ export function createCommandSystem(
             const goalCell = nearestOpenAcrossGrid(grid, cmd.target);
             if (!goalCell) break;
             const goal = grid.cellToWorld(goalCell.cx, goalCell.cy);
-            const slots = assignOpenFormationSlots(grid, movers.length, cmd.target);
+            const slots = assignOpenFormationSlots(world, grid, movers, cmd.target);
             movers.forEach((e, i) => {
               pauseHarvest(world, e);
               const move = world.get(e, Movement);
@@ -176,6 +181,30 @@ export function createCommandSystem(
             }
             break;
           }
+          case 'removeBuilding': {
+            const building = world.get(cmd.building, Building);
+            const owner = world.get(cmd.building, Owner);
+            const position = world.get(cmd.building, Position);
+            if (!building || !owner || !position || owner.player !== cmd.player) break;
+
+            if (cmd.engineer !== undefined) {
+              const engineerOwner = world.get(cmd.engineer, Owner);
+              const engineerType = world.get(cmd.engineer, UnitType);
+              if (
+                !engineerOwner ||
+                engineerOwner.player !== cmd.player ||
+                engineerType?.kind !== 'engineer'
+              ) {
+                break;
+              }
+              const stats = BUILDING_STATS[building.kind];
+              if (stats) economy.addCredits(cmd.player, Math.floor(stats.cost / 3));
+            }
+
+            clearBuildingFootprint(grid, building.footprint, position);
+            world.destroyEntity(cmd.building);
+            break;
+          }
         }
       }
     },
@@ -188,19 +217,22 @@ function nearestOpenAcrossGrid(grid: NavGrid, target: Vec2) {
 }
 
 function assignOpenFormationSlots(
+  world: World,
   grid: NavGrid,
-  count: number,
+  movers: readonly EntityId[],
   target: Vec2,
 ): Vec2[] {
-  if (count === 1) {
+  if (movers.length === 1) {
     const cell = grid.worldToCell(target.x, target.y);
-    if (grid.inBounds(cell.cx, cell.cy) && !grid.isBlocked(cell.cx, cell.cy)) return [target];
+    const clearance = entityClearance(world, grid, movers[0]!);
+    if (grid.isTraversable(cell.cx, cell.cy, clearance)) return [target];
   }
-  const requested = computeFormationSlots(count, target, 2);
+  const requested = computeFormationSlots(movers.length, target, 2);
   const reserved = new Set<number>();
-  return requested.map((slot) => {
+  return requested.map((slot, index) => {
     const desired = grid.worldToCell(slot.x, slot.y);
-    const cell = nearestUnreservedOpen(grid, desired.cx, desired.cy, reserved);
+    const clearance = entityClearance(world, grid, movers[index]!);
+    const cell = nearestUnreservedOpen(grid, desired.cx, desired.cy, reserved, clearance);
     if (!cell) return target;
     reserved.add(grid.index(cell.cx, cell.cy));
     return grid.cellToWorld(cell.cx, cell.cy);
@@ -212,6 +244,7 @@ function nearestUnreservedOpen(
   cx: number,
   cy: number,
   reserved: ReadonlySet<number>,
+  clearance: number,
 ) {
   const maxRadius = Math.max(grid.width, grid.height);
   for (let radius = 0; radius <= maxRadius; radius++) {
@@ -221,7 +254,7 @@ function nearestUnreservedOpen(
         const candidateX = cx + dx;
         const candidateY = cy + dy;
         if (
-          grid.isBlocked(candidateX, candidateY) ||
+          !grid.isTraversable(candidateX, candidateY, clearance) ||
           reserved.has(grid.index(candidateX, candidateY))
         ) {
           continue;
@@ -231,6 +264,10 @@ function nearestUnreservedOpen(
     }
   }
   return null;
+}
+
+function entityClearance(world: World, grid: NavGrid, entity: EntityId): number {
+  return grid.clearanceForRadius(world.get(entity, Selectable)?.radius ?? fp.fromFloat(0.5));
 }
 
 function pauseHarvest(world: World, entity: EntityId): void {

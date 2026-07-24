@@ -12,11 +12,7 @@ import {
   type SelectionCommand,
   type TutorialStep,
 } from '../state/gameStore.js';
-import {
-  BUILDING_PROFILES,
-  UNIT_PROFILES,
-  usesContinuousPlacement,
-} from '../game/gameContent.js';
+import { BUILDING_PROFILES, UNIT_PROFILES, usesContinuousPlacement } from '../game/gameContent.js';
 import type { MissionId } from '../game/skirmishConfig.js';
 
 const BUILDABLE_STRUCTURES = [
@@ -106,6 +102,7 @@ interface HudProps {
   onCancelPlacement(): void;
   onGather(): void;
   onStop(): void;
+  onRemoveBuilding(recycle: boolean): void;
   onRestart(): void;
   onExit(): void;
 }
@@ -113,6 +110,8 @@ interface HudProps {
 /** Industrial RTS command surface and progressive first-match guidance. */
 export function Hud(props: HudProps): JSX.Element {
   const [activeTab, setActiveTab] = useState<CommandTab>('orders');
+  const [pendingRemoval, setPendingRemoval] = useState<'demolish' | 'recycle' | null>(null);
+  const [completionDismissed, setCompletionDismissed] = useState(false);
   const fps = useGameStore((state) => state.fps);
   const entityCount = useGameStore((state) => state.entityCount);
   const credits = useGameStore((state) => state.credits);
@@ -126,7 +125,12 @@ export function Hud(props: HudProps): JSX.Element {
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
   const baseOperational = props.mission !== 'first_contact' || scenario?.phase === 'operational';
-  const canBuild = commandTabAvailable('build', baseOperational, selectedEntity, selectedProduction);
+  const canBuild = commandTabAvailable(
+    'build',
+    baseOperational,
+    selectedEntity,
+    selectedProduction,
+  );
   const preferredTab = preferredCommandTab(selectedEntity, selectedProduction);
   const tabResetKey = commandSelectionContext(selectedEntity, selectedProduction);
   useEffect(() => {
@@ -196,6 +200,8 @@ export function Hud(props: HudProps): JSX.Element {
           </div>
         </section>
 
+        {props.mission === 'base_foundations' ? <TutorialChecklist current={tutorialStep} /> : null}
+
         {selectedEntity ? (
           <SelectionCard entity={selectedEntity} />
         ) : (
@@ -233,6 +239,7 @@ export function Hud(props: HudProps): JSX.Element {
                   entity={selectedEntity}
                   onGather={props.onGather}
                   onStop={props.onStop}
+                  onRemove={(action) => setPendingRemoval(action)}
                 />
               ) : (
                 <WorkspaceEmpty title="No selection" copy="Select a unit or structure." />
@@ -248,7 +255,11 @@ export function Hud(props: HudProps): JSX.Element {
                     <button
                       type="button"
                       key={id}
-                      className={`command-button${active ? ' command-button--active' : ''}`}
+                      className={`command-button${active ? ' command-button--active' : ''}${
+                        isTutorialBuildObjective(tutorialStep, id)
+                          ? ' command-button--objective'
+                          : ''
+                      }`}
                       disabled={!availability.available}
                       onClick={() => props.onPlaceBuilding(id)}
                       title={`${profile.description} ${profile.tacticalNote} ${availability.label}.`}
@@ -298,10 +309,10 @@ export function Hud(props: HudProps): JSX.Element {
                 ? 'TRAINING COMPLETE'
                 : 'TRAINING AREA SECURE'
               : !baseOperational
-              ? 'HOSTILE FORCES HOLDING'
-              : aiActivationSeconds > 0
-                ? `HOSTILE MOBILIZATION ${aiActivationSeconds}s`
-                : 'CONTACT'}
+                ? 'HOSTILE FORCES HOLDING'
+                : aiActivationSeconds > 0
+                  ? `HOSTILE MOBILIZATION ${aiActivationSeconds}s`
+                  : 'CONTACT'}
           </span>
           <span>{fps} FPS</span>
         </div>
@@ -363,6 +374,52 @@ export function Hud(props: HudProps): JSX.Element {
             >
               Resume battle
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {pendingRemoval ? (
+        <ConfirmationDialog
+          title={pendingRemoval === 'recycle' ? 'Recycle structure?' : 'Demolish structure?'}
+          copy={
+            pendingRemoval === 'recycle'
+              ? 'The selected engineer will recover one third of its construction cost.'
+              : 'The structure will be destroyed permanently. No credits will be recovered.'
+          }
+          confirmLabel={pendingRemoval === 'recycle' ? 'Recycle structure' : 'Demolish structure'}
+          onConfirm={() => {
+            props.onRemoveBuilding(pendingRemoval === 'recycle');
+            setPendingRemoval(null);
+          }}
+          onCancel={() => setPendingRemoval(null)}
+        />
+      ) : null}
+
+      {props.mission === 'base_foundations' &&
+      tutorialStep === 'complete' &&
+      !completionDismissed ? (
+        <div className="match-overlay">
+          <div className="match-dialog steel-panel">
+            <div className="hazard-stripe" />
+            <span className="panel-kicker">FIELD COMMAND CONFIRMED</span>
+            <strong className="match-dialog__title">Operation complete</strong>
+            <p>Your base is operational and the next campaign operation is now available.</p>
+            <div className="match-dialog__actions">
+              <button
+                type="button"
+                className="metal-button metal-button--primary"
+                onClick={props.onExit}
+              >
+                Continue campaign
+              </button>
+              <button
+                type="button"
+                className="metal-button"
+                onClick={() => setCompletionDismissed(true)}
+              >
+                Remain in training area
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
@@ -500,6 +557,8 @@ const COMMAND_HELP: Record<SelectionCommand, { label: string; instruction: strin
   build: { label: 'Build', instruction: 'Choose a structure in the right panel' },
   produce: { label: 'Produce', instruction: 'Queue a unit in the right panel' },
   rally: { label: 'Rally point', instruction: 'Right-click terrain to set it' },
+  demolish: { label: 'Demolish', instruction: 'Destroy permanently · no refund' },
+  recycle: { label: 'Recycle', instruction: 'Engineer recovers one third of cost' },
 };
 
 function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Element {
@@ -509,7 +568,9 @@ function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Eleme
       <span className="panel-kicker">TACTICAL READOUT</span>
       <strong>{entity.label}</strong>
       {entity.role ? <span className="selection-card__role">{entity.role}</span> : null}
-      {entity.description ? <p className="selection-card__description">{entity.description}</p> : null}
+      {entity.description ? (
+        <p className="selection-card__description">{entity.description}</p>
+      ) : null}
       {health !== null ? (
         <>
           <div className="selection-card__meta">
@@ -558,16 +619,44 @@ function OrdersPanel({
   entity,
   onGather,
   onStop,
+  onRemove,
 }: {
   entity: SelectedEntitySummary;
   onGather(): void;
   onStop(): void;
+  onRemove(action: 'demolish' | 'recycle'): void;
 }): JSX.Element {
+  const operationalCommands = entity.commands.filter(
+    (command) => command !== 'demolish' && command !== 'recycle',
+  );
   return (
     <div className="quick-orders">
+      {entity.kind === 'building' && operationalCommands.length === 0 ? (
+        <WorkspaceEmpty
+          title={
+            entity.constructionProgress !== undefined
+              ? 'Construction in progress'
+              : 'Automatic facility'
+          }
+          copy={
+            entity.constructionProgress !== undefined
+              ? `Operational systems unlock at 100% · ${Math.round(entity.constructionProgress * 100)}% complete.`
+              : entity.buildingType === 'refinery'
+                ? 'Harvesters automatically deliver ore here. This facility has no manual production queue.'
+                : 'This structure operates automatically and has no direct orders.'
+          }
+        />
+      ) : null}
       {entity.commands.map((command) => {
         const help = COMMAND_HELP[command];
-        const action = command === 'gather' ? onGather : command === 'stop' ? onStop : null;
+        const action =
+          command === 'gather'
+            ? onGather
+            : command === 'stop'
+              ? onStop
+              : command === 'demolish' || command === 'recycle'
+                ? () => onRemove(command)
+                : null;
         return action ? (
           <button type="button" key={command} onClick={action}>
             <strong>{help.label}</strong>
@@ -580,6 +669,73 @@ function OrdersPanel({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function isTutorialBuildObjective(step: TutorialStep, building: string): boolean {
+  return (
+    (step === 'power' && building === 'power_plant') ||
+    step === building ||
+    (step === 'defense' && (building === 'concrete_wall' || building === 'turret'))
+  );
+}
+
+function TutorialChecklist({ current }: { current: TutorialStep }): JSX.Element {
+  const steps = Object.entries(TUTORIAL).filter(([step]) => step !== 'complete') as [
+    TutorialStep,
+    (typeof TUTORIAL)[TutorialStep],
+  ][];
+  const currentIndex = steps.findIndex(([step]) => step === current);
+  return (
+    <ol className="tutorial-checklist" aria-label="Base construction objectives">
+      {steps.map(([step, briefing], index) => (
+        <li
+          key={step}
+          className={
+            current === 'complete' || index < currentIndex
+              ? 'is-complete'
+              : step === current
+                ? 'is-current'
+                : ''
+          }
+        >
+          <span>{current === 'complete' || index < currentIndex ? '✓' : briefing.number}</span>
+          {briefing.title}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function ConfirmationDialog({
+  title,
+  copy,
+  confirmLabel,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  copy: string;
+  confirmLabel: string;
+  onConfirm(): void;
+  onCancel(): void;
+}): JSX.Element {
+  return (
+    <div className="setup-overlay" role="presentation">
+      <section className="pause-dialog steel-panel" role="dialog" aria-modal="true">
+        <span className="panel-kicker">STRUCTURE CONTROL</span>
+        <strong>{title}</strong>
+        <span>{copy}</span>
+        <div className="match-dialog__actions">
+          <button type="button" className="metal-button metal-button--danger" onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+          <button type="button" className="metal-button" onClick={onCancel}>
+            Cancel
+          </button>
+        </div>
+      </section>
     </div>
   );
 }

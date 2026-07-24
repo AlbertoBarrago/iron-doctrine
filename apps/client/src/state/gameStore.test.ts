@@ -113,6 +113,12 @@ describe('selection commands', () => {
       selectionCommands([
         entity({ kind: 'building', unitType: undefined, buildingType: 'construction_yard' }),
       ]),
-    ).toEqual(['build']);
+    ).toEqual(['build', 'demolish']);
+    expect(
+      selectionCommands([
+        entity({ kind: 'building', unitType: undefined, buildingType: 'refinery' }),
+        entity({ unitType: 'engineer' }),
+      ]),
+    ).toContain('recycle');
   });
 });

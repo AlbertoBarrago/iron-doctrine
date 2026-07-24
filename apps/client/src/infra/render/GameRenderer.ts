@@ -139,16 +139,15 @@ export class GameRenderer {
     this.bridge.init({
       seed,
       map: config.map,
-      aiPlayers:
-        !missionRules.enemyEnabled
-          ? []
-          : [
-              {
-                player: 1,
-                difficulty: config.difficulty,
-                activationTick: this.aiActivationTick,
-              },
-            ],
+      aiPlayers: !missionRules.enemyEnabled
+        ? []
+        : [
+            {
+              player: 1,
+              difficulty: config.difficulty,
+              activationTick: this.aiActivationTick,
+            },
+          ],
       startingCredits: {
         0: missionRules.playerCredits,
         1: aiCredits,
@@ -316,6 +315,25 @@ export class GameRenderer {
     this.placingBuilding = null;
     this.placementPointer = null;
     useGameStore.getState().setPlacingBuilding(null);
+  }
+
+  removeSelectedBuilding(recycle: boolean): void {
+    const snapshot = this.bridge.latest.curr;
+    if (!snapshot) return;
+    const selected = snapshot.entities.filter((entity) => this.selected.has(entity.id));
+    const building = selected.find((entity) => entity.kind === 'building' && entity.owner === 0);
+    if (!building) return;
+    const engineer = recycle
+      ? selected.find((entity) => entity.unitType === 'engineer' && entity.owner === 0)
+      : undefined;
+    if (recycle && !engineer) return;
+    this.bridge.command({
+      type: 'removeBuilding',
+      building: asEntityId(building.id),
+      player: 0,
+      ...(engineer ? { engineer: asEntityId(engineer.id) } : {}),
+    });
+    this.selected.delete(building.id);
   }
 
   stopSelectedUnits(): void {
@@ -501,9 +519,7 @@ export class GameRenderer {
           sy,
           s,
           color,
-          e.buildingType === 'concrete_wall'
-            ? wallConnections(e, wallKeys, wallStep)
-            : undefined,
+          e.buildingType === 'concrete_wall' ? wallConnections(e, wallKeys, wallStep) : undefined,
         );
         if (e.construction) {
           const progress = e.construction.progressTicks / e.construction.buildTicks;
@@ -1039,8 +1055,7 @@ export class GameRenderer {
     if (curr) this.syncSelectionState(curr);
     if (
       curr?.entities.some(
-        (entity) =>
-          this.selected.has(entity.id) && entity.buildingType === 'construction_yard',
+        (entity) => this.selected.has(entity.id) && entity.buildingType === 'construction_yard',
       )
     ) {
       useGameStore.getState().advanceTutorial('select');
@@ -1292,6 +1307,10 @@ export class GameRenderer {
           tacticalNote: profile.tacticalNote,
         }),
         kind: entity.kind === 'building' ? 'building' : 'unit',
+        ...(entity.buildingType && { buildingType: entity.buildingType }),
+        ...(construction && {
+          constructionProgress: construction.progressTicks / construction.buildTicks,
+        }),
         count: 1,
         commands: selectionCommands(selected),
         hp: entity.hp,

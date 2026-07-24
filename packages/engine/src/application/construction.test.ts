@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Simulation } from './simulation.js';
 import { NavGrid } from './pathfinding/nav-grid.js';
 import { Building, Construction, Energy, Health, Production } from '../domain/components/index.js';
+import { spawnBuilding } from '../domain/archetypes/buildings.js';
+import { spawnUnit } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromFloat(x), y: fp.fromFloat(y) });
@@ -118,5 +120,35 @@ describe('base construction', () => {
 
     expect(sim.grid.isBlocked(firstCell.cx, firstCell.cy)).toBe(false);
     expect(sim.grid.isBlocked(secondCell.cx, secondCell.cy)).toBe(true);
+  });
+
+  it('demolishes without refund and recycles through an owned engineer for one third', () => {
+    const sim = makeSim(0);
+    const demolished = spawnBuilding(sim.world, sim.grid, 'power_plant', 0, at(-4.5, 0.5));
+    const recycled = spawnBuilding(sim.world, sim.grid, 'barracks', 0, at(4.5, 0.5));
+    const engineer = spawnUnit(sim.world, 'engineer', 0, at(0.5, 5.5));
+
+    sim.enqueue({ type: 'removeBuilding', building: demolished, player: 0 });
+    sim.enqueue({ type: 'removeBuilding', building: recycled, player: 0, engineer });
+    sim.step();
+
+    expect(sim.world.has(demolished, Building)).toBe(false);
+    expect(sim.world.has(recycled, Building)).toBe(false);
+    expect(sim.economy.credits(0)).toBe(200);
+    expect(sim.world.has(engineer, Health)).toBe(true);
+    const formerCell = sim.grid.worldToCell(at(-4.5, 0.5).x, at(-4.5, 0.5).y);
+    expect(sim.grid.isBlocked(formerCell.cx, formerCell.cy)).toBe(false);
+  });
+
+  it('rejects recycling without a valid owned engineer', () => {
+    const sim = makeSim(0);
+    const building = spawnBuilding(sim.world, sim.grid, 'barracks', 0, at(0.5, 0.5));
+    const enemyEngineer = spawnUnit(sim.world, 'engineer', 1, at(5.5, 5.5));
+
+    sim.enqueue({ type: 'removeBuilding', building, player: 0, engineer: enemyEngineer });
+    sim.step();
+
+    expect(sim.world.has(building, Building)).toBe(true);
+    expect(sim.economy.credits(0)).toBe(0);
   });
 });
