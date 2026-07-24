@@ -158,7 +158,7 @@ export function StartScreen({
           <span>
             <i aria-hidden="true" /> Command link online
           </span>
-          <span>Build 0.1.0</span>
+          <span>Build 0.1.0-beta.0</span>
         </footer>
       </section>
     </main>

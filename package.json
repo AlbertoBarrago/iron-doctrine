@@ -1,6 +1,6 @@
 {
   "name": "iron-doctrine",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.0",
   "private": true,
   "type": "module",
   "description": "Original browser-based real-time strategy game.",
