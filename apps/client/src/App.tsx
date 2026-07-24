@@ -61,13 +61,14 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
   const [session, setSession] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
   const [manualPaused, setManualPaused] = useState(false);
+  const [quitConfirmationOpen, setQuitConfirmationOpen] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.7);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const initialAudio = useRef({ muted: audioMuted, volume: audioVolume });
-  const paused = setupOpen || manualPaused;
+  const paused = setupOpen || manualPaused || quitConfirmationOpen;
 
   useEffect(() => {
     void session;
@@ -101,9 +102,16 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
         return;
       }
       const key = event.key.toLowerCase();
+      if (quitConfirmationOpen) {
+        if (key === 'escape') {
+          event.preventDefault();
+          setQuitConfirmationOpen(false);
+        }
+        return;
+      }
       if (key === 'q') {
         event.preventDefault();
-        onExit();
+        setQuitConfirmationOpen(true);
         return;
       }
       if (key !== 'p') return;
@@ -112,7 +120,7 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
     };
     window.addEventListener('keydown', handleKeyboardControl);
     return () => window.removeEventListener('keydown', handleKeyboardControl);
-  }, [onExit]);
+  }, [quitConfirmationOpen]);
 
   const attachMinimap = useCallback((c: HTMLCanvasElement | null) => {
     minimapCanvasRef.current = c;
@@ -156,6 +164,36 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
         }}
         onExit={onExit}
       />
+      {quitConfirmationOpen ? (
+        <div className="setup-overlay" role="presentation">
+          <section
+            className="pause-dialog steel-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quit-confirmation-title"
+          >
+            <span className="panel-kicker">LEAVE BATTLEFIELD</span>
+            <strong id="quit-confirmation-title">Quit mission?</strong>
+            <span>Current battle progress will be lost.</span>
+            <div className="match-dialog__actions">
+              <button
+                type="button"
+                className="metal-button metal-button--primary"
+                onClick={onExit}
+              >
+                Quit to main menu
+              </button>
+              <button
+                type="button"
+                className="metal-button"
+                onClick={() => setQuitConfirmationOpen(false)}
+              >
+                Continue battle
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </div>
   );
 }
