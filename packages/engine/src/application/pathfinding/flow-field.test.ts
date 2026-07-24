@@ -44,6 +44,16 @@ describe('FlowField', () => {
     expect(ff.reachable(1, 5)).toBe(false);
   });
 
+  it('does not route large units through a one-cell choke', () => {
+    const grid = new NavGrid(11, 9, fp.fromInt(1));
+    grid.stampRect(5, 0, 1, 4, true);
+    grid.stampRect(5, 5, 1, 4, true);
+    const infantry = new FlowField(grid, { cx: 8, cy: 4 }, 0);
+    const vehicle = new FlowField(grid, { cx: 8, cy: 4 }, 1);
+    expect(infantry.reachable(2, 4)).toBe(true);
+    expect(vehicle.reachable(2, 4)).toBe(false);
+  });
+
   it('is deterministic', () => {
     const build = () => {
       const g = new NavGrid(12, 12, fp.fromInt(1));

@@ -1,6 +1,13 @@
 import type { System, TickContext } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
-import { Facing, FlowMovement, Movement, Path, Position } from '../../domain/components/index.js';
+import {
+  Facing,
+  FlowMovement,
+  Movement,
+  Path,
+  Position,
+  Selectable,
+} from '../../domain/components/index.js';
 import { FlowField } from '../pathfinding/flow-field.js';
 import type { Cell, NavGrid } from '../pathfinding/nav-grid.js';
 import * as fp from '../../domain/math/fixed.js';
@@ -16,15 +23,15 @@ export class FlowFieldCache {
 
   constructor(private readonly grid: NavGrid) {}
 
-  get(goal: Cell): FlowField {
+  get(goal: Cell, clearance = 0): FlowField {
     if (this.cachedRevision !== this.grid.revision) {
       this.fields.clear();
       this.cachedRevision = this.grid.revision;
     }
-    const key = `${goal.cx}:${goal.cy}`;
+    const key = `${goal.cx}:${goal.cy}:${clearance}`;
     let field = this.fields.get(key);
     if (!field) {
-      field = new FlowField(this.grid, goal);
+      field = new FlowField(this.grid, goal, clearance);
       this.fields.set(key, field);
       this.buildCount++;
     }
@@ -40,6 +47,9 @@ export function createFlowMovementSystem(grid: NavGrid, cache = new FlowFieldCac
         const position = world.get(entity, Position)!;
         const movement = world.get(entity, Movement)!;
         const flowMovement = world.get(entity, FlowMovement)!;
+        const clearance = grid.clearanceForRadius(
+          world.get(entity, Selectable)?.radius ?? fp.div(grid.cellSize, fp.fromInt(2)),
+        );
 
         if (
           movement.target === null ||
@@ -50,13 +60,18 @@ export function createFlowMovementSystem(grid: NavGrid, cache = new FlowFieldCac
         }
 
         const rawGoal = grid.worldToCell(flowMovement.goal.x, flowMovement.goal.y);
-        const goal = grid.nearestOpen(rawGoal.cx, rawGoal.cy, Math.max(grid.width, grid.height));
+        const goal = grid.nearestOpen(
+          rawGoal.cx,
+          rawGoal.cy,
+          Math.max(grid.width, grid.height),
+          clearance,
+        );
         if (!goal) {
           movement.target = null;
           world.remove(entity, FlowMovement);
           continue;
         }
-        const direction = cache.get(goal).sampleAt(position.x, position.y);
+        const direction = cache.get(goal, clearance).sampleAt(position.x, position.y);
         if (direction.x === fp.FP.ZERO && direction.y === fp.FP.ZERO) {
           beginFinalApproach(world, entity);
           continue;

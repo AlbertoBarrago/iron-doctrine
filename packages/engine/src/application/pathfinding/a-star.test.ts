@@ -24,6 +24,14 @@ describe('NavGrid', () => {
     expect(g.isBlocked(4, 3)).toBe(true);
     expect(g.isBlocked(5, 3)).toBe(false);
   });
+
+  it('inflates obstacles for vehicles without penalizing infantry', () => {
+    const g = new NavGrid(7, 7);
+    g.stampRect(0, 2, 7, 1, true);
+    g.stampRect(0, 4, 7, 1, true);
+    expect(g.isTraversable(3, 3, 0)).toBe(true);
+    expect(g.isTraversable(3, 3, 1)).toBe(false);
+  });
 });
 
 describe('A* pathfinding', () => {
@@ -73,6 +81,14 @@ describe('A* pathfinding', () => {
     // Moving from (0,0) to (1,1) diagonally is illegal (both neighbours blocked).
     const path = findPath(g, { cx: 0, cy: 0 }, { cx: 1, cy: 1 });
     expect(path).toBeNull();
+  });
+
+  it('rejects corridors narrower than the requested clearance', () => {
+    const g = new NavGrid(9, 9);
+    g.stampRect(0, 3, 9, 1, true);
+    g.stampRect(0, 5, 9, 1, true);
+    expect(findPath(g, { cx: 1, cy: 4 }, { cx: 7, cy: 4 }, 0)).not.toBeNull();
+    expect(findPath(g, { cx: 1, cy: 4 }, { cx: 7, cy: 4 }, 1)).toBeNull();
   });
 });
 

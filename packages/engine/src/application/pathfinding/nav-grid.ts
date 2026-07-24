@@ -67,6 +67,25 @@ export class NavGrid {
     return this.blocked[this.index(cx, cy)] === 1;
   }
 
+  /**
+   * Whether an agent whose footprint extends `clearance` cells beyond its centre can
+   * occupy this cell. A clearance of zero preserves point-agent navigation.
+   */
+  isTraversable(cx: number, cy: number, clearance = 0): boolean {
+    for (let y = cy - clearance; y <= cy + clearance; y++) {
+      for (let x = cx - clearance; x <= cx + clearance; x++) {
+        if (this.isBlocked(x, y)) return false;
+      }
+    }
+    return true;
+  }
+
+  /** Conservative cell clearance for a circular world-space footprint. */
+  clearanceForRadius(radius: Fixed): number {
+    const cells = fp.toFloat(fp.div(radius, this.cellSize));
+    return Math.max(0, Math.ceil(cells - 0.5));
+  }
+
   setBlocked(cx: number, cy: number, value: boolean): void {
     if (!this.inBounds(cx, cy)) return;
     const index = this.index(cx, cy);
@@ -101,15 +120,15 @@ export class NavGrid {
    * itself when already free, or `null` if none is reachable within `maxRadius`.
    * Used to approach blocked goals (e.g. moving next to a building footprint).
    */
-  nearestOpen(cx: number, cy: number, maxRadius = 16): Cell | null {
-    if (!this.isBlocked(cx, cy)) return { cx, cy };
+  nearestOpen(cx: number, cy: number, maxRadius = 16, clearance = 0): Cell | null {
+    if (this.isTraversable(cx, cy, clearance)) return { cx, cy };
     for (let r = 1; r <= maxRadius; r++) {
       for (let dy = -r; dy <= r; dy++) {
         for (let dx = -r; dx <= r; dx++) {
           if (Math.max(Math.abs(dx), Math.abs(dy)) !== r) continue; // ring perimeter only
           const nx = cx + dx;
           const ny = cy + dy;
-          if (!this.isBlocked(nx, ny)) return { cx: nx, cy: ny };
+          if (this.isTraversable(nx, ny, clearance)) return { cx: nx, cy: ny };
         }
       }
     }

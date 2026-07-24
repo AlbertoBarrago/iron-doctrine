@@ -86,6 +86,7 @@ export class FlowField {
   constructor(
     private readonly grid: NavGrid,
     readonly goal: Cell,
+    readonly clearance = 0,
   ) {
     const size = grid.width * grid.height;
     this.cost = new Int32Array(size).fill(UNREACHABLE);
@@ -96,7 +97,7 @@ export class FlowField {
 
   /** Dijkstra from the goal over passable cells. */
   private buildIntegration(): void {
-    if (this.grid.isBlocked(this.goal.cx, this.goal.cy)) return;
+    if (!this.grid.isTraversable(this.goal.cx, this.goal.cy, this.clearance)) return;
     const start = this.grid.index(this.goal.cx, this.goal.cy);
     this.cost[start] = 0;
     const open = new StableMinHeap();
@@ -109,11 +110,12 @@ export class FlowField {
       for (const [dx, dy, base] of NEIGHBORS) {
         const nx = cx + dx;
         const ny = cy + dy;
-        if (this.grid.isBlocked(nx, ny)) continue;
+        if (!this.grid.isTraversable(nx, ny, this.clearance)) continue;
         if (
           dx !== 0 &&
           dy !== 0 &&
-          (this.grid.isBlocked(cx + dx, cy) || this.grid.isBlocked(cx, cy + dy))
+          (!this.grid.isTraversable(cx + dx, cy, this.clearance) ||
+            !this.grid.isTraversable(cx, cy + dy, this.clearance))
         ) {
           continue; // no diagonal corner cutting
         }
@@ -143,12 +145,13 @@ export class FlowField {
         for (const [dx, dy] of NEIGHBORS) {
           const nx = cx + dx;
           const ny = cy + dy;
-          if (this.grid.isBlocked(nx, ny)) continue;
+          if (!this.grid.isTraversable(nx, ny, this.clearance)) continue;
           // Never steer diagonally through a blocked corner.
           if (
             dx !== 0 &&
             dy !== 0 &&
-            (this.grid.isBlocked(cx + dx, cy) || this.grid.isBlocked(cx, cy + dy))
+            (!this.grid.isTraversable(cx + dx, cy, this.clearance) ||
+              !this.grid.isTraversable(cx, cy + dy, this.clearance))
           ) {
             continue;
           }

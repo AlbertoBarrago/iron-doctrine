@@ -88,7 +88,10 @@ function findSpawnPoint(
         if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
         const cx = centerX + dx;
         const cy = centerY + dy;
-        if (grid.isBlocked(cx, cy) || !hasOpenNeighbour(grid, cx, cy)) continue;
+        const clearance = grid.clearanceForRadius(unitRadius);
+        if (!grid.isTraversable(cx, cy, clearance) || !hasOpenNeighbour(grid, cx, cy, clearance)) {
+          continue;
+        }
         const candidate = grid.cellToWorld(cx, cy);
         if (isOccupied(world, candidate, unitRadius)) continue;
         return candidate;
@@ -98,12 +101,12 @@ function findSpawnPoint(
   return null;
 }
 
-function hasOpenNeighbour(grid: NavGrid, cx: number, cy: number): boolean {
+function hasOpenNeighbour(grid: NavGrid, cx: number, cy: number, clearance: number): boolean {
   return (
-    !grid.isBlocked(cx - 1, cy) ||
-    !grid.isBlocked(cx + 1, cy) ||
-    !grid.isBlocked(cx, cy - 1) ||
-    !grid.isBlocked(cx, cy + 1)
+    grid.isTraversable(cx - 1, cy, clearance) ||
+    grid.isTraversable(cx + 1, cy, clearance) ||
+    grid.isTraversable(cx, cy - 1, clearance) ||
+    grid.isTraversable(cx, cy + 1, clearance)
   );
 }
 

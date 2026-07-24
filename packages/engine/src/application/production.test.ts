@@ -156,8 +156,11 @@ describe('ProductionSystem', () => {
     });
 
     const center = sim.grid.worldToCell(at(0, 0).x, at(0, 0).y);
-    sim.grid.setBlocked(center.cx - 3, center.cy - 3, false);
-    sim.grid.setBlocked(center.cx - 4, center.cy - 3, false);
+    for (let cy = center.cy - 5; cy <= center.cy - 2; cy++) {
+      for (let cx = center.cx - 5; cx <= center.cx - 2; cx++) {
+        sim.grid.setBlocked(cx, cy, false);
+      }
+    }
     sim.step();
 
     expect(sim.world.query(UnitType).length).toBe(1);

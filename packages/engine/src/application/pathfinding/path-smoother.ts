@@ -6,7 +6,7 @@
 import type { NavGrid, Cell } from './nav-grid.js';
 
 /** True if a straight line between two cell centres crosses no blocked cell. */
-export function hasLineOfSight(grid: NavGrid, a: Cell, b: Cell): boolean {
+export function hasLineOfSight(grid: NavGrid, a: Cell, b: Cell, clearance = 0): boolean {
   // Integer supercover line walk (Amanatides–Woo style, simplified).
   let x0 = a.cx;
   let y0 = a.cy;
@@ -19,7 +19,7 @@ export function hasLineOfSight(grid: NavGrid, a: Cell, b: Cell): boolean {
   let err = dx - dy;
 
   for (;;) {
-    if (grid.isBlocked(x0, y0)) return false;
+    if (!grid.isTraversable(x0, y0, clearance)) return false;
     if (x0 === x1 && y0 === y1) return true;
     const e2 = 2 * err;
     if (e2 > -dy) {
@@ -34,12 +34,12 @@ export function hasLineOfSight(grid: NavGrid, a: Cell, b: Cell): boolean {
 }
 
 /** Returns a reduced waypoint list preserving start and goal. */
-export function smoothPath(grid: NavGrid, path: Cell[]): Cell[] {
+export function smoothPath(grid: NavGrid, path: Cell[], clearance = 0): Cell[] {
   if (path.length <= 2) return path;
   const result: Cell[] = [path[0]!];
   let anchor = 0;
   for (let i = 2; i < path.length; i++) {
-    if (!hasLineOfSight(grid, path[anchor]!, path[i]!)) {
+    if (!hasLineOfSight(grid, path[anchor]!, path[i]!, clearance)) {
       result.push(path[i - 1]!);
       anchor = i - 1;
     }

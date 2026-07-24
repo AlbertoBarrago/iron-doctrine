@@ -75,8 +75,13 @@ function heuristic(ax: number, ay: number, bx: number, by: number): number {
  * Finds a path of cell centres from `start` to `goal`. Returns the list of cells
  * (inclusive of start and goal) or `null` if unreachable.
  */
-export function findPath(grid: NavGrid, start: Cell, goal: Cell): Cell[] | null {
-  if (grid.isBlocked(goal.cx, goal.cy) || grid.isBlocked(start.cx, start.cy)) return null;
+export function findPath(grid: NavGrid, start: Cell, goal: Cell, clearance = 0): Cell[] | null {
+  if (
+    !grid.isTraversable(goal.cx, goal.cy, clearance) ||
+    !grid.isTraversable(start.cx, start.cy, clearance)
+  ) {
+    return null;
+  }
   if (start.cx === goal.cx && start.cy === goal.cy) return [start];
 
   const size = grid.width * grid.height;
@@ -115,9 +120,13 @@ export function findPath(grid: NavGrid, start: Cell, goal: Cell): Cell[] | null 
     for (const [dx, dy, base] of dirs) {
       const nx = cx + dx;
       const ny = cy + dy;
-      if (grid.isBlocked(nx, ny)) continue;
+      if (!grid.isTraversable(nx, ny, clearance)) continue;
       // Disallow diagonal corner-cutting through blocked orthogonal neighbours.
-      if (dx !== 0 && dy !== 0 && (grid.isBlocked(cx + dx, cy) || grid.isBlocked(cx, cy + dy))) {
+      if (
+        dx !== 0 &&
+        dy !== 0 &&
+        (!grid.isTraversable(cx + dx, cy, clearance) || !grid.isTraversable(cx, cy + dy, clearance))
+      ) {
         continue;
       }
       const nIdx = grid.index(nx, ny);

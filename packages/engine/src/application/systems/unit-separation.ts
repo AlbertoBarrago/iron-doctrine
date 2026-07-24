@@ -89,7 +89,9 @@ function separatePair(world: World, grid: NavGrid, left: EntityId, right: Entity
   const nextLeft = v2.sub(leftPosition, offset);
   const nextRight = v2.add(rightPosition, offset);
 
-  if (canOccupy(grid, nextLeft) && canOccupy(grid, nextRight)) {
+  const leftRadius = world.get(left, Selectable)!.radius;
+  const rightRadius = world.get(right, Selectable)!.radius;
+  if (canOccupy(grid, nextLeft, leftRadius) && canOccupy(grid, nextRight, rightRadius)) {
     world.add(left, Position, nextLeft);
     world.add(right, Position, nextRight);
     return;
@@ -99,15 +101,15 @@ function separatePair(world: World, grid: NavGrid, left: EntityId, right: Entity
   const fullCorrection = fp.sub(minimumDistance, distance);
   const fullOffset = v2.scale(direction, fullCorrection);
   const leftOnly = v2.sub(leftPosition, fullOffset);
-  if (canOccupy(grid, leftOnly)) {
+  if (canOccupy(grid, leftOnly, leftRadius)) {
     world.add(left, Position, leftOnly);
     return;
   }
   const rightOnly = v2.add(rightPosition, fullOffset);
-  if (canOccupy(grid, rightOnly)) world.add(right, Position, rightOnly);
+  if (canOccupy(grid, rightOnly, rightRadius)) world.add(right, Position, rightOnly);
 }
 
-function canOccupy(grid: NavGrid, position: v2.Vec2): boolean {
+function canOccupy(grid: NavGrid, position: v2.Vec2, radius: fp.Fixed): boolean {
   const cell = grid.worldToCell(position.x, position.y);
-  return grid.inBounds(cell.cx, cell.cy) && !grid.isBlocked(cell.cx, cell.cy);
+  return grid.isTraversable(cell.cx, cell.cy, grid.clearanceForRadius(radius));
 }

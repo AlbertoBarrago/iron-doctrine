@@ -9,12 +9,19 @@
  */
 import type { System } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
-import { FlowMovement, Position, Movement, Path } from '../../domain/components/index.js';
+import {
+  FlowMovement,
+  Position,
+  Movement,
+  Path,
+  Selectable,
+} from '../../domain/components/index.js';
 import type { NavGrid } from '../pathfinding/nav-grid.js';
 import { findPath } from '../pathfinding/a-star.js';
 import { smoothPath } from '../pathfinding/path-smoother.js';
 import * as v2 from '../../domain/math/vec2.js';
 import type { Vec2 } from '../../domain/math/vec2.js';
+import * as fp from '../../domain/math/fixed.js';
 
 export function createPathfindingSystem(grid: NavGrid): System {
   return {
@@ -32,8 +39,11 @@ export function createPathfindingSystem(grid: NavGrid): System {
         if (existing && v2.equals(existing.goal, move.target)) continue; // already routed
 
         const pos = world.get(e, Position)!;
+        const clearance = grid.clearanceForRadius(
+          world.get(e, Selectable)?.radius ?? fp.div(grid.cellSize, fp.fromInt(2)),
+        );
         const rawStart = grid.worldToCell(pos.x, pos.y);
-        const start = grid.nearestOpen(rawStart.cx, rawStart.cy);
+        const start = grid.nearestOpen(rawStart.cx, rawStart.cy, 16, clearance);
         if (!start) {
           move.target = null;
           if (world.has(e, Path)) world.remove(e, Path);
@@ -42,14 +52,14 @@ export function createPathfindingSystem(grid: NavGrid): System {
         // If the goal cell is blocked (e.g. a building footprint), approach the
         // nearest passable cell instead of failing outright.
         const rawGoal = grid.worldToCell(move.target.x, move.target.y);
-        const goalCell = grid.nearestOpen(rawGoal.cx, rawGoal.cy);
+        const goalCell = grid.nearestOpen(rawGoal.cx, rawGoal.cy, 16, clearance);
         if (!goalCell) {
           move.target = null;
           if (world.has(e, Path)) world.remove(e, Path);
           continue;
         }
         const remapped = goalCell.cx !== rawGoal.cx || goalCell.cy !== rawGoal.cy;
-        const cells = findPath(grid, start, goalCell);
+        const cells = findPath(grid, start, goalCell, clearance);
 
         if (!cells || cells.length === 0) {
           // Unreachable: drop the order rather than spin forever.
@@ -58,7 +68,7 @@ export function createPathfindingSystem(grid: NavGrid): System {
           continue;
         }
 
-        const smoothed = smoothPath(grid, cells);
+        const smoothed = smoothPath(grid, cells, clearance);
         const waypoints: Vec2[] = smoothed.map((c) => grid.cellToWorld(c.cx, c.cy));
         // Final waypoint is the exact requested target unless the goal was remapped to
         // approach a blocked cell (then we stop at the approach cell's centre).
