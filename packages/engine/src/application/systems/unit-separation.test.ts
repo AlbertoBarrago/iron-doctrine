@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { World } from '../ecs/world.js';
 import { Position, Selectable, UnitType } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
-import { createUnitSeparationSystem } from './unit-separation.js';
+import {
+  createUnitSeparationSystem,
+  type UnitSeparationDiagnostics,
+} from './unit-separation.js';
 import { NavGrid } from '../pathfinding/nav-grid.js';
 import { Random } from '../../domain/math/rng.js';
 import { asTick } from '@iron/shared';
@@ -90,5 +93,21 @@ describe('UnitSeparationSystem', () => {
       const cell = grid.worldToCell(position.x, position.y);
       expect(grid.isBlocked(cell.cx, cell.cy)).toBe(false);
     }
+  });
+
+  it('checks only nearby pairs for a 500-unit army', () => {
+    const world = new World();
+    const diagnostics: UnitSeparationDiagnostics = { pairChecks: 0 };
+    const system = createUnitSeparationSystem(new NavGrid(128, 128), diagnostics);
+    for (let i = 0; i < 500; i++) unit(world, -50 + i * 0.2);
+
+    system.update(world, {
+      tick: asTick(0),
+      dt: fp.fromFloat(1 / 20),
+      rng: new Random(1),
+    });
+
+    expect(diagnostics.pairChecks).toBeLessThan(10_000);
+    expect(diagnostics.pairChecks).toBeLessThan((500 * 499) / 2);
   });
 });

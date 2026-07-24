@@ -11,6 +11,8 @@ import type { CommandBus } from '../commands/command.js';
 import type { PlayerEconomy } from '../../domain/economy/player-economy.js';
 import {
   Movement,
+  FlowMovement,
+  Path,
   Attack,
   Harvest,
   Production,
@@ -29,6 +31,7 @@ import { TECH_TREE, type TechState } from '../../domain/tech/tech-tree.js';
 import { computeFormationSlots } from '../../domain/movement/formation.js';
 import { indexOf } from '../ecs/entity.js';
 import type { EntityId } from '@iron/shared';
+import type { Vec2 } from '../../domain/math/vec2.js';
 
 export function createCommandSystem(
   bus: CommandBus,
@@ -42,15 +45,26 @@ export function createCommandSystem(
       for (const cmd of bus.drain()) {
         switch (cmd.type) {
           case 'move': {
-            // Multiple units spread into a formation so they don't stack on one cell.
             const movers = [...cmd.entities].sort((a, b) => indexOf(a) - indexOf(b));
-            const slots = computeFormationSlots(movers.length, cmd.target, 2);
+            const goalCell = nearestOpenAcrossGrid(grid, cmd.target);
+            if (!goalCell) break;
+            const goal = grid.cellToWorld(goalCell.cx, goalCell.cy);
+            const slots = assignOpenFormationSlots(grid, movers.length, cmd.target);
             movers.forEach((e, i) => {
               pauseHarvest(world, e);
               const move = world.get(e, Movement);
               if (move) {
-                const slot = slots[i] ?? cmd.target;
-                move.target = { x: slot.x, y: slot.y };
+                const finalTarget = slots[i] ?? goal;
+                move.target = { ...finalTarget };
+                if (movers.length > 1) {
+                  world.add(e, FlowMovement, {
+                    goal: { ...goal },
+                    finalTarget: { ...finalTarget },
+                  });
+                } else if (world.has(e, FlowMovement)) {
+                  world.remove(e, FlowMovement);
+                }
+                if (world.has(e, Path)) world.remove(e, Path);
               }
               const atk = world.get(e, Attack);
               if (atk) {
@@ -65,12 +79,16 @@ export function createCommandSystem(
               pauseHarvest(world, e);
               const move = world.get(e, Movement);
               if (move) move.target = null;
+              if (world.has(e, FlowMovement)) world.remove(e, FlowMovement);
+              if (world.has(e, Path)) world.remove(e, Path);
               const atk = world.get(e, Attack);
               if (atk) atk.target = -1;
             }
             break;
           case 'attack':
             for (const e of cmd.entities) {
+              if (world.has(e, FlowMovement)) world.remove(e, FlowMovement);
+              if (world.has(e, Path)) world.remove(e, Path);
               const atk = world.get(e, Attack);
               if (atk) {
                 atk.target = cmd.target as number;
@@ -90,6 +108,8 @@ export function createCommandSystem(
                   h.node = target as number;
                   const movement = world.get(e, Movement);
                   if (movement) movement.target = { ...targetPosition };
+                  if (world.has(e, FlowMovement)) world.remove(e, FlowMovement);
+                  if (world.has(e, Path)) world.remove(e, Path);
                 } else {
                   h.phase = 'idle'; // re-enter the harvest loop, picking nearest ore
                   h.node = -1;
@@ -160,6 +180,57 @@ export function createCommandSystem(
       }
     },
   };
+}
+
+function nearestOpenAcrossGrid(grid: NavGrid, target: Vec2) {
+  const cell = grid.worldToCell(target.x, target.y);
+  return grid.nearestOpen(cell.cx, cell.cy, Math.max(grid.width, grid.height));
+}
+
+function assignOpenFormationSlots(
+  grid: NavGrid,
+  count: number,
+  target: Vec2,
+): Vec2[] {
+  if (count === 1) {
+    const cell = grid.worldToCell(target.x, target.y);
+    if (grid.inBounds(cell.cx, cell.cy) && !grid.isBlocked(cell.cx, cell.cy)) return [target];
+  }
+  const requested = computeFormationSlots(count, target, 2);
+  const reserved = new Set<number>();
+  return requested.map((slot) => {
+    const desired = grid.worldToCell(slot.x, slot.y);
+    const cell = nearestUnreservedOpen(grid, desired.cx, desired.cy, reserved);
+    if (!cell) return target;
+    reserved.add(grid.index(cell.cx, cell.cy));
+    return grid.cellToWorld(cell.cx, cell.cy);
+  });
+}
+
+function nearestUnreservedOpen(
+  grid: NavGrid,
+  cx: number,
+  cy: number,
+  reserved: ReadonlySet<number>,
+) {
+  const maxRadius = Math.max(grid.width, grid.height);
+  for (let radius = 0; radius <= maxRadius; radius++) {
+    for (let dy = -radius; dy <= radius; dy++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+        const candidateX = cx + dx;
+        const candidateY = cy + dy;
+        if (
+          grid.isBlocked(candidateX, candidateY) ||
+          reserved.has(grid.index(candidateX, candidateY))
+        ) {
+          continue;
+        }
+        return { cx: candidateX, cy: candidateY };
+      }
+    }
+  }
+  return null;
 }
 
 function pauseHarvest(world: World, entity: EntityId): void {

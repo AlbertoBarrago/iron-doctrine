@@ -13,21 +13,59 @@ import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import type { EntityId } from '@iron/shared';
 
-export function createUnitSeparationSystem(grid: NavGrid): System {
+export interface UnitSeparationDiagnostics {
+  pairChecks: number;
+}
+
+export function createUnitSeparationSystem(
+  grid: NavGrid,
+  diagnostics?: UnitSeparationDiagnostics,
+): System {
   return {
     name: 'UnitSeparationSystem',
     update(world: World): void {
       const units = world.query(Position, Selectable, UnitType);
+      const buckets = new Map<string, EntityId[]>();
+      let maximumRadius = fp.FP.ZERO;
+      if (diagnostics) diagnostics.pairChecks = 0;
 
-      for (let leftIndex = 0; leftIndex < units.length; leftIndex++) {
-        const left = units[leftIndex]!;
-        for (let rightIndex = leftIndex + 1; rightIndex < units.length; rightIndex++) {
-          const right = units[rightIndex]!;
-          separatePair(world, grid, left, right);
+      for (const entity of units) {
+        const position = world.get(entity, Position)!;
+        const cell = grid.worldToCell(position.x, position.y);
+        const key = bucketKey(cell.cx, cell.cy);
+        const bucket = buckets.get(key);
+        if (bucket) bucket.push(entity);
+        else buckets.set(key, [entity]);
+        const radius = world.get(entity, Selectable)!.radius;
+        if (radius > maximumRadius) maximumRadius = radius;
+      }
+
+      const neighborRange = Math.max(
+        1,
+        Math.ceil(fp.toFloat(fp.div(fp.mul(maximumRadius, fp.fromInt(2)), grid.cellSize))),
+      );
+
+      for (const left of units) {
+        const position = world.get(left, Position)!;
+        const cell = grid.worldToCell(position.x, position.y);
+        for (let dy = -neighborRange; dy <= neighborRange; dy++) {
+          for (let dx = -neighborRange; dx <= neighborRange; dx++) {
+            const nearby = buckets.get(bucketKey(cell.cx + dx, cell.cy + dy));
+            if (!nearby) continue;
+            for (const right of nearby) {
+              if (right <= left) continue;
+              if (diagnostics) diagnostics.pairChecks++;
+              separatePair(world, grid, left, right);
+            }
+          }
         }
       }
     },
   };
+}
+
+function bucketKey(cx: number, cy: number): string {
+  return `${cx}:${cy}`;
 }
 
 function separatePair(world: World, grid: NavGrid, left: EntityId, right: EntityId): void {

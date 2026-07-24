@@ -11,6 +11,7 @@ import { CommandBus, type Command } from './commands/command.js';
 import { createCommandSystem } from './systems/command-system.js';
 import { createPathfindingSystem } from './systems/pathfinding-system.js';
 import { MovementSystem } from './systems/movement.js';
+import { createFlowMovementSystem } from './systems/flow-movement.js';
 import { createUnitSeparationSystem } from './systems/unit-separation.js';
 import { createCombatSystem } from './systems/combat.js';
 import { ProjectileSystem } from './systems/projectile.js';
@@ -83,6 +84,7 @@ const defaultSystems = (d: Deps): System[] => [
   createEnergySystem(d.economy),
   createResourceSystem(d.economy),
   createProductionSystem(d.grid),
+  createFlowMovementSystem(d.grid),
   createPathfindingSystem(d.grid),
   MovementSystem,
   createUnitSeparationSystem(d.grid),

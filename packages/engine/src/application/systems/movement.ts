@@ -8,7 +8,7 @@
  */
 import type { System, TickContext } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
-import { Position, Movement, Facing, Path } from '../../domain/components/index.js';
+import { Position, Movement, Facing, FlowMovement, Path } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import type { Vec2 } from '../../domain/math/vec2.js';
@@ -20,6 +20,7 @@ export const MovementSystem: System = {
   name: 'MovementSystem',
   update(world: World, ctx: TickContext): void {
     for (const e of world.query(Position, Movement)) {
+      if (world.has(e, FlowMovement)) continue;
       const move = world.get(e, Movement)!;
       if (move.target === null) continue;
 

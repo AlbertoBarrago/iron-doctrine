@@ -16,6 +16,7 @@ export class NavGrid {
   private readonly blocked: Uint8Array;
   /** Extra movement cost per cell (0 = default). Scaled integer (x256). */
   private readonly cost: Uint16Array;
+  private gridRevision = 0;
 
   readonly originX: Fixed;
   readonly originY: Fixed;
@@ -49,6 +50,12 @@ export class NavGrid {
   restore(state: { blocked: number[]; cost: number[] }): void {
     this.blocked.set(state.blocked);
     this.cost.set(state.cost);
+    this.gridRevision++;
+  }
+
+  /** Monotonically changes whenever pathfinding topology or costs change. */
+  get revision(): number {
+    return this.gridRevision;
   }
 
   inBounds(cx: number, cy: number): boolean {
@@ -61,7 +68,12 @@ export class NavGrid {
   }
 
   setBlocked(cx: number, cy: number, value: boolean): void {
-    if (this.inBounds(cx, cy)) this.blocked[this.index(cx, cy)] = value ? 1 : 0;
+    if (!this.inBounds(cx, cy)) return;
+    const index = this.index(cx, cy);
+    const next = value ? 1 : 0;
+    if (this.blocked[index] === next) return;
+    this.blocked[index] = next;
+    this.gridRevision++;
   }
 
   /** Stamp a rectangular footprint (e.g. a building) as blocked/clear. */
@@ -76,7 +88,12 @@ export class NavGrid {
   }
 
   setCost(cx: number, cy: number, scaledCost: number): void {
-    if (this.inBounds(cx, cy)) this.cost[this.index(cx, cy)] = scaledCost & 0xffff;
+    if (!this.inBounds(cx, cy)) return;
+    const index = this.index(cx, cy);
+    const next = scaledCost & 0xffff;
+    if (this.cost[index] === next) return;
+    this.cost[index] = next;
+    this.gridRevision++;
   }
 
   /**

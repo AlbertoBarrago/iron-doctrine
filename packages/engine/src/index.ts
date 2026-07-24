@@ -15,6 +15,10 @@ export type { UnitStats } from './domain/archetypes/units.js';
 export { MovementSystem } from './application/systems/movement.js';
 export { createCommandSystem } from './application/systems/command-system.js';
 export { createPathfindingSystem } from './application/systems/pathfinding-system.js';
+export {
+  createFlowMovementSystem,
+  FlowFieldCache,
+} from './application/systems/flow-movement.js';
 export { createCombatSystem } from './application/systems/combat.js';
 export { ProjectileSystem } from './application/systems/projectile.js';
 export { HealthSystem } from './application/systems/health.js';

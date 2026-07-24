@@ -54,6 +54,16 @@ export const Movement = defineComponent<MovementData>('Movement', () => ({
   speed: fp.fromInt(4),
 }));
 
+/** Shared navigation goal plus the entity's collision-safe final formation slot. */
+export interface FlowMovementData {
+  goal: Vec2;
+  finalTarget: Vec2;
+}
+export const FlowMovement = defineComponent<FlowMovementData>('FlowMovement', () => ({
+  goal: zero(),
+  finalTarget: zero(),
+}));
+
 /**
  * A resolved path the unit is following. `goal` records the target the path was
  * computed for, so the PathfindingSystem can detect when a new order invalidates it.

@@ -9,7 +9,7 @@
  */
 import type { System } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
-import { Position, Movement, Path } from '../../domain/components/index.js';
+import { FlowMovement, Position, Movement, Path } from '../../domain/components/index.js';
 import type { NavGrid } from '../pathfinding/nav-grid.js';
 import { findPath } from '../pathfinding/a-star.js';
 import { smoothPath } from '../pathfinding/path-smoother.js';
@@ -21,6 +21,7 @@ export function createPathfindingSystem(grid: NavGrid): System {
     name: 'PathfindingSystem',
     update(world: World): void {
       for (const e of world.query(Position, Movement)) {
+        if (world.has(e, FlowMovement)) continue;
         const move = world.get(e, Movement)!;
         if (move.target === null) {
           if (world.has(e, Path)) world.remove(e, Path);

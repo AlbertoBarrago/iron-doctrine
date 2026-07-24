@@ -25,6 +25,59 @@ const NEIGHBORS = [
   [-1, -1, DIAG],
 ] as const;
 
+interface HeapEntry {
+  idx: number;
+  cost: number;
+  sequence: number;
+}
+
+class StableMinHeap {
+  private readonly entries: HeapEntry[] = [];
+  private nextSequence = 0;
+
+  get size(): number {
+    return this.entries.length;
+  }
+
+  push(idx: number, cost: number): void {
+    const entry = { idx, cost, sequence: this.nextSequence++ };
+    this.entries.push(entry);
+    let child = this.entries.length - 1;
+    while (child > 0) {
+      const parent = Math.floor((child - 1) / 2);
+      if (!this.before(entry, this.entries[parent]!)) break;
+      this.entries[child] = this.entries[parent]!;
+      child = parent;
+    }
+    this.entries[child] = entry;
+  }
+
+  pop(): HeapEntry | undefined {
+    const first = this.entries[0];
+    const last = this.entries.pop();
+    if (!first || !last || this.entries.length === 0) return first;
+    let parent = 0;
+    while (true) {
+      const left = parent * 2 + 1;
+      if (left >= this.entries.length) break;
+      const right = left + 1;
+      let child = left;
+      if (right < this.entries.length && this.before(this.entries[right]!, this.entries[left]!)) {
+        child = right;
+      }
+      if (!this.before(this.entries[child]!, last)) break;
+      this.entries[parent] = this.entries[child]!;
+      parent = child;
+    }
+    this.entries[parent] = last;
+    return first;
+  }
+
+  private before(left: HeapEntry, right: HeapEntry): boolean {
+    return left.cost < right.cost || (left.cost === right.cost && left.sequence < right.sequence);
+  }
+}
+
 export class FlowField {
   readonly cost: Int32Array;
   /** Per-cell unit direction toward the goal (zero for unreachable / goal cell). */
@@ -46,15 +99,10 @@ export class FlowField {
     if (this.grid.isBlocked(this.goal.cx, this.goal.cy)) return;
     const start = this.grid.index(this.goal.cx, this.goal.cy);
     this.cost[start] = 0;
-    // Small binary-heap-free Dijkstra: repeated bucketed relaxation is overkill here;
-    // a simple priority via array of {idx,c} sorted-insert keeps it deterministic and
-    // adequate for map-sized grids.
-    const open: Array<{ idx: number; c: number }> = [{ idx: start, c: 0 }];
-    while (open.length > 0) {
-      // Pop the lowest cost (stable: earliest inserted among equals).
-      let best = 0;
-      for (let i = 1; i < open.length; i++) if (open[i]!.c < open[best]!.c) best = i;
-      const { idx, c } = open.splice(best, 1)[0]!;
+    const open = new StableMinHeap();
+    open.push(start, 0);
+    while (open.size > 0) {
+      const { idx, cost: c } = open.pop()!;
       if (c > this.cost[idx]!) continue;
       const cx = idx % this.grid.width;
       const cy = (idx - cx) / this.grid.width;
@@ -73,7 +121,7 @@ export class FlowField {
         const nc = c + base + this.grid.extraCost(nx, ny);
         if (nc < this.cost[nIdx]!) {
           this.cost[nIdx] = nc;
-          open.push({ idx: nIdx, c: nc });
+          open.push(nIdx, nc);
         }
       }
     }

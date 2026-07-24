@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
 import { NavGrid } from './pathfinding/nav-grid.js';
-import { Position, Path } from '../domain/components/index.js';
+import { FlowMovement, Position, Path } from '../domain/components/index.js';
 import * as fp from '../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 
@@ -60,6 +60,31 @@ describe('Pathfinding integration', () => {
     expect(sim.grid.inBounds(cell.cx, cell.cy)).toBe(true);
     expect(fp.toFloat(position.x)).toBeCloseTo(0, 1);
     expect(fp.toFloat(position.y)).toBeCloseTo(0, 1);
+  });
+
+  it('assigns distinct reachable slots when a group moves at the right edge', () => {
+    const sim = new Simulation({
+      seed: 1,
+      grid: new NavGrid(16, 16, fp.fromInt(1)),
+    });
+    const first = spawn(sim, 6, 0);
+    const second = spawn(sim, 6, 1);
+    sim.enqueue({ type: 'move', entities: [first, second], target: at(20, 0) });
+    sim.step();
+
+    const slots = [first, second].map((entity) => sim.world.get(entity, FlowMovement)!.finalTarget);
+    const cells = slots.map((slot) => sim.grid.worldToCell(slot.x, slot.y));
+    expect(new Set(cells.map(({ cx, cy }) => `${cx}:${cy}`)).size).toBe(2);
+    expect(cells.every(({ cx, cy }) => sim.grid.inBounds(cx, cy))).toBe(true);
+
+    for (let i = 0; i < 200; i++) sim.step();
+    expect(
+      [first, second].every((entity) => {
+        const position = sim.world.get(entity, Position)!;
+        const cell = sim.grid.worldToCell(position.x, position.y);
+        return sim.grid.inBounds(cell.cx, cell.cy);
+      }),
+    ).toBe(true);
   });
 
   it('stays deterministic with obstacles (identical hashes across runs)', () => {
