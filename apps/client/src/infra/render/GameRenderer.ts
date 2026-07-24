@@ -16,6 +16,7 @@ import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron
 import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
+import { drawUnit } from './UnitPainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import {
@@ -315,12 +316,13 @@ export class GameRenderer {
     this.drawGrid();
     this.units.clear();
     this.particles.update(dtMs / 1000);
-    this.particles.draw();
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
+      const isNewTick = curr.tick !== this.lastUiTick;
+      if (isNewTick) this.detectCombatEffects(prev, curr);
       this.drawEntities(prev, curr, alpha);
       this.drawScenarioSite(curr);
-      if (curr.tick !== this.lastUiTick) {
+      if (isNewTick) {
         this.lastUiTick = curr.tick;
         this.detectDeaths(curr);
         const store = useGameStore.getState();
@@ -345,7 +347,38 @@ export class GameRenderer {
       this.drawFog(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);
     }
+    this.particles.draw();
     this.drawSelectionBox();
+  }
+
+  private detectCombatEffects(prev: Snapshot, curr: Snapshot): void {
+    const previous = new Map(prev.entities.map((entity) => [entity.id, entity]));
+    const current = new Map(curr.entities.map((entity) => [entity.id, entity]));
+    for (const entity of curr.entities) {
+      const before = previous.get(entity.id);
+      if (
+        entity.weaponCooldownLeft === undefined ||
+        entity.weaponCooldownLeft <= (before?.weaponCooldownLeft ?? 0) ||
+        entity.attackTarget === undefined
+      ) {
+        continue;
+      }
+      const muzzleX = entity.x + Math.cos(entity.angle) * entity.radius;
+      const muzzleY = entity.y + Math.sin(entity.angle) * entity.radius;
+      this.particles.muzzleFlash(
+        muzzleX,
+        muzzleY,
+        entity.angle,
+        entity.unitType === 'rifleman' ? 0.65 : 1,
+      );
+      if (entity.unitType === 'rifleman') {
+        const target = current.get(entity.attackTarget);
+        if (target) this.particles.tracer(muzzleX, muzzleY, target.x, target.y);
+        this.audio.play('rifle');
+      } else {
+        this.audio.play('cannon');
+      }
+    }
   }
 
   /** Emit explosion FX + sound for entities that vanished since the last snapshot. */
@@ -357,6 +390,9 @@ export class GameRenderer {
         this.particles.explosion(info.x, info.y, info.kind === 'building' ? 2 : 1);
         this.audio.play('explosion');
         this.selected.delete(id);
+      } else if (!live.has(id) && info.kind === 'projectile') {
+        this.particles.impact(info.x, info.y, 1.2);
+        this.audio.play('impact');
       }
     }
     this.prevIds.clear();
@@ -374,7 +410,20 @@ export class GameRenderer {
       const { sx, sy } = this.camera.worldToScreen(wx, wy);
 
       if (e.kind === 'projectile') {
-        this.units.circle(sx, sy, Math.max(2, 0.15 * this.camera.scale)).fill({ color: 0xf2be4c });
+        const dx = e.x - p.x;
+        const dy = e.y - p.y;
+        const length = Math.hypot(dx, dy);
+        const ux = length > 0 ? dx / length : Math.cos(e.angle);
+        const uy = length > 0 ? dy / length : Math.sin(e.angle);
+        const streak = Math.max(5, 0.55 * this.camera.scale);
+        this.units
+          .moveTo(sx - ux * streak, sy - uy * streak)
+          .lineTo(sx + ux * streak * 0.25, sy + uy * streak * 0.25)
+          .stroke({
+            width: Math.max(2, 0.14 * this.camera.scale),
+            color: 0xf2be4c,
+            alpha: 0.95,
+          });
         continue;
       }
 
@@ -393,24 +442,6 @@ export class GameRenderer {
 
       const r = e.radius * this.camera.scale;
       const color = OWNER_COLORS[e.owner % OWNER_COLORS.length]!;
-
-      if (
-        e.unitType === 'rifleman' &&
-        e.attackTarget !== undefined &&
-        e.weaponCooldownLeft !== undefined &&
-        e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0)
-      ) {
-        const target = curr.entities.find((candidate) => candidate.id === e.attackTarget);
-        if (target) {
-          const targetScreen = this.camera.worldToScreen(target.x, target.y);
-          this.units
-            .moveTo(sx, sy)
-            .lineTo(targetScreen.sx, targetScreen.sy)
-            .stroke({ width: 1.5, color: 0xf4d77a, alpha: 0.85 })
-            .circle(sx + Math.cos(e.angle) * r, sy + Math.sin(e.angle) * r, 3)
-            .fill({ color: 0xffe29a, alpha: 0.95 });
-        }
-      }
 
       if (e.kind === 'building') {
         const s = r;
@@ -441,12 +472,7 @@ export class GameRenderer {
       if (this.selected.has(e.id)) {
         this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
       }
-      this.drawUnitBody(e, sx, sy, r, color);
-      // Facing tick.
-      this.units
-        .moveTo(sx, sy)
-        .lineTo(sx + Math.cos(e.angle) * r, sy + Math.sin(e.angle) * r)
-        .stroke({ width: 2, color: 0x0b0f0d, alpha: 0.6 });
+      drawUnit(this.units, e, sx, sy, r, color);
 
       // Health bar.
       if (e.maxHp > 0) {
@@ -520,42 +546,6 @@ export class GameRenderer {
         .lineTo(sx + size * 0.9, sy)
         .stroke({ width: 3, color: ink });
     }
-  }
-
-  private drawUnitBody(
-    entity: EntitySnapshot,
-    sx: number,
-    sy: number,
-    radius: number,
-    color: number,
-  ): void {
-    if (entity.unitType === 'tank') {
-      this.units
-        .roundRect(sx - radius, sy - radius * 0.72, radius * 2, radius * 1.44, 2)
-        .fill({ color })
-        .rect(sx - radius * 0.4, sy - radius * 0.28, radius * 0.8, radius * 0.56)
-        .fill({ color: 0x17231d });
-      return;
-    }
-    if (entity.unitType === 'harvester') {
-      this.units
-        .rect(sx - radius, sy - radius * 0.75, radius * 2, radius * 1.5)
-        .fill({ color })
-        .rect(sx - radius * 0.7, sy - radius * 0.16, radius * 1.4, radius * 0.32)
-        .fill({ color: 0xc59b3c });
-      return;
-    }
-    if (entity.unitType === 'engineer') {
-      this.units
-        .moveTo(sx, sy - radius)
-        .lineTo(sx + radius, sy)
-        .lineTo(sx, sy + radius)
-        .lineTo(sx - radius, sy)
-        .closePath()
-        .fill({ color });
-      return;
-    }
-    this.units.circle(sx, sy, radius).fill({ color });
   }
 
   private drawGrid(): void {

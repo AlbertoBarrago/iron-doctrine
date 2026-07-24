@@ -6,7 +6,16 @@
  * The AudioContext is created lazily on the first sound because browsers require a
  * user gesture — the first click/keypress that triggers a sound provides it.
  */
-export type SoundKind = 'select' | 'move' | 'explosion' | 'build';
+export const SOUND_KINDS = [
+  'select',
+  'move',
+  'explosion',
+  'build',
+  'rifle',
+  'cannon',
+  'impact',
+] as const;
+export type SoundKind = (typeof SOUND_KINDS)[number];
 
 export const normalizeVolume = (volume: number): number => Math.min(1, Math.max(0, volume));
 
@@ -59,6 +68,17 @@ export class AudioBus {
       case 'explosion':
         this.noiseBurst(ctx, now, 0.35);
         break;
+      case 'rifle':
+        this.noiseBurst(ctx, now, 0.045, 2400);
+        this.blip(ctx, now, 720, 0.035, 'square');
+        break;
+      case 'cannon':
+        this.noiseBurst(ctx, now, 0.2, 620);
+        this.blip(ctx, now, 72, 0.16, 'sine');
+        break;
+      case 'impact':
+        this.noiseBurst(ctx, now, 0.09, 1300);
+        break;
     }
   }
 
@@ -81,7 +101,7 @@ export class AudioBus {
     osc.stop(now + dur);
   }
 
-  private noiseBurst(ctx: AudioContext, now: number, dur: number): void {
+  private noiseBurst(ctx: AudioContext, now: number, dur: number, cutoff = 900): void {
     const frames = Math.floor(ctx.sampleRate * dur);
     const buffer = ctx.createBuffer(1, frames, ctx.sampleRate);
     const data = buffer.getChannelData(0);
@@ -96,7 +116,7 @@ export class AudioBus {
     src.buffer = buffer;
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 900;
+    filter.frequency.value = cutoff;
     src.connect(filter).connect(this.master!);
     src.start(now);
   }

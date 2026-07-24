@@ -20,7 +20,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 161 automated tests;
+- 162 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -36,6 +36,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Completed units wait for a collision-free facility exit instead of spawning into obstacles.
 - Unit separation respects navigation bounds and blocked cells; pathfinding recovers displaced units.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
+- Procedural unit silhouettes, ballistic combat cues and distinct weapon audio improve battlefield readability.
 - Prettier remains the formatter; ESLint and Biome both provide diagnostics.
 - Large changes use dedicated branches and small Conventional Commits.
 
@@ -49,10 +50,9 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 ### Combat and economy feedback
 
-1. Replace rifle tracers with thin ballistic projectiles and an appropriate shot sound.
-2. Add visible gathering and depositing animations.
-3. Show invalid, blocked and unavailable orders clearly.
-4. Tune ore income, construction time and hostile pressure through complete matches.
+1. Add visible gathering and depositing animations.
+2. Show invalid, blocked and unavailable orders clearly.
+3. Tune ore income, construction time and hostile pressure through complete matches.
 
 ### Base building
 
