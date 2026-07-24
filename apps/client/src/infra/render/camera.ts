@@ -5,15 +5,6 @@
  */
 export const PIXELS_PER_UNIT = 32;
 export const EDGE_PAN_MARGIN = 36;
-export const CAMERA_DRAG_THRESHOLD = 6;
-
-export function exceedsDragThreshold(
-  start: { x: number; y: number },
-  current: { x: number; y: number },
-  threshold = CAMERA_DRAG_THRESHOLD,
-): boolean {
-  return Math.hypot(current.x - start.x, current.y - start.y) >= threshold;
-}
 
 export function edgePanDirection(
   pointer: { x: number; y: number } | null,
@@ -66,6 +57,14 @@ export class Camera {
 
   zoomBy(factor: number): void {
     this.zoom = Math.min(3, Math.max(0.3, this.zoom * factor));
+  }
+
+  zoomAtScreenPoint(factor: number, sx: number, sy: number): void {
+    const before = this.screenToWorld(sx, sy);
+    this.zoomBy(factor);
+    const after = this.screenToWorld(sx, sy);
+    this.x += before.wx - after.wx;
+    this.y += before.wy - after.wy;
   }
 
   get scale(): number {

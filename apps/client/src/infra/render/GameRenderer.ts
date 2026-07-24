@@ -13,7 +13,7 @@
 import { Application, Container, Graphics } from 'pixi.js';
 import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
-import { Camera, edgePanDirection, exceedsDragThreshold } from './camera.js';
+import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { SimBridge } from '../worker/SimBridge.js';
@@ -23,6 +23,7 @@ import {
   type CommandFeedback,
   type CommandFeedbackKind,
 } from './commandFeedback.js';
+import { clampMovementTarget } from './movementTarget.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
 import { firstContactLayout, type SkirmishConfig } from '../../game/skirmishConfig.js';
 
@@ -66,13 +67,9 @@ export class GameRenderer {
   private placementPointer: { x: number; y: number } | null = null;
   private navigationPointer: { x: number; y: number } | null = null;
   private cameraDrag: {
-    startX: number;
-    startY: number;
     x: number;
     y: number;
     pointerId: number;
-    button: 1 | 2;
-    moved: boolean;
   } | null = null;
   private commandFeedback: CommandFeedback | null = null;
 
@@ -943,14 +940,16 @@ export class GameRenderer {
     canvas.addEventListener('pointerdown', (e) => this.onPointerDown(e));
     canvas.addEventListener('pointermove', (e) => this.onPointerMove(e));
     canvas.addEventListener('pointerup', (e) => this.onPointerUp(e));
-    canvas.addEventListener('pointercancel', (e) => this.onPointerUp(e));
+    canvas.addEventListener('pointercancel', () => this.cancelPointerGesture());
     canvas.addEventListener('pointerleave', () => {
       if (!this.cameraDrag) this.navigationPointer = null;
     });
     canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
     canvas.addEventListener('wheel', (e) => {
       e.preventDefault();
-      this.camera.zoomBy(e.deltaY < 0 ? 1.1 : 0.9);
+      const point = this.canvasPoint(e);
+      this.camera.zoomAtScreenPoint(e.deltaY < 0 ? 1.1 : 0.9, point.x, point.y);
+      this.clampCamera();
     });
     window.addEventListener('keydown', (e) => {
       this.keys.add(e.key.toLowerCase());
@@ -969,16 +968,17 @@ export class GameRenderer {
       else if (e.button === 2) this.cancelBuildingPlacement();
       return;
     }
-    if (e.button === 1 || e.button === 2) {
+    if (e.button === 2) {
+      e.preventDefault();
+      this.issueMove(point.x, point.y);
+      return;
+    }
+    if (e.button === 1) {
       e.preventDefault();
       this.cameraDrag = {
-        startX: point.x,
-        startY: point.y,
         x: point.x,
         y: point.y,
         pointerId: e.pointerId,
-        button: e.button,
-        moved: e.button === 1,
       };
       if (e.currentTarget instanceof Element) e.currentTarget.setPointerCapture(e.pointerId);
       return;
@@ -996,14 +996,9 @@ export class GameRenderer {
     if (this.cameraDrag) {
       const dx = point.x - this.cameraDrag.x;
       const dy = point.y - this.cameraDrag.y;
-      const moved =
-        this.cameraDrag.moved ||
-        exceedsDragThreshold({ x: this.cameraDrag.startX, y: this.cameraDrag.startY }, point);
-      if (moved) {
-        this.camera.panByScreenDelta(dx, dy);
-        this.clampCamera();
-      }
-      this.cameraDrag = { ...this.cameraDrag, x: point.x, y: point.y, moved };
+      this.camera.panByScreenDelta(dx, dy);
+      this.clampCamera();
+      this.cameraDrag = { ...this.cameraDrag, x: point.x, y: point.y };
       return;
     }
     this.updatePointerCursor(point.x, point.y);
@@ -1012,13 +1007,11 @@ export class GameRenderer {
 
   private onPointerUp(e: PointerEvent): void {
     const point = this.canvasPoint(e);
-    if ((e.button === 1 || e.button === 2) && this.cameraDrag) {
-      const drag = this.cameraDrag;
+    if (e.button === 1 && this.cameraDrag) {
       if (e.currentTarget instanceof Element && e.currentTarget.hasPointerCapture(e.pointerId)) {
         e.currentTarget.releasePointerCapture(e.pointerId);
       }
       this.cameraDrag = null;
-      if (drag.button === 2 && !drag.moved) this.issueMove(point.x, point.y);
       return;
     }
     if (e.button !== 0 || !this.dragStart) return;
@@ -1036,6 +1029,12 @@ export class GameRenderer {
     const curr = this.bridge.latest.curr;
     if (curr) this.syncSelectionState(curr);
     if (this.selected.size > 0) useGameStore.getState().advanceTutorial('select');
+  }
+
+  private cancelPointerGesture(): void {
+    this.cameraDrag = null;
+    this.dragStart = null;
+    this.dragNow = null;
   }
 
   private selectInBox(
@@ -1057,8 +1056,16 @@ export class GameRenderer {
         const d = (sx - box.x0) ** 2 + (sy - box.y0) ** 2;
         const rr = (ent.radius * this.camera.scale + 6) ** 2;
         if (d <= rr && (!best || d < best.d)) best = { id: ent.id, d };
-      } else if (ent.kind === 'unit' && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
-        this.selected.add(ent.id);
+      } else if (ent.kind === 'unit') {
+        const radius = ent.radius * this.camera.scale;
+        if (
+          sx + radius >= minX &&
+          sx - radius <= maxX &&
+          sy + radius >= minY &&
+          sy - radius <= maxY
+        ) {
+          this.selected.add(ent.id);
+        }
       }
     }
     if (isClick && best) this.selected.add(best.id);
@@ -1072,10 +1079,6 @@ export class GameRenderer {
     const clicked = this.findOwnedUnitAt(point.x, point.y, curr);
     if (!clicked?.unitType) {
       this.showCommandFeedback(point.x, point.y, 'select');
-      const target = this.camera.screenToWorld(point.x, point.y);
-      this.camera.x = target.wx;
-      this.camera.y = target.wy;
-      this.clampCamera();
       return;
     }
     if (!e.ctrlKey && !e.shiftKey) this.selected.clear();
@@ -1120,7 +1123,15 @@ export class GameRenderer {
       this.showCommandFeedback(sx, sy, 'invalid');
       return;
     }
-    const { wx, wy } = this.camera.screenToWorld(sx, sy);
+    const rawTarget = this.camera.screenToWorld(sx, sy);
+    const target = this.activeMap
+      ? clampMovementTarget(
+          { x: rawTarget.wx, y: rawTarget.wy },
+          this.activeMap.width * this.activeMap.cellSize,
+          this.activeMap.height * this.activeMap.cellSize,
+          this.activeMap.cellSize,
+        )
+      : { x: rawTarget.wx, y: rawTarget.wy };
     const curr = this.bridge.latest.curr;
     const units = curr?.entities.filter((entity) => {
       return entity.kind === 'unit' && this.selected.has(entity.id);
@@ -1133,7 +1144,7 @@ export class GameRenderer {
         this.bridge.command({
           type: 'setRally',
           building: asEntityId(building.id),
-          point: { x: fp.fromFloat(wx), y: fp.fromFloat(wy) },
+          point: { x: fp.fromFloat(target.x), y: fp.fromFloat(target.y) },
         });
       }
       return;
@@ -1164,7 +1175,7 @@ export class GameRenderer {
     this.bridge.command({
       type: 'move',
       entities: units.map((entity) => asEntityId(entity.id)),
-      target: { x: fp.fromFloat(wx), y: fp.fromFloat(wy) },
+      target: { x: fp.fromFloat(target.x), y: fp.fromFloat(target.y) },
     });
     useGameStore.getState().advanceTutorial('move');
   }
