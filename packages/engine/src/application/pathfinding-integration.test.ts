@@ -45,6 +45,23 @@ describe('Pathfinding integration', () => {
     expect(fp.toFloat(pos.y)).toBeCloseTo(8, 1);
   });
 
+  it('recovers a unit whose position is just outside the navigation grid', () => {
+    const sim = new Simulation({
+      seed: 1,
+      grid: new NavGrid(8, 8, fp.fromInt(1)),
+    });
+    const entity = spawn(sim, -5, 0);
+    sim.enqueue({ type: 'move', entities: [entity], target: at(0, 0) });
+
+    for (let i = 0; i < 200; i++) sim.step();
+
+    const position = sim.world.get(entity, Position)!;
+    const cell = sim.grid.worldToCell(position.x, position.y);
+    expect(sim.grid.inBounds(cell.cx, cell.cy)).toBe(true);
+    expect(fp.toFloat(position.x)).toBeCloseTo(0, 1);
+    expect(fp.toFloat(position.y)).toBeCloseTo(0, 1);
+  });
+
   it('stays deterministic with obstacles (identical hashes across runs)', () => {
     const a = makeSim();
     const b = makeSim();

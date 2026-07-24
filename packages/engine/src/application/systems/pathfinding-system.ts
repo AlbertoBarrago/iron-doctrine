@@ -31,7 +31,13 @@ export function createPathfindingSystem(grid: NavGrid): System {
         if (existing && v2.equals(existing.goal, move.target)) continue; // already routed
 
         const pos = world.get(e, Position)!;
-        const start = grid.worldToCell(pos.x, pos.y);
+        const rawStart = grid.worldToCell(pos.x, pos.y);
+        const start = grid.nearestOpen(rawStart.cx, rawStart.cy);
+        if (!start) {
+          move.target = null;
+          if (world.has(e, Path)) world.remove(e, Path);
+          continue;
+        }
         // If the goal cell is blocked (e.g. a building footprint), approach the
         // nearest passable cell instead of failing outright.
         const rawGoal = grid.worldToCell(move.target.x, move.target.y);

@@ -7,27 +7,30 @@
  */
 import type { System } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
+import type { NavGrid } from '../pathfinding/nav-grid.js';
 import { Position, Selectable, UnitType } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import type { EntityId } from '@iron/shared';
 
-export const UnitSeparationSystem: System = {
-  name: 'UnitSeparationSystem',
-  update(world: World): void {
-    const units = world.query(Position, Selectable, UnitType);
+export function createUnitSeparationSystem(grid: NavGrid): System {
+  return {
+    name: 'UnitSeparationSystem',
+    update(world: World): void {
+      const units = world.query(Position, Selectable, UnitType);
 
-    for (let leftIndex = 0; leftIndex < units.length; leftIndex++) {
-      const left = units[leftIndex]!;
-      for (let rightIndex = leftIndex + 1; rightIndex < units.length; rightIndex++) {
-        const right = units[rightIndex]!;
-        separatePair(world, left, right);
+      for (let leftIndex = 0; leftIndex < units.length; leftIndex++) {
+        const left = units[leftIndex]!;
+        for (let rightIndex = leftIndex + 1; rightIndex < units.length; rightIndex++) {
+          const right = units[rightIndex]!;
+          separatePair(world, grid, left, right);
+        }
       }
-    }
-  },
-};
+    },
+  };
+}
 
-function separatePair(world: World, left: EntityId, right: EntityId): void {
+function separatePair(world: World, grid: NavGrid, left: EntityId, right: EntityId): void {
   const leftPosition = world.get(left, Position)!;
   const rightPosition = world.get(right, Position)!;
   const minimumDistance = fp.add(
@@ -45,7 +48,28 @@ function separatePair(world: World, left: EntityId, right: EntityId): void {
   const distance = distanceSquared === fp.FP.ZERO ? fp.FP.ZERO : v2.len(delta);
   const correction = fp.div(fp.sub(minimumDistance, distance), fp.fromInt(2));
   const offset = v2.scale(direction, correction);
+  const nextLeft = v2.sub(leftPosition, offset);
+  const nextRight = v2.add(rightPosition, offset);
 
-  world.add(left, Position, v2.sub(leftPosition, offset));
-  world.add(right, Position, v2.add(rightPosition, offset));
+  if (canOccupy(grid, nextLeft) && canOccupy(grid, nextRight)) {
+    world.add(left, Position, nextLeft);
+    world.add(right, Position, nextRight);
+    return;
+  }
+
+  // If one side is blocked, resolve the full overlap through the other unit.
+  const fullCorrection = fp.sub(minimumDistance, distance);
+  const fullOffset = v2.scale(direction, fullCorrection);
+  const leftOnly = v2.sub(leftPosition, fullOffset);
+  if (canOccupy(grid, leftOnly)) {
+    world.add(left, Position, leftOnly);
+    return;
+  }
+  const rightOnly = v2.add(rightPosition, fullOffset);
+  if (canOccupy(grid, rightOnly)) world.add(right, Position, rightOnly);
+}
+
+function canOccupy(grid: NavGrid, position: v2.Vec2): boolean {
+  const cell = grid.worldToCell(position.x, position.y);
+  return grid.inBounds(cell.cx, cell.cy) && !grid.isBlocked(cell.cx, cell.cy);
 }
