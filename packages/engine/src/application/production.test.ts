@@ -1,7 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
 import { NavGrid } from './pathfinding/nav-grid.js';
-import { Position, Owner, Production, Building, Movement } from '../domain/components/index.js';
+import {
+  Position,
+  Owner,
+  Production,
+  Building,
+  Movement,
+  UnitType,
+  ResourceNode,
+  Selectable,
+} from '../domain/components/index.js';
 import * as fp from '../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 
@@ -107,6 +116,52 @@ describe('ProductionSystem', () => {
     // The newest unit should have a movement order toward the rally (or be en route).
     const units = sim.world.query(Position, Movement).filter((e) => e !== fac);
     expect(units.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('avoids resource fields when choosing a production exit', () => {
+    const sim = makeSim();
+    const fac = factory(sim);
+    sim.enqueue({ type: 'spawnResource', amount: 1000, at: at(-3, -3) });
+    sim.enqueue({ type: 'queueProduction', building: fac, unit: 'harvester' });
+    for (let i = 0; i < 200; i++) sim.step();
+
+    const harvester = sim.world.query(UnitType, Position)[0]!;
+    const resource = sim.world.query(ResourceNode, Position)[0]!;
+    const unitPosition = sim.world.get(harvester, Position)!;
+    const resourcePosition = sim.world.get(resource, Position)!;
+    const unitRadius = sim.world.get(harvester, Selectable)!.radius;
+    const resourceRadius = sim.world.get(resource, Selectable)!.radius;
+    const dx = fp.sub(unitPosition.x, resourcePosition.x);
+    const dy = fp.sub(unitPosition.y, resourcePosition.y);
+    const clearance = fp.add(unitRadius, resourceRadius);
+
+    expect(fp.add(fp.mul(dx, dx), fp.mul(dy, dy))).toBeGreaterThanOrEqual(
+      fp.mul(clearance, clearance),
+    );
+  });
+
+  it('keeps a completed unit queued until a safe exit opens', () => {
+    const sim = makeSim();
+    const fac = factory(sim);
+    for (let cy = 0; cy < sim.grid.height; cy++) {
+      for (let cx = 0; cx < sim.grid.width; cx++) sim.grid.setBlocked(cx, cy, true);
+    }
+    sim.enqueue({ type: 'queueProduction', building: fac, unit: 'harvester' });
+    for (let i = 0; i < 200; i++) sim.step();
+
+    expect(sim.world.query(UnitType).length).toBe(0);
+    expect(sim.world.get(fac, Production)).toMatchObject({
+      queue: ['harvester'],
+      progressTicks: 180,
+    });
+
+    const center = sim.grid.worldToCell(at(0, 0).x, at(0, 0).y);
+    sim.grid.setBlocked(center.cx - 3, center.cy - 3, false);
+    sim.grid.setBlocked(center.cx - 4, center.cy - 3, false);
+    sim.step();
+
+    expect(sim.world.query(UnitType).length).toBe(1);
+    expect(sim.world.get(fac, Production)!.queue).toEqual([]);
   });
 
   it('production stays deterministic across runs', () => {

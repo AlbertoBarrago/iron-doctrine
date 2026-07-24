@@ -20,7 +20,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 154 automated tests;
+- 156 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -33,6 +33,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Hidden map cells are fully black; explored terrain is remembered but attenuated.
 - AI production observes unit build times and difficulty-specific army limits.
 - AI production uses the same validated facility queues, costs and tech gates as players.
+- Completed units wait for a collision-free facility exit instead of spawning into obstacles.
 - Prettier remains the formatter; ESLint and Biome both provide diagnostics.
 - Large changes use dedicated branches and small Conventional Commits.
 

@@ -12,9 +12,13 @@ import {
   Owner,
   Production,
   Movement,
+  Building,
+  Selectable,
   type ProductionData,
 } from '../../domain/components/index.js';
 import { spawnUnit, UNIT_STATS } from '../../domain/archetypes/units.js';
+import * as fp from '../../domain/math/fixed.js';
+import type { Vec2 } from '../../domain/math/vec2.js';
 import type { EntityId } from '@iron/shared';
 
 export function createProductionSystem(grid: NavGrid): System {
@@ -33,11 +37,11 @@ export function createProductionSystem(grid: NavGrid): System {
           continue;
         }
 
-        prod.progressTicks++;
+        prod.progressTicks = Math.min(prod.progressTicks + 1, stats.buildTicks);
         if (prod.progressTicks < stats.buildTicks) continue;
 
         // Complete: spawn beside the building and clear progress for the next item.
-        finishUnit(world, grid, b, unit, world.get(b, Owner)!.player, prod);
+        if (!finishUnit(world, grid, b, unit, world.get(b, Owner)!.player, prod)) continue;
         prod.queue.shift();
         prod.progressTicks = 0;
       }
@@ -52,16 +56,65 @@ function finishUnit(
   unit: string,
   player: number,
   prod: ProductionData,
-): void {
+): boolean {
   const pos = world.get(building, Position)!;
   const cell = grid.worldToCell(pos.x, pos.y);
-  // Spawn on a free cell just outside the footprint.
-  const open = grid.nearestOpen(cell.cx + 2, cell.cy + 2) ?? { cx: cell.cx + 2, cy: cell.cy + 2 };
-  const at = grid.cellToWorld(open.cx, open.cy);
+  const footprint = world.get(building, Building)?.footprint ?? 1;
+  const radius = UNIT_STATS[unit]?.radius;
+  if (radius === undefined) return false;
+  const at = findSpawnPoint(world, grid, cell.cx, cell.cy, footprint, fp.fromFloat(radius));
+  if (!at) return false;
   const e = spawnUnit(world, unit, player, at);
 
   if (prod.rally) {
     const move = world.get(e, Movement);
     if (move) move.target = { x: prod.rally.x, y: prod.rally.y };
   }
+  return true;
+}
+
+function findSpawnPoint(
+  world: World,
+  grid: NavGrid,
+  centerX: number,
+  centerY: number,
+  footprint: number,
+  unitRadius: fp.Fixed,
+): Vec2 | null {
+  const firstRing = Math.floor(footprint / 2) + 1;
+  for (let ring = firstRing; ring <= 16; ring++) {
+    for (let dy = -ring; dy <= ring; dy++) {
+      for (let dx = -ring; dx <= ring; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) continue;
+        const cx = centerX + dx;
+        const cy = centerY + dy;
+        if (grid.isBlocked(cx, cy) || !hasOpenNeighbour(grid, cx, cy)) continue;
+        const candidate = grid.cellToWorld(cx, cy);
+        if (isOccupied(world, candidate, unitRadius)) continue;
+        return candidate;
+      }
+    }
+  }
+  return null;
+}
+
+function hasOpenNeighbour(grid: NavGrid, cx: number, cy: number): boolean {
+  return (
+    !grid.isBlocked(cx - 1, cy) ||
+    !grid.isBlocked(cx + 1, cy) ||
+    !grid.isBlocked(cx, cy - 1) ||
+    !grid.isBlocked(cx, cy + 1)
+  );
+}
+
+function isOccupied(world: World, candidate: Vec2, unitRadius: fp.Fixed): boolean {
+  for (const entity of world.query(Position, Selectable)) {
+    const position = world.get(entity, Position)!;
+    const selectable = world.get(entity, Selectable)!;
+    const dx = fp.sub(candidate.x, position.x);
+    const dy = fp.sub(candidate.y, position.y);
+    const clearance = fp.add(unitRadius, selectable.radius);
+    if (fp.add(fp.mul(dx, dx), fp.mul(dy, dy)) < fp.mul(clearance, clearance)) return true;
+  }
+  return false;
 }
