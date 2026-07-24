@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
-import { Position, Health, Attack, Projectile } from '../domain/components/index.js';
+import { Position, Health, Attack, Movement, Projectile } from '../domain/components/index.js';
 import * as fp from '../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 
@@ -71,6 +71,27 @@ describe('Combat', () => {
     sim.enqueue({ type: 'attack', entities: [shooter], target: enemy });
     sim.step();
     expect(sim.world.get(shooter, Attack)!.target).toBe(enemy);
+  });
+
+  it('distributes several attackers around a shared target', () => {
+    const sim = new Simulation({ seed: 1 });
+    const attackers = [
+      spawn(sim, 'rifleman', 0, -20, -1),
+      spawn(sim, 'rifleman', 0, -20, 0),
+      spawn(sim, 'rifleman', 0, -20, 1),
+    ];
+    const enemy = spawn(sim, 'tank', 1, 0, 0);
+    sim.enqueue({ type: 'attack', entities: attackers, target: enemy });
+    sim.step();
+
+    const destinations = attackers.map((entity) => sim.world.get(entity, Movement)!.target);
+    expect(new Set(destinations.map((target) => `${target!.x}:${target!.y}`)).size).toBe(3);
+
+    const initialHealth = sim.world.get(enemy, Health)!.hp;
+    for (let i = 0; i < 200; i++) sim.step();
+    expect(
+      !sim.world.isAlive(enemy) || sim.world.get(enemy, Health)!.hp < initialHealth,
+    ).toBe(true);
   });
 
   it('combat remains deterministic across runs', () => {

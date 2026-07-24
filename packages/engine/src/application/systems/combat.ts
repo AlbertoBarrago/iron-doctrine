@@ -80,13 +80,31 @@ export function createCombatSystem(economy: PlayerEconomy): System {
         }
       } else if (attack.chase) {
         const move = world.get(e, Movement); // pursue the target
-        if (move) move.target = { x: targetPos.x, y: targetPos.y };
+        if (move) move.target = engagementPosition(e, targetPos, weapon.range);
       } else {
         attack.target = -1; // auto target left range: break leash
       }
     }
     },
   };
+}
+
+const DIAGONAL = v2.normalize({ x: fp.FP.ONE, y: fp.FP.ONE });
+const ENGAGEMENT_DIRECTIONS: readonly v2.Vec2[] = [
+  { x: fp.FP.ONE, y: fp.FP.ZERO },
+  DIAGONAL,
+  { x: fp.FP.ZERO, y: fp.FP.ONE },
+  { x: fp.neg(DIAGONAL.x), y: DIAGONAL.y },
+  { x: fp.neg(fp.FP.ONE), y: fp.FP.ZERO },
+  { x: fp.neg(DIAGONAL.x), y: fp.neg(DIAGONAL.y) },
+  { x: fp.FP.ZERO, y: fp.neg(fp.FP.ONE) },
+  { x: DIAGONAL.x, y: fp.neg(DIAGONAL.y) },
+];
+
+function engagementPosition(entity: EntityId, target: v2.Vec2, range: fp.Fixed): v2.Vec2 {
+  const direction = ENGAGEMENT_DIRECTIONS[indexOf(entity) % ENGAGEMENT_DIRECTIONS.length]!;
+  const standOff = fp.mul(range, fp.fromFloat(0.75));
+  return v2.add(target, v2.scale(direction, standOff));
 }
 
 function isLivingEnemy(world: World, target: EntityId, myPlayer: number): boolean {
