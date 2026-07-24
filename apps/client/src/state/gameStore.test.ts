@@ -3,7 +3,7 @@ import {
   commandAvailability,
   commandSelectionContext,
   commandTabAvailable,
-  nextTutorialStep,
+  tutorialProgress,
   preferredCommandTab,
   selectionCommands,
 } from './gameStore.js';
@@ -64,18 +64,24 @@ describe('command availability', () => {
 });
 
 describe('tutorial progression', () => {
-  it('advances only when the current instruction is completed', () => {
-    expect(nextTutorialStep('select', 'select')).toBe('move');
-    expect(nextTutorialStep('select', 'build')).toBe('select');
+  it('follows the base construction learning sequence', () => {
+    expect(tutorialProgress([], 'select').step).toBe('power');
+    expect(tutorialProgress(['select', 'power'], 'refinery').step).toBe('gather');
   });
 
-  it('advances through the complete playable loop', () => {
-    expect(nextTutorialStep('move', 'move')).toBe('gather');
-    expect(nextTutorialStep('gather', 'gather')).toBe('build');
-    expect(nextTutorialStep('build', 'build')).toBe('produce');
-    expect(nextTutorialStep('produce', 'produce')).toBe('attack');
-    expect(nextTutorialStep('attack', 'attack')).toBe('complete');
-    expect(nextTutorialStep('complete', 'complete')).toBe('complete');
+  it('remembers milestones completed out of order', () => {
+    const earlyBarracks = tutorialProgress([], 'barracks');
+    expect(earlyBarracks.step).toBe('select');
+    const selected = tutorialProgress(earlyBarracks.completed, 'select');
+    const powered = tutorialProgress(selected.completed, 'power');
+    const refined = tutorialProgress(powered.completed, 'refinery');
+    const gathered = tutorialProgress(refined.completed, 'gather');
+    expect(gathered.step).toBe('produce');
+  });
+
+  it('completes after production and base defense', () => {
+    const completed = ['select', 'power', 'refinery', 'gather', 'barracks', 'produce'] as const;
+    expect(tutorialProgress(completed, 'defense').step).toBe('complete');
   });
 });
 

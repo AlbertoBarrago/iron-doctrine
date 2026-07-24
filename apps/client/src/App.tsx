@@ -134,6 +134,7 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
     <div className="game-shell">
       <div ref={containerRef} className="game-canvas" />
       <Hud
+        mission={config.mission}
         minimap={<Minimap onCanvas={attachMinimap} onClick={minimapClick} />}
         setupOpen={setupOpen}
         paused={manualPaused}

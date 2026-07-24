@@ -3,8 +3,42 @@ import type { MapDef } from '@iron/shared';
 
 export type EnemyStartingForce = 0 | 2 | 4;
 export type GracePeriodSeconds = 120 | 180 | 300;
+export type MissionId = 'base_foundations' | 'first_contact' | 'skirmish';
+
+export interface MissionRules {
+  playerStart: 'base' | 'patrol';
+  playerCredits: number;
+  enemyEnabled: boolean;
+  recoveryScenario: boolean;
+  matchEnabled: boolean;
+}
+
+export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
+  base_foundations: {
+    playerStart: 'base',
+    playerCredits: 3200,
+    enemyEnabled: false,
+    recoveryScenario: false,
+    matchEnabled: false,
+  },
+  first_contact: {
+    playerStart: 'patrol',
+    playerCredits: 0,
+    enemyEnabled: true,
+    recoveryScenario: true,
+    matchEnabled: true,
+  },
+  skirmish: {
+    playerStart: 'base',
+    playerCredits: 3200,
+    enemyEnabled: true,
+    recoveryScenario: false,
+    matchEnabled: true,
+  },
+};
 
 export interface SkirmishConfig {
+  mission: MissionId;
   map: MapDef;
   difficulty: Difficulty;
   gracePeriodSeconds: GracePeriodSeconds;
@@ -12,6 +46,7 @@ export interface SkirmishConfig {
 }
 
 export const DEFAULT_SKIRMISH_SETTINGS = {
+  mission: 'skirmish',
   difficulty: 'easy',
   gracePeriodSeconds: 180,
   enemyStartingForce: 0,

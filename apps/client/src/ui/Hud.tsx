@@ -17,6 +17,7 @@ import {
   UNIT_PROFILES,
   usesContinuousPlacement,
 } from '../game/gameContent.js';
+import type { MissionId } from '../game/skirmishConfig.js';
 
 const BUILDABLE_STRUCTURES = [
   {
@@ -48,42 +49,48 @@ const BUILDABLE_STRUCTURES = [
 const TUTORIAL: Record<TutorialStep, { number: string; title: string; instruction: string }> = {
   select: {
     number: '01',
-    title: 'Select your forces',
-    instruction: 'Left-click a unit or drag a selection box.',
+    title: 'Select the construction yard',
+    instruction: 'Left-click your command structure to open base construction.',
   },
-  move: {
+  power: {
     number: '02',
-    title: 'Issue a move order',
-    instruction: 'Right-click open terrain with units selected.',
+    title: 'Establish the power grid',
+    instruction: 'Build a Power Plant beside the construction yard.',
+  },
+  refinery: {
+    number: '03',
+    title: 'Build a refinery',
+    instruction: 'Deploy it close to one of your home ore fields.',
   },
   gather: {
-    number: '03',
+    number: '04',
     title: 'Fund the war effort',
     instruction: 'Select the harvester and right-click an ore field.',
   },
-  build: {
-    number: '04',
-    title: 'Expand the base',
-    instruction: 'Choose a structure, then deploy it on clear terrain.',
+  barracks: {
+    number: '05',
+    title: 'Establish a barracks',
+    instruction: 'Build infantry production inside your base perimeter.',
   },
   produce: {
-    number: '05',
-    title: 'Produce a unit',
-    instruction: 'Select a barracks or war factory and queue reinforcements.',
-  },
-  attack: {
     number: '06',
-    title: 'Engage the enemy',
-    instruction: 'Select combat units and right-click a red target.',
+    title: 'Train the first squad',
+    instruction: 'Select the barracks and queue a Rifleman.',
+  },
+  defense: {
+    number: '07',
+    title: 'Secure the perimeter',
+    instruction: 'Build concrete walls or a defense turret around the base.',
   },
   complete: {
     number: '✓',
-    title: 'Commander online',
-    instruction: 'Destroy the hostile construction yard. Defend your own.',
+    title: 'Base operational',
+    instruction: 'Continue expanding at your own pace. No attack is inbound.',
   },
 };
 
 interface HudProps {
+  mission: MissionId;
   minimap: ReactNode;
   setupOpen: boolean;
   paused: boolean;
@@ -118,7 +125,7 @@ export function Hud(props: HudProps): JSX.Element {
   const scenario = useGameStore((state) => state.scenario);
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
-  const baseOperational = scenario?.phase === 'operational';
+  const baseOperational = props.mission !== 'first_contact' || scenario?.phase === 'operational';
   const canBuild = commandTabAvailable('build', baseOperational, selectedEntity, selectedProduction);
   const preferredTab = preferredCommandTab(selectedEntity, selectedProduction);
   const tabResetKey = commandSelectionContext(selectedEntity, selectedProduction);
@@ -141,7 +148,7 @@ export function Hud(props: HudProps): JSX.Element {
         <span className="mission-notice__signal" />
         <div>
           <span>PRIMARY OBJECTIVE</span>
-          <strong>{scenario?.objective ?? 'Establishing tactical link'}</strong>
+          <strong>{scenario?.objective ?? tutorial.title}</strong>
           {scenario?.phase === 'recovering' ? (
             <div className="mission-notice__progress">
               <i style={{ width: `${scenario.progress * 100}%` }} />
@@ -286,7 +293,11 @@ export function Hud(props: HudProps): JSX.Element {
 
         <div className="command-panel__footer">
           <span>
-            {!baseOperational
+            {props.mission === 'base_foundations'
+              ? tutorialStep === 'complete'
+                ? 'TRAINING COMPLETE'
+                : 'TRAINING AREA SECURE'
+              : !baseOperational
               ? 'HOSTILE FORCES HOLDING'
               : aiActivationSeconds > 0
                 ? `HOSTILE MOBILIZATION ${aiActivationSeconds}s`

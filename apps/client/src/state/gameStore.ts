@@ -7,8 +7,15 @@ import {
   type MatchStateSnapshot,
 } from '@iron/engine';
 
-export type TutorialStep =
-  'select' | 'move' | 'gather' | 'build' | 'produce' | 'attack' | 'complete';
+export type TutorialMilestone =
+  | 'select'
+  | 'power'
+  | 'refinery'
+  | 'gather'
+  | 'barracks'
+  | 'produce'
+  | 'defense';
+export type TutorialStep = TutorialMilestone | 'complete';
 export type SelectionCommand =
   'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally';
 
@@ -90,6 +97,7 @@ interface GameUiState {
   scenario: FirstContactSnapshot | null;
   aiActivationSeconds: number;
   tutorialStep: TutorialStep;
+  completedTutorial: TutorialMilestone[];
   setFps: (fps: number) => void;
   setPlaying: (playing: boolean) => void;
   setEntityCount: (n: number) => void;
@@ -101,22 +109,27 @@ interface GameUiState {
   setMatch: (match: MatchStateSnapshot | null) => void;
   setScenario: (scenario: FirstContactSnapshot | null) => void;
   setAiActivationSeconds: (seconds: number) => void;
-  advanceTutorial: (expected: TutorialStep) => void;
+  advanceTutorial: (milestone: TutorialMilestone) => void;
+  resetTutorial: () => void;
 }
 
-const TUTORIAL_STEPS: TutorialStep[] = [
+const TUTORIAL_STEPS: TutorialMilestone[] = [
   'select',
-  'move',
+  'power',
+  'refinery',
   'gather',
-  'build',
+  'barracks',
   'produce',
-  'attack',
-  'complete',
+  'defense',
 ];
 
-export function nextTutorialStep(current: TutorialStep, expected: TutorialStep): TutorialStep {
-  if (current !== expected) return current;
-  return TUTORIAL_STEPS[TUTORIAL_STEPS.indexOf(current) + 1] ?? 'complete';
+export function tutorialProgress(
+  completed: readonly TutorialMilestone[],
+  milestone: TutorialMilestone,
+): { completed: TutorialMilestone[]; step: TutorialStep } {
+  const nextCompleted = completed.includes(milestone) ? [...completed] : [...completed, milestone];
+  const step = TUTORIAL_STEPS.find((candidate) => !nextCompleted.includes(candidate)) ?? 'complete';
+  return { completed: nextCompleted, step };
 }
 
 function sameSelectedEntity(
@@ -201,6 +214,7 @@ export const useGameStore = create<GameUiState>((set) => ({
   scenario: null,
   aiActivationSeconds: 0,
   tutorialStep: 'select',
+  completedTutorial: [],
   setFps: (fps) =>
     set((state) => {
       const rounded = Math.round(fps);
@@ -250,9 +264,13 @@ export const useGameStore = create<GameUiState>((set) => ({
     set((state) =>
       state.aiActivationSeconds === aiActivationSeconds ? state : { aiActivationSeconds },
     ),
-  advanceTutorial: (expected) =>
+  advanceTutorial: (milestone) =>
     set((state) => {
-      const tutorialStep = nextTutorialStep(state.tutorialStep, expected);
-      return tutorialStep === state.tutorialStep ? state : { tutorialStep };
+      const progress = tutorialProgress(state.completedTutorial, milestone);
+      return {
+        tutorialStep: progress.step,
+        completedTutorial: progress.completed,
+      };
     }),
+  resetTutorial: () => set({ tutorialStep: 'select', completedTutorial: [] }),
 }));

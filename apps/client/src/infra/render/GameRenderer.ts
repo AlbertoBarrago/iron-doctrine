@@ -27,7 +27,11 @@ import {
 } from './commandFeedback.js';
 import { clampMovementTarget } from './movementTarget.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
-import { firstContactLayout, type SkirmishConfig } from '../../game/skirmishConfig.js';
+import {
+  firstContactLayout,
+  MISSION_RULES,
+  type SkirmishConfig,
+} from '../../game/skirmishConfig.js';
 import { profileFor, usesContinuousPlacement } from '../../game/gameContent.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
@@ -58,6 +62,7 @@ export class GameRenderer {
   private readonly particles: ParticleSystem;
   private readonly audio = new AudioBus();
   private activeMap: MapDef | null = null;
+  private mission: SkirmishConfig['mission'] = 'skirmish';
   private aiActivationTick = 0;
   /** Entities seen last frame, to detect deaths for explosion FX. */
   private readonly prevIds = new Map<number, { x: number; y: number; kind: string }>();
@@ -94,15 +99,20 @@ export class GameRenderer {
   }
 
   async start(config: SkirmishConfig, seed = 123456789): Promise<void> {
+    useGameStore.getState().resetTutorial();
     this.activeMap = config.map;
+    this.mission = config.mission;
+    const missionRules = MISSION_RULES[config.mission];
     this.aiActivationTick = config.gracePeriodSeconds * SIM_HZ;
     const humanSpawn = config.map.spawns.find((spawn) => spawn.player === 0);
     const enemySpawn = config.map.spawns.find((spawn) => spawn.player === 1);
     if (!humanSpawn || !enemySpawn)
       throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
     const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
-    const firstContact = firstContactLayout(config.map);
-    const recoveryAt = mapPosition(config.map, firstContact.recovery.x, firstContact.recovery.y);
+    const firstContact = missionRules.recoveryScenario ? firstContactLayout(config.map) : null;
+    const recoveryAt = firstContact
+      ? mapPosition(config.map, firstContact.recovery.x, firstContact.recovery.y)
+      : null;
     const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
 
     await this.app.init({
@@ -129,25 +139,35 @@ export class GameRenderer {
     this.bridge.init({
       seed,
       map: config.map,
-      aiPlayers: [
-        {
-          player: 1,
-          difficulty: config.difficulty,
-          activationTick: this.aiActivationTick,
-        },
-      ],
-      startingCredits: { 0: 0, 1: aiCredits },
+      aiPlayers:
+        !missionRules.enemyEnabled
+          ? []
+          : [
+              {
+                player: 1,
+                difficulty: config.difficulty,
+                activationTick: this.aiActivationTick,
+              },
+            ],
+      startingCredits: {
+        0: missionRules.playerCredits,
+        1: aiCredits,
+      },
       startingTech: {
         0: ['infantry_doctrine', 'armor_doctrine'],
         1: ['infantry_doctrine', 'armor_doctrine'],
       },
-      matchPlayers: [0, 1],
-      firstContact: {
-        player: 0,
-        recoveryAt,
-        recoveryTicks: SIM_HZ * 4,
-        recoveredCredits: 2600,
-      },
+      ...(missionRules.matchEnabled ? { matchPlayers: [0, 1] } : {}),
+      ...(recoveryAt
+        ? {
+            firstContact: {
+              player: 0,
+              recoveryAt,
+              recoveryTicks: SIM_HZ * 4,
+              recoveredCredits: 2600,
+            },
+          }
+        : {}),
     });
     this.bridge.start();
     useGameStore.getState().setPlaying(true);
@@ -165,63 +185,74 @@ export class GameRenderer {
       });
     }
 
-    // A strong patrol teaches control before the economy and construction layers unlock.
-    for (let i = 0; i < 6; i++) {
+    if (missionRules.playerStart === 'base') {
       this.bridge.command({
-        type: 'spawnUnit',
-        unit: i < 2 ? 'tank' : 'rifleman',
+        type: 'spawnBuilding',
+        building: 'construction_yard',
         player: 0,
-        at: offsetSpawn(config.map, humanSpawn, (i % 3) * 2, Math.floor(i / 3) * 2),
+        at: humanBase,
       });
-    }
-    // Light resistance on the route: dangerous enough to teach focus fire, not attrition.
-    for (const position of firstContact.resistance.slice(0, 2)) {
       this.bridge.command({
         type: 'spawnUnit',
-        unit: 'rifleman',
-        player: 1,
-        at: mapPosition(config.map, position.x, position.y),
+        unit: 'harvester',
+        player: 0,
+        at: offsetSpawn(config.map, humanSpawn, 3, 2),
       });
     }
 
-    // Enemy base starts dormant until the configured activation tick.
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'construction_yard',
-      player: 1,
-      at: enemyBase,
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'power_plant',
-      player: 1,
-      at: offsetSpawn(config.map, enemySpawn, -5, 0),
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'barracks',
-      player: 1,
-      at: offsetSpawn(config.map, enemySpawn, 0, -5),
-    });
-    this.bridge.command({
-      type: 'spawnBuilding',
-      building: 'factory',
-      player: 1,
-      at: offsetSpawn(config.map, enemySpawn, -6, -6),
-    });
-    this.bridge.command({
-      type: 'spawnUnit',
-      unit: 'harvester',
-      player: 1,
-      at: offsetSpawn(config.map, enemySpawn, -2, -2),
-    });
-    for (let i = 0; i < config.enemyStartingForce; i++) {
+    if (firstContact) {
+      // Level 2 starts as a patrol mission before the economy layer unlocks.
+      for (let i = 0; i < 6; i++) {
+        this.bridge.command({
+          type: 'spawnUnit',
+          unit: i < 2 ? 'tank' : 'rifleman',
+          player: 0,
+          at: offsetSpawn(config.map, humanSpawn, (i % 3) * 2, Math.floor(i / 3) * 2),
+        });
+      }
+      for (const position of firstContact.resistance.slice(0, 2)) {
+        this.bridge.command({
+          type: 'spawnUnit',
+          unit: 'rifleman',
+          player: 1,
+          at: mapPosition(config.map, position.x, position.y),
+        });
+      }
+    }
+
+    if (missionRules.enemyEnabled) {
+      this.bridge.command({
+        type: 'spawnBuilding',
+        building: 'construction_yard',
+        player: 1,
+        at: enemyBase,
+      });
+      for (const [building, dx, dy] of [
+        ['power_plant', -5, 0],
+        ['barracks', 0, -5],
+        ['factory', -6, -6],
+      ] as const) {
+        this.bridge.command({
+          type: 'spawnBuilding',
+          building,
+          player: 1,
+          at: offsetSpawn(config.map, enemySpawn, dx, dy),
+        });
+      }
       this.bridge.command({
         type: 'spawnUnit',
-        unit: i % 3 === 0 ? 'tank' : 'rifleman',
+        unit: 'harvester',
         player: 1,
-        at: offsetSpawn(config.map, enemySpawn, -1 - (i % 3) * 2, -5 - Math.floor(i / 3) * 2),
+        at: offsetSpawn(config.map, enemySpawn, -2, -2),
       });
+      for (let i = 0; i < config.enemyStartingForce; i++) {
+        this.bridge.command({
+          type: 'spawnUnit',
+          unit: i % 3 === 0 ? 'tank' : 'rifleman',
+          player: 1,
+          at: offsetSpawn(config.map, enemySpawn, -1 - (i % 3) * 2, -5 - Math.floor(i / 3) * 2),
+        });
+      }
     }
 
     this.installInput();
@@ -264,7 +295,7 @@ export class GameRenderer {
       building: asEntityId(building.id),
       unit,
     });
-    useGameStore.getState().advanceTutorial('produce');
+    if (unit === 'rifleman') useGameStore.getState().advanceTutorial('produce');
   }
 
   /** Cancel the last item in the selected building's production queue. */
@@ -335,7 +366,12 @@ export class GameRenderer {
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
         store.setScenario(curr.scenario ?? null);
-        const activationOrigin = curr.scenario?.operationalAtTick;
+        const activationOrigin =
+          this.mission === 'first_contact'
+            ? curr.scenario?.operationalAtTick
+            : this.mission === 'skirmish'
+              ? 0
+              : null;
         store.setAiActivationSeconds(
           activationOrigin === null || activationOrigin === undefined
             ? 0
@@ -843,7 +879,14 @@ export class GameRenderer {
       at: { x: fp.fromFloat(position.x), y: fp.fromFloat(position.y) },
     });
     this.audio.play('build');
-    useGameStore.getState().advanceTutorial('build');
+    const milestone = {
+      power_plant: 'power',
+      refinery: 'refinery',
+      barracks: 'barracks',
+      concrete_wall: 'defense',
+      turret: 'defense',
+    }[building] as 'power' | 'refinery' | 'barracks' | 'defense' | undefined;
+    if (milestone) useGameStore.getState().advanceTutorial(milestone);
     if (!usesContinuousPlacement(building)) this.cancelBuildingPlacement();
   }
 
@@ -994,7 +1037,14 @@ export class GameRenderer {
     if (this.selected.size > 0) this.audio.play('select');
     const curr = this.bridge.latest.curr;
     if (curr) this.syncSelectionState(curr);
-    if (this.selected.size > 0) useGameStore.getState().advanceTutorial('select');
+    if (
+      curr?.entities.some(
+        (entity) =>
+          this.selected.has(entity.id) && entity.buildingType === 'construction_yard',
+      )
+    ) {
+      useGameStore.getState().advanceTutorial('select');
+    }
   }
 
   private cancelPointerGesture(): void {
@@ -1133,7 +1183,6 @@ export class GameRenderer {
         entities: units.map((entity) => asEntityId(entity.id)),
         target: asEntityId(enemy.id),
       });
-      useGameStore.getState().advanceTutorial('attack');
       return;
     }
     this.showCommandFeedback(sx, sy, 'move');
@@ -1143,7 +1192,6 @@ export class GameRenderer {
       entities: units.map((entity) => asEntityId(entity.id)),
       target: { x: fp.fromFloat(target.x), y: fp.fromFloat(target.y) },
     });
-    useGameStore.getState().advanceTutorial('move');
   }
 
   private selectedUnits(snapshot = this.bridge.latest.curr): EntitySnapshot[] {

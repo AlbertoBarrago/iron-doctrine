@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MapDef } from '@iron/shared';
-import { firstContactLayout } from './skirmishConfig.js';
+import { firstContactLayout, MISSION_RULES } from './skirmishConfig.js';
 
 const mapWithSpawns = (
   friendly: { x: number; y: number },
@@ -38,5 +38,20 @@ describe('First Contact layout', () => {
     expect(layout.resistance).toHaveLength(3);
     expect(layout.resistance.every(({ x, y }) => x > layout.recovery.x && y < layout.recovery.y))
       .toBe(true);
+  });
+});
+
+describe('mission profiles', () => {
+  it('keeps the construction tutorial separate from the recovery mission', () => {
+    expect(MISSION_RULES.base_foundations).toMatchObject({
+      playerStart: 'base',
+      enemyEnabled: false,
+      recoveryScenario: false,
+    });
+    expect(MISSION_RULES.first_contact).toMatchObject({
+      playerStart: 'patrol',
+      enemyEnabled: true,
+      recoveryScenario: true,
+    });
   });
 });

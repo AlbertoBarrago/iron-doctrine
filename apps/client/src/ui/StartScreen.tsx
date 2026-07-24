@@ -6,6 +6,7 @@ import {
   type EnemyStartingForce,
   type GracePeriodSeconds,
   type SkirmishConfig,
+  type MissionId,
 } from '../game/skirmishConfig.js';
 
 type MenuScreen = 'main' | 'setup';
@@ -30,10 +31,11 @@ export function StartScreen({
   );
   const selectedMap = maps.find((entry) => entry.id === mapId) ?? maps[0];
 
-  const startMission = (): void => {
+  const startMission = (mission: MissionId): void => {
     if (!selectedMap) return;
     onStart({
       map: selectedMap.map,
+      mission,
       difficulty,
       gracePeriodSeconds,
       enemyStartingForce,
@@ -63,8 +65,12 @@ export function StartScreen({
 
         {screen === 'main' ? (
           <nav className="main-menu__commands" aria-label="Main commands">
-            <button type="button" disabled={!selectedMap} onClick={startMission}>
-              <span className="main-menu__command-label">First Contact</span>
+            <button
+              type="button"
+              disabled={!selectedMap}
+              onClick={() => startMission('base_foundations')}
+            >
+              <span className="main-menu__command-label">Base Foundations</span>
               <small className="main-menu__command-hint">Begin campaign</small>
             </button>
             <button type="button" onClick={() => setScreen('setup')}>
@@ -147,7 +153,7 @@ export function StartScreen({
               type="button"
               className="mission-setup__deploy"
               disabled={!selectedMap}
-              onClick={startMission}
+              onClick={() => startMission('skirmish')}
             >
               Deploy forces
             </button>
