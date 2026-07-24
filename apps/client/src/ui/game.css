@@ -1801,12 +1801,35 @@ kbd {
 }
 .command-panel .selection-card {
   position: static;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   width: auto;
+  max-height: 218px;
   margin: 0 0 8px;
   padding: 10px;
+  overflow-y: auto;
   background: #171e1a;
   box-shadow: none;
+}
+.selection-card__role {
+  display: block;
+  margin: -6px 0 7px;
+  color: #c6a94e;
+  font: 800 9px/1.25 var(--body);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.selection-card__description,
+.selection-card__tactical {
+  margin: 0 0 9px;
+  color: #aeb6aa;
+  font: 500 10px/1.45 var(--body);
+}
+.selection-card__tactical {
+  margin: 9px 0 0;
+  padding: 7px 8px;
+  color: #c9c7aa;
+  background: #101512;
+  border-left: 2px solid #9c873f;
 }
 .panel-empty--selection {
   min-height: 68px;
@@ -2102,13 +2125,13 @@ kbd {
 }
 .command-workspace .build-list {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 .command-workspace .command-button {
-  min-height: 84px;
+  min-height: 92px;
   padding: 7px;
-  grid-template-columns: 34px minmax(0, 1fr);
+  grid-template-columns: 40px minmax(0, 1fr);
   grid-template-rows: auto auto;
 }
 .command-workspace .command-button__icon {
@@ -2119,10 +2142,14 @@ kbd {
   min-width: 0;
 }
 .command-workspace .command-button__copy strong {
-  font-size: 11px;
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.command-workspace .command-button__copy span {
-  font-size: 9px;
+.command-workspace .command-button__copy small {
+  font-size: 10px;
+  line-height: 1.35;
 }
 .command-workspace .command-button__meta {
   display: flex;
@@ -2130,6 +2157,45 @@ kbd {
   flex-direction: row;
   justify-content: space-between;
   padding-top: 3px;
+}
+.command-workspace .production-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+.command-workspace .unit-button {
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  min-height: 94px;
+  padding: 8px;
+}
+.command-workspace .unit-button__icon {
+  grid-row: 1 / 3;
+  font-size: 19px;
+}
+.unit-button__copy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.unit-button__copy strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.command-workspace .unit-button__role {
+  color: #c6a94e;
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.command-workspace .unit-button__description {
+  color: #a7afa4;
+  font: 500 10px/1.35 var(--body);
+}
+.unit-button__price {
+  grid-column: 1 / -1;
+  padding-top: 5px;
+  border-top: 1px solid rgba(143, 138, 90, 0.3);
 }
 .quick-orders {
   display: grid;

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   commandAvailability,
+  commandSelectionContext,
+  commandTabAvailable,
   nextTutorialStep,
   preferredCommandTab,
   selectionCommands,
@@ -30,6 +32,21 @@ describe('contextual command tabs', () => {
       }),
     ).toBe('production');
     expect(preferredCommandTab(selected(['move']), null)).toBe('orders');
+  });
+
+  it('does not reset the tab when only live status changes', () => {
+    const base = selected(['build']);
+    expect(commandSelectionContext(base, null)).toBe(
+      commandSelectionContext({ ...base, hp: 20, status: 'Damaged' }, null),
+    );
+  });
+
+  it('exposes build and production only for the relevant selection', () => {
+    const yard = selected(['build']);
+    expect(commandTabAvailable('build', true, yard, null)).toBe(true);
+    expect(commandTabAvailable('build', true, selected(['move']), null)).toBe(false);
+    expect(commandTabAvailable('production', true, yard, null)).toBe(false);
+    expect(commandTabAvailable('orders', false, null, null)).toBe(true);
   });
 });
 

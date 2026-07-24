@@ -2,6 +2,8 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import {
   commandAvailability,
+  commandSelectionContext,
+  commandTabAvailable,
   preferredCommandTab,
   useGameStore,
   type CommandTab,
@@ -10,36 +12,27 @@ import {
   type SelectionCommand,
   type TutorialStep,
 } from '../state/gameStore.js';
+import { BUILDING_PROFILES, UNIT_PROFILES } from '../game/gameContent.js';
 
 const BUILDABLE_STRUCTURES = [
   {
     id: 'power_plant',
-    label: 'Power plant',
-    purpose: 'Keeps powered defenses operational',
     unlocks: '+100 power',
   },
   {
     id: 'refinery',
-    label: 'Refinery',
-    purpose: 'Accepts ore deliveries from harvesters',
     unlocks: 'Unlocks income',
   },
   {
     id: 'barracks',
-    label: 'Barracks',
-    purpose: 'Trains inexpensive ground forces',
     unlocks: 'Riflemen · Engineers',
   },
   {
     id: 'factory',
-    label: 'War factory',
-    purpose: 'Builds armored and economy vehicles',
     unlocks: 'Tanks · Harvesters',
   },
   {
     id: 'turret',
-    label: 'Defense turret',
-    purpose: 'Automatically engages nearby hostiles',
     unlocks: 'Requires 40 power',
   },
 ] as const;
@@ -118,6 +111,9 @@ export function Hud(props: HudProps): JSX.Element {
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
   const baseOperational = scenario?.phase === 'operational';
+  const canBuild = commandTabAvailable('build', baseOperational, selectedEntity, selectedProduction);
+  const preferredTab = preferredCommandTab(selectedEntity, selectedProduction);
+  const tabResetKey = commandSelectionContext(selectedEntity, selectedProduction);
   useEffect(() => {
     if (!props.setupOpen) return;
     const closeOnEscape = (event: KeyboardEvent): void => {
@@ -127,8 +123,9 @@ export function Hud(props: HudProps): JSX.Element {
     return () => window.removeEventListener('keydown', closeOnEscape);
   }, [props.setupOpen, props.onSetupChange]);
   useEffect(() => {
-    setActiveTab(preferredCommandTab(selectedEntity, selectedProduction));
-  }, [selectedEntity, selectedProduction]);
+    void tabResetKey;
+    setActiveTab(preferredTab);
+  }, [tabResetKey, preferredTab]);
 
   return (
     <>
@@ -205,7 +202,9 @@ export function Hud(props: HudProps): JSX.Element {
                 role="tab"
                 aria-selected={activeTab === tab}
                 className={activeTab === tab ? 'is-active' : ''}
-                disabled={tab !== 'orders' && !baseOperational}
+                disabled={
+                  !commandTabAvailable(tab, baseOperational, selectedEntity, selectedProduction)
+                }
                 onClick={() => setActiveTab(tab)}
               >
                 {tab}
@@ -223,10 +222,11 @@ export function Hud(props: HudProps): JSX.Element {
               ) : (
                 <WorkspaceEmpty title="No selection" copy="Select a unit or structure." />
               )
-            ) : activeTab === 'build' ? (
+            ) : activeTab === 'build' && canBuild ? (
               <div className="build-list">
-                {BUILDABLE_STRUCTURES.map(({ id, label, purpose, unlocks }) => {
+                {BUILDABLE_STRUCTURES.map(({ id, unlocks }) => {
                   const stats = BUILDING_STATS[id]!;
+                  const profile = BUILDING_PROFILES[id]!;
                   const active = placingBuilding === id;
                   const availability = commandAvailability(credits, stats.cost);
                   return (
@@ -236,11 +236,12 @@ export function Hud(props: HudProps): JSX.Element {
                       className={`command-button${active ? ' command-button--active' : ''}`}
                       disabled={!availability.available}
                       onClick={() => props.onPlaceBuilding(id)}
-                      title={`${purpose}. ${unlocks}. ${availability.label}.`}
+                      title={`${profile.description} ${profile.tacticalNote} ${availability.label}.`}
                     >
                       <span className="command-button__icon">{buildingSymbol(id)}</span>
                       <span className="command-button__copy">
-                        <strong>{label}</strong>
+                        <strong>{profile.label}</strong>
+                        <small>{profile.description}</small>
                         <small className="command-button__unlocks">{unlocks}</small>
                       </span>
                       <span className="command-button__meta">
@@ -261,7 +262,14 @@ export function Hud(props: HudProps): JSX.Element {
                 onCancel={props.onCancelProduction}
               />
             ) : (
-              <WorkspaceEmpty title="Facility required" copy="Select a barracks or war factory." />
+              <WorkspaceEmpty
+                title={activeTab === 'build' ? 'Construction yard required' : 'Facility required'}
+                copy={
+                  activeTab === 'build'
+                    ? 'Select your construction yard to deploy structures.'
+                    : 'Select a barracks or war factory.'
+                }
+              />
             )}
           </div>
         </section>
@@ -413,6 +421,7 @@ function ProductionPanel({
       <div className="production-grid">
         {production.produces.map((unit) => {
           const stats = UNIT_STATS[unit];
+          const profile = UNIT_PROFILES[unit];
           const availability = stats
             ? commandAvailability(credits, stats.cost)
             : { available: false as const, label: 'Unavailable' };
@@ -423,11 +432,15 @@ function ProductionPanel({
               className="unit-button"
               disabled={!availability.available}
               onClick={() => onQueue(unit)}
-              title={availability.label}
+              title={`${profile?.description ?? humanize(unit)} ${profile?.tacticalNote ?? ''}`}
             >
               <span className="unit-button__icon">{unitSymbol(unit)}</span>
-              <strong>{humanize(unit)}</strong>
-              <small>
+              <span className="unit-button__copy">
+                <strong>{profile?.label ?? humanize(unit)}</strong>
+                <small className="unit-button__role">{profile?.role}</small>
+                <small className="unit-button__description">{profile?.description}</small>
+              </span>
+              <small className="unit-button__price">
                 ${stats?.cost ?? '?'} · {availability.label}
               </small>
             </button>
@@ -472,6 +485,8 @@ function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Eleme
     <section className="selection-card steel-panel">
       <span className="panel-kicker">TACTICAL READOUT</span>
       <strong>{entity.label}</strong>
+      {entity.role ? <span className="selection-card__role">{entity.role}</span> : null}
+      {entity.description ? <p className="selection-card__description">{entity.description}</p> : null}
       {health !== null ? (
         <>
           <div className="selection-card__meta">
@@ -508,6 +523,9 @@ function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Eleme
           <i />
           {entity.status}
         </div>
+      ) : null}
+      {entity.tacticalNote ? (
+        <p className="selection-card__tactical">{entity.tacticalNote}</p>
       ) : null}
     </section>
   );

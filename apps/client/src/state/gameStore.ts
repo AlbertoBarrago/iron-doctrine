@@ -14,6 +14,9 @@ export type SelectionCommand =
 
 export interface SelectedEntitySummary {
   label: string;
+  role?: string;
+  description?: string;
+  tacticalNote?: string;
   kind: 'unit' | 'building' | 'group';
   count: number;
   hp?: number;
@@ -41,6 +44,28 @@ export function preferredCommandTab(
   if (production) return 'production';
   if (selected?.commands.includes('build')) return 'build';
   return 'orders';
+}
+
+export function commandSelectionContext(
+  selected: SelectedEntitySummary | null,
+  production: SelectedProduction | null,
+): string {
+  const selection = selected
+    ? `${selected.kind}:${selected.label}:${selected.count}:${selected.commands.join(',')}`
+    : 'none';
+  return `${selection}:${production?.building ?? 'none'}`;
+}
+
+export function commandTabAvailable(
+  tab: CommandTab,
+  baseOperational: boolean,
+  selected: SelectedEntitySummary | null,
+  production: SelectedProduction | null,
+): boolean {
+  if (tab === 'orders') return true;
+  if (!baseOperational) return false;
+  if (tab === 'build') return selected?.commands.includes('build') ?? false;
+  return production !== null;
 }
 
 export type CommandAvailability =
@@ -101,6 +126,9 @@ function sameSelectedEntity(
   if (!left || !right) return left === right;
   return (
     left.label === right.label &&
+    left.role === right.role &&
+    left.description === right.description &&
+    left.tacticalNote === right.tacticalNote &&
     left.kind === right.kind &&
     left.count === right.count &&
     left.hp === right.hp &&

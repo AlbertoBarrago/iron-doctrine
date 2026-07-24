@@ -28,6 +28,7 @@ import {
 import { clampMovementTarget } from './movementTarget.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
 import { firstContactLayout, type SkirmishConfig } from '../../game/skirmishConfig.js';
+import { profileFor } from '../../game/gameContent.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
@@ -1216,8 +1217,16 @@ export class GameRenderer {
     } else {
       const entity = selected[0]!;
       const construction = entity.construction;
+      const profile = profileFor(entity.unitType, entity.buildingType);
       store.setSelectedEntity({
-        label: (entity.unitType ?? entity.buildingType ?? entity.kind).replaceAll('_', ' '),
+        label:
+          profile?.label ??
+          (entity.unitType ?? entity.buildingType ?? entity.kind).replaceAll('_', ' '),
+        ...(profile && {
+          role: profile.role,
+          description: profile.description,
+          tacticalNote: profile.tacticalNote,
+        }),
         kind: entity.kind === 'building' ? 'building' : 'unit',
         count: 1,
         commands: selectionCommands(selected),
