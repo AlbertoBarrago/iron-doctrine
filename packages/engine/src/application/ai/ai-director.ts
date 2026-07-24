@@ -8,15 +8,15 @@
  *   - Aggression: once its army reaches a threshold, order every combat unit to
  *     attack the nearest enemy — units, then buildings.
  *
- * Production uses archetype build times as a deterministic cooldown. All randomness
- * flows through the seeded per-tick RNG so two peers make identical decisions.
+ * Production submits the same validated facility-queue commands as a human player.
  * Difficulty scales decision cadence, attack size and the standing-army limit.
  */
 import type { System, TickContext } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
-import type { NavGrid } from '../pathfinding/nav-grid.js';
 import type { PlayerEconomy } from '../../domain/economy/player-economy.js';
+import type { TechState } from '../../domain/tech/tech-tree.js';
 import type { TeamResolver } from '../systems/fog-system.js';
+import type { CommandBus } from '../commands/command.js';
 import {
   Position,
   Owner,
@@ -25,8 +25,9 @@ import {
   Attack,
   Building,
   Harvest,
+  Production,
 } from '../../domain/components/index.js';
-import { spawnUnit, UNIT_STATS } from '../../domain/archetypes/units.js';
+import { UNIT_STATS } from '../../domain/archetypes/units.js';
 import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import type { Vec2 } from '../../domain/math/vec2.js';
@@ -71,12 +72,12 @@ const TUNING: Record<Difficulty, Tuning> = {
 
 export function createAISystem(
   ais: AIPlayerConfig[],
+  bus: CommandBus,
   economy: PlayerEconomy,
+  tech: TechState,
   teamOf: TeamResolver,
-  grid: NavGrid,
   activationOrigin?: () => number | null,
 ): System {
-  const nextProductionTick = new Map<number, number>();
   return {
     name: 'AIDirector',
     update(world: World, ctx: TickContext): void {
@@ -87,27 +88,13 @@ export function createAISystem(
         if (ctx.tick < activationTick) continue;
         const tuning = TUNING[ai.difficulty];
         const activeTick = ctx.tick - activationTick;
-        if (
-          activeTick % tuning.decisionInterval === 0 &&
-          ctx.tick >= (nextProductionTick.get(ai.player) ?? activationTick)
-        ) {
-          const buildTicks = manageEconomyAndProduction(world, ctx, ai, economy, grid, tuning);
-          if (buildTicks !== null) nextProductionTick.set(ai.player, ctx.tick + buildTicks);
+        if (activeTick % tuning.decisionInterval === 0) {
+          manageEconomyAndProduction(world, ai, bus, economy, tech, tuning);
         }
         if (activeTick % tuning.attackInterval === 0) manageAggression(world, ai, teamOf, tuning);
       }
     },
   };
-}
-
-function basePoint(world: World, player: number): Vec2 {
-  for (const e of world.query(Building, Owner, Position)) {
-    if (world.get(e, Owner)!.player === player) return { ...world.get(e, Position)! };
-  }
-  for (const e of world.query(Owner, Position)) {
-    if (world.get(e, Owner)!.player === player) return { ...world.get(e, Position)! };
-  }
-  return v2.zero();
 }
 
 function ownUnits(world: World, player: number): EntityId[] {
@@ -118,55 +105,68 @@ function ownUnits(world: World, player: number): EntityId[] {
 
 function manageEconomyAndProduction(
   world: World,
-  ctx: TickContext,
   ai: AIPlayerConfig,
+  bus: CommandBus,
   economy: PlayerEconomy,
-  grid: NavGrid,
+  tech: TechState,
   tuning: Tuning,
-): number | null {
+): void {
   const player = ai.player;
-  const base = basePoint(world, player);
   const units = ownUnits(world, player);
   const harvesters = units.filter((e) => world.has(e, Harvest)).length;
+  const queuedUnits = ownQueuedUnits(world, player);
 
   // Economy: always keep one harvester.
-  if (harvesters === 0 && economy.spend(player, UNIT_STATS.harvester!.cost)) {
-    spawnNear(world, ctx, grid, 'harvester', player, base);
-    return UNIT_STATS.harvester!.buildTicks;
+  if (harvesters === 0 && !queuedUnits.includes('harvester')) {
+    if (queueUnit(world, bus, economy, tech, player, 'harvester')) return;
   }
 
-  const combatUnits = units.filter((entity) => world.has(entity, Weapon)).length;
-  if (combatUnits >= tuning.maxCombatUnits) return null;
+  const queuedCombatUnits = queuedUnits.filter((unit) => UNIT_STATS[unit]?.weapon).length;
+  const combatUnits =
+    units.filter((entity) => world.has(entity, Weapon)).length + queuedCombatUnits;
+  if (combatUnits >= tuning.maxCombatUnits) return;
 
   // Production: buy the best affordable combat unit, keeping a small reserve.
   const tank = UNIT_STATS.tank!;
   const rifle = UNIT_STATS.rifleman!;
-  if (economy.credits(player) >= tank.cost + 200 && economy.spend(player, tank.cost)) {
-    spawnNear(world, ctx, grid, 'tank', player, base);
-    return tank.buildTicks;
-  } else if (economy.credits(player) >= rifle.cost + 100 && economy.spend(player, rifle.cost)) {
-    spawnNear(world, ctx, grid, 'rifleman', player, base);
-    return rifle.buildTicks;
+  if (economy.credits(player) >= tank.cost + 200) {
+    if (queueUnit(world, bus, economy, tech, player, 'tank')) return;
   }
-  return null;
+  if (economy.credits(player) >= rifle.cost + 100) {
+    queueUnit(world, bus, economy, tech, player, 'rifleman');
+  }
 }
 
-function spawnNear(
+function ownQueuedUnits(world: World, player: number): string[] {
+  const queued: string[] = [];
+  for (const building of world.query(Production, Owner)) {
+    if (world.get(building, Owner)!.player === player) {
+      queued.push(...world.get(building, Production)!.queue);
+    }
+  }
+  return queued;
+}
+
+function queueUnit(
   world: World,
-  ctx: TickContext,
-  grid: NavGrid,
-  unit: string,
+  bus: CommandBus,
+  economy: PlayerEconomy,
+  tech: TechState,
   player: number,
-  base: Vec2,
-): void {
-  // Deterministic jitter around the base, snapped to a free cell.
-  const ox = fp.fromInt(ctx.rng.nextInt(-3, 3));
-  const oy = fp.fromInt(ctx.rng.nextInt(-3, 3));
-  const want = { x: fp.add(base.x, ox), y: fp.add(base.y, oy) };
-  const cell = grid.worldToCell(want.x, want.y);
-  const open = grid.nearestOpen(cell.cx, cell.cy);
-  const at = open ? grid.cellToWorld(open.cx, open.cy) : want;
-  spawnUnit(world, unit, player, at);
+  unit: string,
+): boolean {
+  const stats = UNIT_STATS[unit];
+  if (!stats || economy.credits(player) < stats.cost || !tech.canProduceUnit(player, unit)) {
+    return false;
+  }
+  const facility = world.query(Production, Owner).find((building) => {
+    if (world.get(building, Owner)!.player !== player) return false;
+    const production = world.get(building, Production)!;
+    return production.queue.length === 0 && production.produces.includes(unit);
+  });
+  if (facility === undefined) return false;
+  bus.push({ type: 'queueProduction', building: facility, unit });
+  return true;
 }
 
 function manageAggression(

@@ -73,9 +73,10 @@ const defaultSystems = (d: Deps): System[] => [
   ...(d.firstContact ? [createFirstContactSystem(d.firstContact, d.grid, d.economy)] : []),
   createAISystem(
     d.aiPlayers,
+    d.bus,
     d.economy,
+    d.tech,
     d.teamOf,
-    d.grid,
     d.firstContact ? () => d.firstContact!.activationOriginTick : undefined,
   ),
   // Energy is recomputed before combat so power-gated defenses see the current balance.

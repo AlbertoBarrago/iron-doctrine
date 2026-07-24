@@ -137,7 +137,10 @@ export class GameRenderer {
         },
       ],
       startingCredits: { 0: 0, 1: aiCredits },
-      startingTech: { 0: ['infantry_doctrine', 'armor_doctrine'] },
+      startingTech: {
+        0: ['infantry_doctrine', 'armor_doctrine'],
+        1: ['infantry_doctrine', 'armor_doctrine'],
+      },
       matchPlayers: [0, 1],
       firstContact: {
         player: 0,
@@ -193,6 +196,18 @@ export class GameRenderer {
       building: 'power_plant',
       player: 1,
       at: offsetSpawn(config.map, enemySpawn, -5, 0),
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'barracks',
+      player: 1,
+      at: offsetSpawn(config.map, enemySpawn, 0, -5),
+    });
+    this.bridge.command({
+      type: 'spawnBuilding',
+      building: 'factory',
+      player: 1,
+      at: offsetSpawn(config.map, enemySpawn, -6, -6),
     });
     this.bridge.command({
       type: 'spawnUnit',
