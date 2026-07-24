@@ -91,22 +91,28 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
   }, [paused]);
 
   useEffect(() => {
-    const togglePause = (event: KeyboardEvent): void => {
+    const handleKeyboardControl = (event: KeyboardEvent): void => {
       const target = event.target;
       if (
         event.repeat ||
-        event.key.toLowerCase() !== 'p' ||
         (target instanceof HTMLElement &&
           (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)))
       ) {
         return;
       }
+      const key = event.key.toLowerCase();
+      if (key === 'q') {
+        event.preventDefault();
+        onExit();
+        return;
+      }
+      if (key !== 'p') return;
       event.preventDefault();
       setManualPaused((current) => !current);
     };
-    window.addEventListener('keydown', togglePause);
-    return () => window.removeEventListener('keydown', togglePause);
-  }, []);
+    window.addEventListener('keydown', handleKeyboardControl);
+    return () => window.removeEventListener('keydown', handleKeyboardControl);
+  }, [onExit]);
 
   const attachMinimap = useCallback((c: HTMLCanvasElement | null) => {
     minimapCanvasRef.current = c;

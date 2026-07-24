@@ -605,6 +605,7 @@ function SetupOverlay({
     ['Wheel', 'Zoom'],
     ['WASD / edges', 'Pan camera'],
     ['P', 'Pause or resume'],
+    ['Q', 'Quit to main menu'],
   ];
   return (
     <div

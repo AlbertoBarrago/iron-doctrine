@@ -14,8 +14,9 @@ First Contact is a playable vertical slice:
 - harvest ore, construct a base and produce units;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
+- launch missions from a classic 1990s-inspired RTS command menu;
 - navigate with mouse, keyboard and tactical radar;
-- pause with `P` or open the in-game Setup panel.
+- pause with `P`, quit to the main menu with `Q` or open the in-game Setup panel.
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
