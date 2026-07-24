@@ -17,7 +17,7 @@ import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { drawUnit } from './UnitPainter.js';
-import { drawBuilding } from './BuildingPainter.js';
+import { drawBuilding, type WallConnections } from './BuildingPainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import {
@@ -28,7 +28,7 @@ import {
 import { clampMovementTarget } from './movementTarget.js';
 import { selectionCommands, useGameStore } from '../../state/gameStore.js';
 import { firstContactLayout, type SkirmishConfig } from '../../game/skirmishConfig.js';
-import { profileFor } from '../../game/gameContent.js';
+import { profileFor, usesContinuousPlacement } from '../../game/gameContent.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
@@ -404,6 +404,12 @@ export class GameRenderer {
   private drawEntities(prev: Snapshot, curr: Snapshot, alpha: number): void {
     const prevById = new Map<number, EntitySnapshot>();
     for (const e of prev.entities) prevById.set(e.id, e);
+    const wallKeys = new Set(
+      curr.entities
+        .filter((entity) => entity.buildingType === 'concrete_wall')
+        .map((entity) => wallKey(entity.owner, entity.x, entity.y)),
+    );
+    const wallStep = this.activeMap?.cellSize ?? 1;
 
     for (const e of curr.entities) {
       const p = prevById.get(e.id) ?? e;
@@ -452,7 +458,17 @@ export class GameRenderer {
             .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)
             .stroke({ width: 2, color: 0xf0c85a });
         }
-        drawBuilding(this.units, e, sx, sy, s, color);
+        drawBuilding(
+          this.units,
+          e,
+          sx,
+          sy,
+          s,
+          color,
+          e.buildingType === 'concrete_wall'
+            ? wallConnections(e, wallKeys, wallStep)
+            : undefined,
+        );
         if (e.construction) {
           const progress = e.construction.progressTicks / e.construction.buildTicks;
           this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
@@ -828,7 +844,7 @@ export class GameRenderer {
     });
     this.audio.play('build');
     useGameStore.getState().advanceTutorial('build');
-    this.cancelBuildingPlacement();
+    if (!usesContinuousPlacement(building)) this.cancelBuildingPlacement();
   }
 
   private snappedPlacement(sx: number, sy: number): { x: number; y: number } {
@@ -1321,4 +1337,21 @@ export class GameRenderer {
     // Only destroy Pixi if init finished; otherwise start() will tear it down itself.
     if (this.ready) this.app.destroy(true, { children: true });
   }
+}
+
+function wallKey(owner: number, x: number, y: number): string {
+  return `${owner}:${Math.round(x * 1000)}:${Math.round(y * 1000)}`;
+}
+
+function wallConnections(
+  entity: EntitySnapshot,
+  walls: ReadonlySet<string>,
+  step: number,
+): WallConnections {
+  return {
+    north: walls.has(wallKey(entity.owner, entity.x, entity.y - step)),
+    east: walls.has(wallKey(entity.owner, entity.x + step, entity.y)),
+    south: walls.has(wallKey(entity.owner, entity.x, entity.y + step)),
+    west: walls.has(wallKey(entity.owner, entity.x - step, entity.y)),
+  };
 }

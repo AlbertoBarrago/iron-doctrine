@@ -1,6 +1,13 @@
 import type { EntitySnapshot } from '@iron/engine';
 import type { Graphics } from 'pixi.js';
 
+export interface WallConnections {
+  north: boolean;
+  east: boolean;
+  south: boolean;
+  west: boolean;
+}
+
 export function drawBuilding(
   graphics: Graphics,
   entity: EntitySnapshot,
@@ -8,8 +15,13 @@ export function drawBuilding(
   y: number,
   size: number,
   factionColor: number,
+  wallConnections?: WallConnections,
 ): void {
   const alpha = entity.construction ? 0.55 : 1;
+  if (entity.buildingType === 'concrete_wall') {
+    drawConcreteWall(graphics, x, y, size, factionColor, alpha, wallConnections);
+    return;
+  }
   drawFoundation(graphics, x, y, size);
 
   switch (entity.buildingType) {
@@ -39,6 +51,40 @@ export function drawBuilding(
   }
 
   drawFactionMark(graphics, x, y, size, factionColor);
+}
+
+function drawConcreteWall(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  color: number,
+  alpha: number,
+  connections: WallConnections = { north: false, east: false, south: false, west: false },
+): void {
+  const concrete = 0x59615a;
+  const edge = 0x171c19;
+  const halfWidth = size * 0.34;
+  graphics
+    .rect(x - size * 0.82, y - size * 0.82, size * 1.64, size * 1.64)
+    .fill({ color: edge, alpha });
+
+  const drawArm = (armX: number, armY: number, width: number, height: number): void => {
+    graphics
+      .rect(armX, armY, width, height)
+      .fill({ color: concrete, alpha })
+      .stroke({ width: 1, color: 0x252c27, alpha });
+  };
+  drawArm(x - halfWidth, y - halfWidth, halfWidth * 2, halfWidth * 2);
+  if (connections.north) drawArm(x - halfWidth, y - size, halfWidth * 2, size - halfWidth);
+  if (connections.east) drawArm(x + halfWidth, y - halfWidth, size - halfWidth, halfWidth * 2);
+  if (connections.south) drawArm(x - halfWidth, y + halfWidth, halfWidth * 2, size - halfWidth);
+  if (connections.west) drawArm(x - size, y - halfWidth, size - halfWidth, halfWidth * 2);
+
+  graphics
+    .rect(x - halfWidth * 0.62, y - halfWidth * 0.62, halfWidth * 1.24, halfWidth * 1.24)
+    .fill({ color: shade(color, 1.16), alpha })
+    .stroke({ width: 1, color: 0x2b2410, alpha });
 }
 
 function drawFoundation(graphics: Graphics, x: number, y: number, size: number): void {

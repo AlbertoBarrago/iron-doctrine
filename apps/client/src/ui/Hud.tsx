@@ -12,9 +12,17 @@ import {
   type SelectionCommand,
   type TutorialStep,
 } from '../state/gameStore.js';
-import { BUILDING_PROFILES, UNIT_PROFILES } from '../game/gameContent.js';
+import {
+  BUILDING_PROFILES,
+  UNIT_PROFILES,
+  usesContinuousPlacement,
+} from '../game/gameContent.js';
 
 const BUILDABLE_STRUCTURES = [
+  {
+    id: 'concrete_wall',
+    unlocks: 'Continuous placement',
+  },
   {
     id: 'power_plant',
     unlocks: '+100 power',
@@ -293,7 +301,11 @@ export function Hud(props: HudProps): JSX.Element {
           <span className="placement-banner__lamp" />
           <div>
             <strong>DEPLOYING {humanize(placingBuilding)}</strong>
-            <small>Left-click confirm · Right-click / Esc abort</small>
+            <small>
+              {usesContinuousPlacement(placingBuilding)
+                ? 'Left-click place next segment · Right-click / Esc finish'
+                : 'Left-click confirm · Right-click / Esc abort'}
+            </small>
           </div>
           <button
             type="button"
@@ -723,6 +735,13 @@ function SetupOverlay({
 
 const humanize = (value: string): string => value.replaceAll('_', ' ');
 const buildingSymbol = (building: string): string =>
-  ({ power_plant: 'ϟ', refinery: '◆', barracks: '▥', factory: '▣', turret: '⌖' })[building] ?? '■';
+  ({
+    concrete_wall: '╬',
+    power_plant: 'ϟ',
+    refinery: '◆',
+    barracks: '▥',
+    factory: '▣',
+    turret: '⌖',
+  })[building] ?? '■';
 const unitSymbol = (unit: string): string =>
   ({ rifleman: '▲', engineer: '◇', tank: '▰', harvester: '⬢' })[unit] ?? '●';

@@ -5,6 +5,12 @@ export interface BattlefieldProfile {
   tacticalNote: string;
 }
 
+const CONTINUOUS_PLACEMENT = new Set(['concrete_wall']);
+
+export function usesContinuousPlacement(building: string): boolean {
+  return CONTINUOUS_PLACEMENT.has(building);
+}
+
 export const UNIT_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
   rifleman: {
     label: 'Rifleman',
@@ -33,6 +39,12 @@ export const UNIT_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
 };
 
 export const BUILDING_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
+  concrete_wall: {
+    label: 'Concrete wall',
+    role: 'Base perimeter',
+    description: 'A durable barrier that blocks hostile movement and channels attacks.',
+    tacticalNote: 'Build connected lines and leave deliberate routes for your own forces.',
+  },
   construction_yard: {
     label: 'Construction yard',
     role: 'Base command',
