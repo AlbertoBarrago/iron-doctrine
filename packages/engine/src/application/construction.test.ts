@@ -87,4 +87,36 @@ describe('base construction', () => {
       buildTicks: 140,
     });
   });
+
+  it('builds connected wall cells and releases navigation when one is destroyed', () => {
+    const sim = makeSim(500);
+    sim.enqueue({
+      type: 'placeBuilding',
+      building: 'concrete_wall',
+      player: 0,
+      at: at(0.5, 0.5),
+    });
+    sim.enqueue({
+      type: 'placeBuilding',
+      building: 'concrete_wall',
+      player: 0,
+      at: at(1.5, 0.5),
+    });
+    sim.step();
+
+    const walls = sim.world.query(Building);
+    expect(walls).toHaveLength(2);
+    expect(sim.economy.credits(0)).toBe(350);
+    const firstCell = sim.grid.worldToCell(fp.fromFloat(0.5), fp.fromFloat(0.5));
+    const secondCell = sim.grid.worldToCell(fp.fromFloat(1.5), fp.fromFloat(0.5));
+    expect(sim.grid.isBlocked(firstCell.cx, firstCell.cy)).toBe(true);
+    expect(sim.grid.isBlocked(secondCell.cx, secondCell.cy)).toBe(true);
+
+    for (let tick = 1; tick < 30; tick++) sim.step();
+    sim.world.get(walls[0]!, Health)!.hp = 0;
+    sim.step();
+
+    expect(sim.grid.isBlocked(firstCell.cx, firstCell.cy)).toBe(false);
+    expect(sim.grid.isBlocked(secondCell.cx, secondCell.cy)).toBe(true);
+  });
 });

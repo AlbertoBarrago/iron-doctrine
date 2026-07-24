@@ -15,7 +15,7 @@ import { createFlowMovementSystem } from './systems/flow-movement.js';
 import { createUnitSeparationSystem } from './systems/unit-separation.js';
 import { createCombatSystem } from './systems/combat.js';
 import { ProjectileSystem } from './systems/projectile.js';
-import { HealthSystem } from './systems/health.js';
+import { createHealthSystem } from './systems/health.js';
 import { createResourceSystem } from './systems/resource-system.js';
 import { createEnergySystem } from './systems/energy-system.js';
 import { createFogSystem, type TeamResolver } from './systems/fog-system.js';
@@ -90,7 +90,7 @@ const defaultSystems = (d: Deps): System[] => [
   createUnitSeparationSystem(d.grid),
   createCombatSystem(d.economy),
   ProjectileSystem,
-  HealthSystem,
+  createHealthSystem(d.grid),
   ...(d.match ? [createMatchSystem(d.match)] : []),
   createFogSystem(d.fog, d.teamOf),
 ];

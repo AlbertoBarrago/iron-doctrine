@@ -21,7 +21,7 @@ export {
 } from './application/systems/flow-movement.js';
 export { createCombatSystem } from './application/systems/combat.js';
 export { ProjectileSystem } from './application/systems/projectile.js';
-export { HealthSystem } from './application/systems/health.js';
+export { createHealthSystem } from './application/systems/health.js';
 export { createProductionSystem } from './application/systems/production-system.js';
 export { ConstructionSystem } from './application/systems/construction-system.js';
 export { createResourceSystem } from './application/systems/resource-system.js';

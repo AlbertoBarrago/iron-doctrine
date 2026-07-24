@@ -40,6 +40,13 @@ export interface BuildingStats {
 }
 
 export const BUILDING_STATS: Readonly<Record<string, BuildingStats>> = {
+  concrete_wall: {
+    hp: 500,
+    footprint: 1,
+    cost: 75,
+    buildTicks: 30,
+    power: 0,
+  },
   construction_yard: {
     hp: 1500,
     footprint: 3,
@@ -104,6 +111,17 @@ export function spawnBuilding(
 
   stampFootprint(grid, stats, at);
   return e;
+}
+
+/** Clears a destroyed building footprint so navigation can use the cells again. */
+export function clearBuildingFootprint(
+  grid: NavGrid,
+  footprint: number,
+  at: Vec2,
+): void {
+  const cell = grid.worldToCell(at.x, at.y);
+  const half = Math.floor(footprint / 2);
+  grid.stampRect(cell.cx - half, cell.cy - half, footprint, footprint, false);
 }
 
 /** Add operational components once construction completes. */
