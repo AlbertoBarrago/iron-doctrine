@@ -128,23 +128,50 @@ function drawInfantry(
   color: number,
   engineer: boolean,
 ): void {
-  const body = localToScreen(sx, sy, angle, -radius * 0.08, 0);
-  const head = localToScreen(sx, sy, angle, radius * 0.52, 0);
-  const weaponStart = localToScreen(sx, sy, angle, radius * 0.1, -radius * 0.22);
-  const weaponEnd = localToScreen(sx, sy, angle, radius * 1.25, -radius * 0.22);
+  const head = localToScreen(sx, sy, angle, radius * 0.62, 0);
+  const leftFoot = localToScreen(sx, sy, angle, -radius * 0.82, -radius * 0.3);
+  const rightFoot = localToScreen(sx, sy, angle, -radius * 0.82, radius * 0.3);
+  const hip = localToScreen(sx, sy, angle, -radius * 0.25, 0);
+  const weaponStart = localToScreen(sx, sy, angle, radius * 0.02, -radius * 0.35);
+  const weaponEnd = localToScreen(sx, sy, angle, radius * 1.3, -radius * 0.35);
 
   graphics
-    .circle(body.x, body.y, radius * 0.64)
-    .fill({ color })
-    .stroke({ width: 1, color: 0x080b08 })
-    .circle(head.x, head.y, radius * 0.38)
-    .fill({ color: shade(color, 1.18) })
+    .moveTo(hip.x, hip.y)
+    .lineTo(leftFoot.x, leftFoot.y)
+    .moveTo(hip.x, hip.y)
+    .lineTo(rightFoot.x, rightFoot.y)
+    .stroke({ width: Math.max(1.5, radius * 0.22), color: 0x111713 });
+
+  polygon(graphics, sx, sy, angle, [
+    { x: -radius * 0.42, y: -radius * 0.42 },
+    { x: radius * 0.25, y: -radius * 0.55 },
+    { x: radius * 0.52, y: -radius * 0.28 },
+    { x: radius * 0.52, y: radius * 0.28 },
+    { x: radius * 0.25, y: radius * 0.55 },
+    { x: -radius * 0.42, y: radius * 0.42 },
+  ]);
+  graphics.fill({ color }).stroke({ width: 1.25, color: 0x080b08 });
+
+  const leftShoulder = localToScreen(sx, sy, angle, radius * 0.12, -radius * 0.58);
+  const rightShoulder = localToScreen(sx, sy, angle, radius * 0.12, radius * 0.58);
+  graphics
+    .circle(leftShoulder.x, leftShoulder.y, radius * 0.16)
+    .circle(rightShoulder.x, rightShoulder.y, radius * 0.16)
+    .fill({ color: shade(color, 0.72) })
+    .circle(head.x, head.y, radius * 0.3)
+    .fill({ color: shade(color, 1.16) })
     .stroke({ width: 1, color: 0x080b08 });
+  const visorStart = localToScreen(sx, sy, angle, radius * 0.75, -radius * 0.18);
+  const visorEnd = localToScreen(sx, sy, angle, radius * 0.75, radius * 0.18);
+  graphics
+    .moveTo(visorStart.x, visorStart.y)
+    .lineTo(visorEnd.x, visorEnd.y)
+    .stroke({ width: Math.max(1, radius * 0.1), color: 0x1a2824 });
 
   if (engineer) {
     const pack = localToScreen(sx, sy, angle, -radius * 0.45, 0);
     graphics
-      .rect(pack.x - radius * 0.28, pack.y - radius * 0.34, radius * 0.56, radius * 0.68)
+      .rect(pack.x - radius * 0.3, pack.y - radius * 0.36, radius * 0.6, radius * 0.72)
       .fill({ color: 0xc29a3d })
       .stroke({ width: 1, color: 0x20180a });
     const toolEnd = localToScreen(sx, sy, angle, radius * 0.92, -radius * 0.48);

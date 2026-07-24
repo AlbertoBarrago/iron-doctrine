@@ -17,6 +17,7 @@ import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { drawUnit } from './UnitPainter.js';
+import { drawBuilding } from './BuildingPainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import {
@@ -450,11 +451,7 @@ export class GameRenderer {
             .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)
             .stroke({ width: 2, color: 0xf0c85a });
         }
-        this.units
-          .rect(sx - s, sy - s, s * 2, s * 2)
-          .fill({ color, alpha: e.construction ? 0.45 : 1 })
-          .stroke({ width: 2, color: 0x0b0f0d });
-        this.drawBuildingMark(e, sx, sy, s);
+        drawBuilding(this.units, e, sx, sy, s, color);
         if (e.construction) {
           const progress = e.construction.progressTicks / e.construction.buildTicks;
           this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
@@ -507,44 +504,6 @@ export class GameRenderer {
       this.units
         .rect(sx - size, sy + size + 5, size * 2 * scenario.progress, 4)
         .fill({ color: 0x78d46a });
-    }
-  }
-
-  private drawBuildingMark(entity: EntitySnapshot, sx: number, sy: number, size: number): void {
-    const ink = 0x0b1711;
-    const mark = entity.buildingType;
-    if (mark === 'construction_yard') {
-      this.units
-        .moveTo(sx - size * 0.55, sy - size * 0.55)
-        .lineTo(sx + size * 0.55, sy + size * 0.55)
-        .moveTo(sx + size * 0.55, sy - size * 0.55)
-        .lineTo(sx - size * 0.55, sy + size * 0.55)
-        .stroke({ width: 3, color: ink });
-    } else if (mark === 'power_plant') {
-      this.units.circle(sx, sy, size * 0.45).stroke({ width: 3, color: ink });
-    } else if (mark === 'refinery') {
-      this.units
-        .rect(sx - size * 0.5, sy - size * 0.28, size, size * 0.56)
-        .stroke({ width: 3, color: ink });
-    } else if (mark === 'barracks') {
-      for (const offset of [-0.45, 0, 0.45]) {
-        this.units
-          .moveTo(sx + size * offset, sy - size * 0.6)
-          .lineTo(sx + size * offset, sy + size * 0.6);
-      }
-      this.units.stroke({ width: 2, color: ink });
-    } else if (mark === 'factory') {
-      this.units
-        .rect(sx - size * 0.7, sy - size * 0.35, size * 0.55, size * 0.7)
-        .rect(sx + size * 0.15, sy - size * 0.35, size * 0.55, size * 0.7)
-        .fill({ color: ink });
-    } else if (mark === 'turret') {
-      this.units
-        .circle(sx, sy, size * 0.45)
-        .fill({ color: ink })
-        .moveTo(sx, sy)
-        .lineTo(sx + size * 0.9, sy)
-        .stroke({ width: 3, color: ink });
     }
   }
 
