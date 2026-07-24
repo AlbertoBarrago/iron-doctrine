@@ -22,8 +22,13 @@ export const DEFAULT_MAP: MapDef = {
   cellSize: 1,
   blocked: [],
   resources: [
-    { x: 24, y: 20, amount: 6000 },
-    { x: 71, y: 75, amount: 6000 },
+    { x: 24, y: 20, amount: 8000 },
+    { x: 18, y: 28, amount: 8000 },
+    { x: 30, y: 16, amount: 8000 },
+    { x: 71, y: 75, amount: 8000 },
+    { x: 77, y: 67, amount: 8000 },
+    { x: 65, y: 79, amount: 8000 },
+    { x: 48, y: 48, amount: 12000 },
   ],
   spawns: [
     { player: 0, x: 16, y: 16 },

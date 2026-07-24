@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap } from '@iron/shared';
-import { loadMapCatalog, parseMapJson, saveLocalMap, type MapStorage } from './mapCatalog.js';
+import {
+  DEFAULT_MAP,
+  loadMapCatalog,
+  parseMapJson,
+  saveLocalMap,
+  type MapStorage,
+} from './mapCatalog.js';
 
 function memoryStorage(): MapStorage {
   const values = new Map<string, string>();
@@ -17,6 +23,22 @@ function validMap(name: string) {
 }
 
 describe('local map catalog', () => {
+  it('gives both bases a sustainable home economy plus contested central ore', () => {
+    expect(DEFAULT_MAP.resources).toHaveLength(7);
+    expect(DEFAULT_MAP.resources.filter((resource) => resource.amount === 8000)).toHaveLength(6);
+    expect(DEFAULT_MAP.resources).toContainEqual({ x: 48, y: 48, amount: 12000 });
+    expect(
+      DEFAULT_MAP.resources
+        .filter((resource) => Math.hypot(resource.x - 16, resource.y - 16) < 16)
+        .reduce((total, resource) => total + resource.amount, 0),
+    ).toBe(24_000);
+    expect(
+      DEFAULT_MAP.resources
+        .filter((resource) => Math.hypot(resource.x - 79, resource.y - 79) < 16)
+        .reduce((total, resource) => total + resource.amount, 0),
+    ).toBe(24_000);
+  });
+
   it('saves maps and replaces maps with the same name', () => {
     const storage = memoryStorage();
     saveLocalMap(storage, validMap('Crossfire'));
