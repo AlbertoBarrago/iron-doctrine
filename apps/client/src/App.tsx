@@ -4,27 +4,59 @@ import { Hud } from './ui/Hud.js';
 import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
+import { CampaignScreen } from './ui/CampaignScreen.js';
 import { loadMapCatalog } from './maps/mapCatalog.js';
-import type { SkirmishConfig } from './game/skirmishConfig.js';
+import {
+  DEFAULT_SKIRMISH_SETTINGS,
+  type SkirmishConfig,
+} from './game/skirmishConfig.js';
+import {
+  completeCampaignMission,
+  loadCampaignProgress,
+} from './game/campaignProgress.js';
+import type { CampaignMissionId } from './game/campaign.js';
+import { useGameStore } from './state/gameStore.js';
 import './ui/game.css';
 
-type Mode = 'menu' | 'game' | 'editor';
+type Mode = 'menu' | 'campaign' | 'game' | 'editor';
 
 /** Root: switches between the live game and the map editor. */
 export function App(): JSX.Element {
   const [mode, setMode] = useState<Mode>('menu');
   const [, setCatalogRevision] = useState(0);
+  const [, setCampaignRevision] = useState(0);
   const [skirmish, setSkirmish] = useState<SkirmishConfig | null>(null);
+  const [gameReturnMode, setGameReturnMode] = useState<'menu' | 'campaign'>('menu');
   const maps = loadMapCatalog(localStorage);
   if (mode === 'menu') {
     return (
       <StartScreen
         maps={maps}
         onStart={(config) => {
+          setGameReturnMode('menu');
           setSkirmish(config);
           setMode('game');
         }}
+        onOpenCampaign={() => setMode('campaign')}
         onOpenEditor={() => setMode('editor')}
+      />
+    );
+  }
+  if (mode === 'campaign') {
+    return (
+      <CampaignScreen
+        progress={loadCampaignProgress(localStorage)}
+        onBack={() => setMode('menu')}
+        onDeploy={(mission) => {
+          if (!mission.runtimeMission || !maps[0]) return;
+          setGameReturnMode('campaign');
+          setSkirmish({
+            ...DEFAULT_SKIRMISH_SETTINGS,
+            mission: mission.runtimeMission,
+            map: maps[0].map,
+          });
+          setMode('game');
+        }}
       />
     );
   }
@@ -44,9 +76,13 @@ export function App(): JSX.Element {
   return (
     <Game
       config={skirmish}
+      onMissionComplete={(mission) => {
+        completeCampaignMission(localStorage, mission);
+        setCampaignRevision((current) => current + 1);
+      }}
       onExit={() => {
         setSkirmish(null);
-        setMode('menu');
+        setMode(gameReturnMode);
       }}
     />
   );
@@ -57,7 +93,15 @@ export function App(): JSX.Element {
  * overlays the React HUD/minimap. Unmounting disposes the renderer (used when switching
  * to the editor). StrictMode double-invokes effects in dev, hence the duplicate guard.
  */
-function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): JSX.Element {
+function Game({
+  config,
+  onMissionComplete,
+  onExit,
+}: {
+  config: SkirmishConfig;
+  onMissionComplete(mission: CampaignMissionId): void;
+  onExit(): void;
+}): JSX.Element {
   const [session, setSession] = useState(0);
   const [setupOpen, setSetupOpen] = useState(false);
   const [manualPaused, setManualPaused] = useState(false);
@@ -68,6 +112,9 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const initialAudio = useRef({ muted: audioMuted, volume: audioVolume });
+  const completionReported = useRef(false);
+  const tutorialStep = useGameStore((state) => state.tutorialStep);
+  const match = useGameStore((state) => state.match);
   const paused = setupOpen || manualPaused || quitConfirmationOpen;
 
   useEffect(() => {
@@ -86,6 +133,28 @@ function Game({ config, onExit }: { config: SkirmishConfig; onExit(): void }): J
       rendererRef.current = null;
     };
   }, [config, session]);
+
+  useEffect(() => {
+    void session;
+    completionReported.current = false;
+  }, [session]);
+
+  useEffect(() => {
+    if (completionReported.current) return;
+    let completedMission: CampaignMissionId | null = null;
+    if (config.mission === 'base_foundations' && tutorialStep === 'complete') {
+      completedMission = 'base_foundations';
+    } else if (
+      config.mission === 'first_contact' &&
+      match?.status === 'finished' &&
+      match.winner === 0
+    ) {
+      completedMission = 'first_contact';
+    }
+    if (!completedMission) return;
+    completionReported.current = true;
+    onMissionComplete(completedMission);
+  }, [config.mission, match, onMissionComplete, tutorialStep]);
 
   useEffect(() => {
     rendererRef.current?.setPaused(paused);

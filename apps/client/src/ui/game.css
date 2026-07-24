@@ -2285,3 +2285,399 @@ kbd {
     max-height: calc(100vh - 24px);
   }
 }
+
+/* Campaign theater: a field map and stamped operation dossier. */
+.campaign-screen {
+  --campaign-paper: #252a22;
+  --campaign-ink: #b9b79a;
+  --campaign-brass: #c2a24a;
+  --campaign-route: #a54432;
+  --campaign-cleared: #6f9b62;
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  color: var(--campaign-ink);
+  background:
+    radial-gradient(ellipse at 18% 74%, rgba(101, 116, 84, 0.2), transparent 28%),
+    radial-gradient(ellipse at 73% 22%, rgba(78, 91, 67, 0.17), transparent 24%),
+    linear-gradient(135deg, #171c17, #080c0a 72%);
+}
+.campaign-screen__scanlines {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  opacity: 0.16;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, #000 3px 4px);
+  pointer-events: none;
+}
+.campaign-header {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  height: 82px;
+  grid-template-columns: 150px 1fr 180px;
+  align-items: center;
+  padding: 0 22px;
+  background: linear-gradient(#30372d, #171d18);
+  border-bottom: 3px solid #080b09;
+  box-shadow: inset 0 -1px #596050;
+}
+.campaign-header button {
+  width: max-content;
+  padding: 9px 12px;
+  color: #b9b79a;
+  cursor: pointer;
+  background: #111611;
+  border: 1px solid #606451;
+  font: 800 10px var(--body);
+  letter-spacing: 0.08em;
+}
+.campaign-header > div:nth-child(2) span,
+.campaign-header__record span {
+  display: block;
+  color: #7f816c;
+  font: 800 9px var(--body);
+  letter-spacing: 0.12em;
+}
+.campaign-header h1 {
+  margin: 3px 0 0;
+  color: #ddd5b4;
+  font: 32px/1 var(--display);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.campaign-header__record {
+  text-align: right;
+}
+.campaign-header__record strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--campaign-brass);
+  font: 24px var(--display);
+  letter-spacing: 0.08em;
+}
+.campaign-layout {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  height: calc(100vh - 82px);
+  grid-template-columns: minmax(520px, 1.45fr) minmax(390px, 0.75fr);
+}
+.operations-map {
+  position: relative;
+  min-height: 560px;
+  overflow: hidden;
+  background:
+    linear-gradient(24deg, transparent 48%, rgba(183, 182, 144, 0.05) 49% 51%, transparent 52%),
+    radial-gradient(ellipse at 30% 65%, rgba(130, 142, 104, 0.18), transparent 24%),
+    radial-gradient(ellipse at 73% 37%, rgba(120, 132, 97, 0.12), transparent 20%),
+    #1b211b;
+  border-right: 4px ridge #535846;
+}
+.operations-map::before,
+.operations-map::after {
+  position: absolute;
+  content: '';
+  border: 1px solid rgba(149, 151, 117, 0.12);
+  border-radius: 48%;
+  transform: rotate(-18deg);
+}
+.operations-map::before {
+  top: 8%;
+  left: 8%;
+  width: 66%;
+  height: 62%;
+  box-shadow:
+    0 0 0 22px rgba(149, 151, 117, 0.035),
+    0 0 0 46px rgba(149, 151, 117, 0.025);
+}
+.operations-map::after {
+  right: -9%;
+  bottom: 8%;
+  width: 55%;
+  height: 48%;
+  box-shadow: 0 0 0 28px rgba(149, 151, 117, 0.025);
+}
+.operations-map__grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.12;
+  background-image:
+    linear-gradient(rgba(178, 177, 137, 0.28) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(178, 177, 137, 0.28) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+.operations-map__route {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.operations-map__route polyline {
+  fill: none;
+  stroke: var(--campaign-route);
+  stroke-width: 0.7;
+  stroke-dasharray: 2 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.operations-map__caption {
+  position: absolute;
+  top: 24px;
+  left: 26px;
+  padding: 9px 12px;
+  background: rgba(10, 14, 11, 0.72);
+  border-left: 3px solid var(--campaign-brass);
+}
+.operations-map__caption span,
+.operations-map__caption strong {
+  display: block;
+}
+.operations-map__caption span {
+  color: #777c69;
+  font: 800 8px var(--body);
+  letter-spacing: 0.13em;
+}
+.operations-map__caption strong {
+  margin-top: 3px;
+  color: #c9c4a4;
+  font: 17px var(--display);
+  letter-spacing: 0.07em;
+}
+.operation-node {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  width: 130px;
+  min-height: 52px;
+  padding: 5px 7px;
+  transform: translate(-50%, -50%);
+  color: #aaa98d;
+  text-align: left;
+  cursor: pointer;
+  background: #121712;
+  border: 1px solid #676854;
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.38);
+}
+.operation-node span {
+  color: var(--campaign-brass);
+  font: 18px/1 var(--display);
+}
+.operation-node strong {
+  overflow: hidden;
+  font: 800 9px/1.2 var(--body);
+  letter-spacing: 0.06em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.operation-node--completed {
+  border-color: var(--campaign-cleared);
+}
+.operation-node--completed::after {
+  position: absolute;
+  right: -8px;
+  bottom: -7px;
+  padding: 2px 4px;
+  color: #8fbd83;
+  content: 'CLEARED';
+  background: #172017;
+  border: 1px solid #52764c;
+  font: 800 7px var(--body);
+  letter-spacing: 0.08em;
+  transform: rotate(-5deg);
+}
+.operation-node--classified {
+  color: #6e6e61;
+  border-color: #3f443c;
+  filter: grayscale(0.8);
+}
+.operation-node.is-selected {
+  outline: 2px solid var(--campaign-brass);
+  outline-offset: 3px;
+}
+.operations-map__legend {
+  position: absolute;
+  z-index: 3;
+  bottom: 18px;
+  left: 22px;
+  display: flex;
+  gap: 14px;
+  padding: 7px 9px;
+  background: rgba(9, 13, 10, 0.72);
+  font: 800 8px var(--body);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.operations-map__legend span::before {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 5px;
+  content: '';
+  background: #646556;
+}
+.operations-map__legend .is-cleared::before {
+  background: var(--campaign-cleared);
+}
+.operations-map__legend .is-active::before {
+  background: var(--campaign-brass);
+}
+.mission-dossier {
+  position: relative;
+  height: 100%;
+  padding: 20px 22px;
+  overflow-y: auto;
+  color: #c4c0a1;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025), transparent 20%),
+    var(--campaign-paper);
+  box-shadow: inset 8px 0 20px rgba(0, 0, 0, 0.28);
+}
+.mission-dossier__stripe {
+  height: 6px;
+  margin: -20px -22px 18px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--campaign-route) 0 10px,
+    #201b14 10px 20px
+  );
+}
+.mission-dossier header {
+  padding-bottom: 14px;
+  border-bottom: 2px solid #111611;
+}
+.mission-dossier header span,
+.mission-dossier header small {
+  display: block;
+  color: #777b68;
+  font: 800 9px var(--body);
+  letter-spacing: 0.1em;
+}
+.mission-dossier header strong {
+  display: block;
+  margin: 6px 0;
+  color: #e0d8b6;
+  font: 30px/1 var(--display);
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+.dossier-section {
+  margin-top: 14px;
+}
+.dossier-section > span {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--campaign-brass);
+  font: 800 9px var(--body);
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+.dossier-section p,
+.dossier-section ul {
+  margin: 0;
+  color: #b1af95;
+  font: 11px/1.5 var(--body);
+}
+.dossier-section ul {
+  padding-left: 15px;
+}
+.mission-dossier__columns {
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 16px;
+}
+.mission-dossier footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 2px solid #111611;
+}
+.mission-dossier footer button {
+  min-height: 42px;
+  padding: 0 18px;
+  color: #17150d;
+  cursor: pointer;
+  background: var(--campaign-brass);
+  border: 2px outset #dbc064;
+  font: 900 11px var(--body);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.mission-dossier footer button:disabled {
+  color: #67695a;
+  cursor: not-allowed;
+  background: #31372e;
+  border-color: #4a5045;
+}
+.mission-stamp {
+  padding: 6px 9px;
+  color: var(--campaign-route);
+  border: 3px double currentColor;
+  font: 900 12px var(--body);
+  letter-spacing: 0.1em;
+  transform: rotate(-4deg);
+}
+.mission-stamp--completed {
+  color: var(--campaign-cleared);
+}
+.mission-stamp--available {
+  color: var(--campaign-brass);
+}
+.mission-dossier.is-classified .dossier-section p,
+.mission-dossier.is-classified .dossier-section li {
+  color: #77786a;
+}
+@media (max-width: 980px) {
+  .campaign-layout {
+    height: auto;
+    min-height: calc(100vh - 82px);
+    grid-template-columns: 1fr;
+  }
+  .operations-map {
+    min-height: 540px;
+    border-right: 0;
+    border-bottom: 4px ridge #535846;
+  }
+  .mission-dossier {
+    height: auto;
+    min-height: 560px;
+  }
+}
+@media (max-width: 640px) {
+  .campaign-header {
+    height: 74px;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    padding: 0 12px;
+  }
+  .campaign-header h1 {
+    font-size: 24px;
+  }
+  .campaign-header__record {
+    display: none;
+  }
+  .campaign-layout {
+    min-height: calc(100vh - 74px);
+  }
+  .operations-map {
+    min-height: 480px;
+  }
+  .operation-node {
+    width: 104px;
+  }
+  .mission-dossier {
+    padding: 16px;
+  }
+  .mission-dossier__stripe {
+    margin: -16px -16px 16px;
+  }
+  .mission-dossier__columns {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

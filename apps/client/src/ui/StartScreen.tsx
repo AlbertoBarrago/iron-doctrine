@@ -14,10 +14,12 @@ type MenuScreen = 'main' | 'setup';
 export function StartScreen({
   maps,
   onStart,
+  onOpenCampaign,
   onOpenEditor,
 }: {
   maps: MapCatalogEntry[];
   onStart: (config: SkirmishConfig) => void;
+  onOpenCampaign: () => void;
   onOpenEditor: () => void;
 }): JSX.Element {
   const [screen, setScreen] = useState<MenuScreen>('main');
@@ -68,10 +70,10 @@ export function StartScreen({
             <button
               type="button"
               disabled={!selectedMap}
-              onClick={() => startMission('base_foundations')}
+              onClick={onOpenCampaign}
             >
-              <span className="main-menu__command-label">Base Foundations</span>
-              <small className="main-menu__command-hint">Begin campaign</small>
+              <span className="main-menu__command-label">Campaign</span>
+              <small className="main-menu__command-hint">Operations map</small>
             </button>
             <button type="button" onClick={() => setScreen('setup')}>
               <span className="main-menu__command-label">Mission setup</span>
