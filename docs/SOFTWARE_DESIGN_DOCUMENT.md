@@ -701,6 +701,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 23  | Tactical AI                   | scouting, expansion, harassment, threat response and deterministic difficulty tuning                                  | planned                                            |
 | 24  | Content vertical slice        | two original factions, balanced roster, production-quality visual/audio assets and one representative map             | planned                                            |
 | 25  | Release hardening             | performance budgets, end-to-end match tests, accessibility pass and reproducible production deployment                | planned                                            |
+| 26  | Adaptive audio & game feel    | adaptive music (calm during base-building, tense during combat or as hostiles approach), staged construction animation (rubble/scaffolding → completed building), general responsiveness and "juice" pass | planned                                            |
 
 ---
 
