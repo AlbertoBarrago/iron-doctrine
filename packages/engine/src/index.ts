@@ -15,10 +15,7 @@ export type { UnitStats } from './domain/archetypes/units.js';
 export { MovementSystem } from './application/systems/movement.js';
 export { createCommandSystem } from './application/systems/command-system.js';
 export { createPathfindingSystem } from './application/systems/pathfinding-system.js';
-export {
-  createFlowMovementSystem,
-  FlowFieldCache,
-} from './application/systems/flow-movement.js';
+export { createFlowMovementSystem, FlowFieldCache } from './application/systems/flow-movement.js';
 export { createCombatSystem } from './application/systems/combat.js';
 export { ProjectileSystem } from './application/systems/projectile.js';
 export { createHealthSystem } from './application/systems/health.js';
@@ -95,6 +92,12 @@ export type {
   FirstContactPhase,
   FirstContactSnapshot,
 } from './application/scenario/first-contact.js';
+export { IronPassState } from './application/scenario/iron-pass.js';
+export type {
+  IronPassConfig,
+  IronPassPhase,
+  IronPassSnapshot,
+} from './application/scenario/iron-pass.js';
 export { buildSnapshot, hashState } from './application/snapshot.js';
 export type {
   Snapshot,

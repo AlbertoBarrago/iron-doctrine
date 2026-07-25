@@ -36,6 +36,7 @@ import {
   FirstContactState,
   type FirstContactConfig,
 } from './scenario/first-contact.js';
+import { createIronPassSystem, IronPassState, type IronPassConfig } from './scenario/iron-pass.js';
 
 export interface SimulationConfig {
   seed: number;
@@ -53,6 +54,8 @@ export interface SimulationConfig {
   matchPlayers?: number[];
   /** Optional authored opening that recovers the player's base through exploration. */
   firstContact?: FirstContactConfig;
+  /** Optional scripted armored ambush triggered when the player crosses a chokepoint. */
+  ironPass?: IronPassConfig;
 }
 
 interface Deps {
@@ -65,6 +68,7 @@ interface Deps {
   aiPlayers: AIPlayerConfig[];
   match: MatchState | null;
   firstContact: FirstContactState | null;
+  ironPass: IronPassState | null;
 }
 
 /** Default ordered pipeline for the current milestone. */
@@ -72,6 +76,7 @@ const defaultSystems = (d: Deps): System[] => [
   createCommandSystem(d.bus, d.grid, d.economy, d.tech),
   ConstructionSystem,
   ...(d.firstContact ? [createFirstContactSystem(d.firstContact, d.grid, d.economy)] : []),
+  ...(d.ironPass ? [createIronPassSystem(d.ironPass)] : []),
   createAISystem(
     d.aiPlayers,
     d.bus,
@@ -106,6 +111,7 @@ export class Simulation {
   readonly rng: Random;
   readonly match: MatchState | null;
   readonly firstContact: FirstContactState | null;
+  readonly ironPass: IronPassState | null;
   private readonly scheduler = new Scheduler();
   private readonly dt = fp.fromFloat(1 / SIM_HZ);
   private currentTick = 0;
@@ -119,6 +125,7 @@ export class Simulation {
       ? new MatchState(config.matchPlayers.map((player) => asPlayerId(player)))
       : null;
     this.firstContact = config.firstContact ? new FirstContactState(config.firstContact) : null;
+    this.ironPass = config.ironPass ? new IronPassState(config.ironPass) : null;
     if (config.startingCredits) {
       for (const [player, amount] of Object.entries(config.startingCredits)) {
         this.economy.addCredits(Number(player), amount);
@@ -139,6 +146,7 @@ export class Simulation {
       aiPlayers: config.aiPlayers ?? [],
       match: this.match,
       firstContact: this.firstContact,
+      ironPass: this.ironPass,
     });
     for (const s of systems) this.scheduler.add(s);
   }
@@ -185,6 +193,7 @@ export class Simulation {
     const snap = buildSnapshot(this.world, this.currentTick, players);
     if (this.match) snap.match = this.match.snapshot();
     if (this.firstContact) snap.scenario = this.firstContact.snapshot();
+    else if (this.ironPass) snap.scenario = this.ironPass.snapshot();
     snap.fog = {
       width: this.fog.width,
       height: this.fog.height,
