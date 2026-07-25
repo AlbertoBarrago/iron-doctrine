@@ -13,6 +13,7 @@ First Contact is a playable vertical slice:
 - explore a full-screen battlefield through persistent fog of war;
 - harvest ore, construct a base and produce units;
 - read harvester load, extraction and deposit state directly on the battlefield;
+- identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
 - launch missions from a classic 1990s-inspired RTS command menu;
@@ -21,7 +22,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 187 automated tests;
+- 189 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -37,7 +38,9 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Completed units wait for a collision-free facility exit instead of spawning into obstacles.
 - Unit separation respects navigation bounds and blocked cells; pathfinding recovers displaced units.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
-- Procedural unit silhouettes, ballistic combat cues and distinct weapon audio improve battlefield readability.
+- The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
+- Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
+- Building operation and construction state drive ambient animation without entering the simulation.
 - Prettier remains the formatter; ESLint and Biome both provide diagnostics.
 - Large changes use dedicated branches and small Conventional Commits.
 
@@ -69,7 +72,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 ### Content and presentation
 
 1. Expand First Contact with authored triggers and reusable mission objectives.
-2. Improve unit silhouettes, movement animation and impact feedback.
+2. Playtest the new infantry and structure art pass at normal and minimum zoom.
 3. Add maps designed around scouting, expansion and defensible terrain.
 4. Run a browser playtest pass at common desktop resolutions.
 
