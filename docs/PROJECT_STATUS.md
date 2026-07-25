@@ -65,6 +65,17 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 2. Scope campaign completion and unlocks to that profile in versioned browser `localStorage`.
 3. Migrate the current global campaign progress without losing completed missions.
 
+### Campaign production
+
+Build the remaining operations in order:
+
+1. Operation 03 — Iron Pass.
+2. Operation 04 — Siege Line.
+3. Operation 05 — Black Dawn.
+
+Each operation requires a dedicated runtime mission, authored map, objectives and triggers,
+briefing/debriefing copy, balance pass and complete browser playtest before it can be unlocked.
+
 ### Base building
 
 1. Add buildable wall segments and a clear placement workflow.
