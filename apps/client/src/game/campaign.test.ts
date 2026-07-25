@@ -30,9 +30,23 @@ describe('campaign', () => {
   it('unlocks First Contact only after Base Foundations', () => {
     const firstContact = campaignMission('first_contact');
     expect(campaignMissionStatus(firstContact, { completed: [] })).toBe('classified');
+    expect(campaignMissionStatus(firstContact, { completed: ['base_foundations'] })).toBe(
+      'available',
+    );
+  });
+
+  it('unlocks Iron Pass only after First Contact', () => {
+    const ironPass = campaignMission('iron_pass');
+    expect(ironPass.runtimeMission).toBe('iron_pass');
+    expect(campaignMissionStatus(ironPass, { completed: ['base_foundations'] })).toBe('classified');
     expect(
-      campaignMissionStatus(firstContact, { completed: ['base_foundations'] }),
+      campaignMissionStatus(ironPass, { completed: ['base_foundations', 'first_contact'] }),
     ).toBe('available');
+  });
+
+  it('keeps Siege Line and Black Dawn classified until authored', () => {
+    expect(campaignMission('siege_line').runtimeMission).toBeUndefined();
+    expect(campaignMission('black_dawn').runtimeMission).toBeUndefined();
   });
 
   it('persists completion idempotently and survives invalid storage', () => {

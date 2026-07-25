@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { createEmptyMap } from '@iron/shared';
+import { createEmptyMap, validateMap } from '@iron/shared';
 import {
   DEFAULT_MAP,
+  IRON_PASS_MAP,
   loadMapCatalog,
   parseMapJson,
   saveLocalMap,
@@ -39,6 +40,18 @@ describe('local map catalog', () => {
     ).toBe(24_000);
   });
 
+  it('gives Iron Pass a valid chokepoint corridor connecting both spawns', () => {
+    expect(validateMap(IRON_PASS_MAP)).toEqual([]);
+    const [friendly, hostile] = IRON_PASS_MAP.spawns;
+    expect(friendly).toMatchObject({ player: 0 });
+    expect(hostile).toMatchObject({ player: 1 });
+    const isBlocked = (x: number, y: number) =>
+      IRON_PASS_MAP.blocked.some(([bx, by]) => bx === x && by === y);
+    expect(isBlocked(friendly!.x, friendly!.y)).toBe(false);
+    expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
+    expect(isBlocked(48, 48)).toBe(false);
+  });
+
   it('saves maps and replaces maps with the same name', () => {
     const storage = memoryStorage();
     saveLocalMap(storage, validMap('Crossfire'));
@@ -47,8 +60,8 @@ describe('local map catalog', () => {
     saveLocalMap(storage, changed);
 
     const entries = loadMapCatalog(storage);
-    expect(entries).toHaveLength(2);
-    expect(entries[1]!.map.resources).toHaveLength(1);
+    expect(entries).toHaveLength(3);
+    expect(entries[2]!.map.resources).toHaveLength(1);
   });
 
   it('rejects malformed imports', () => {

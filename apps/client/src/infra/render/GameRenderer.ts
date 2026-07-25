@@ -29,6 +29,7 @@ import { clampMovementTarget } from './movementTarget.js';
 import { harvesterStatus, selectionCommands, useGameStore } from '../../state/gameStore.js';
 import {
   firstContactLayout,
+  ironPassLayout,
   MISSION_RULES,
   type SkirmishConfig,
 } from '../../game/skirmishConfig.js';
@@ -113,6 +114,13 @@ export class GameRenderer {
     const recoveryAt = firstContact
       ? mapPosition(config.map, firstContact.recovery.x, firstContact.recovery.y)
       : null;
+    const ironPass = missionRules.ambushScenario ? ironPassLayout(config.map) : null;
+    const triggerAt = ironPass
+      ? mapPosition(config.map, ironPass.trigger.x, ironPass.trigger.y)
+      : null;
+    const ambushSpawns = ironPass
+      ? ironPass.ambush.map((spawn) => mapPosition(config.map, spawn.x, spawn.y))
+      : null;
     const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
 
     await this.app.init({
@@ -164,6 +172,16 @@ export class GameRenderer {
               recoveryAt,
               recoveryTicks: SIM_HZ * 4,
               recoveredCredits: 2600,
+            },
+          }
+        : {}),
+      ...(triggerAt && ambushSpawns
+        ? {
+            ironPass: {
+              player: 0,
+              ambushPlayer: 1,
+              triggerAt,
+              ambushSpawns,
             },
           }
         : {}),
@@ -389,9 +407,9 @@ export class GameRenderer {
         store.setMatch(curr.match ?? null);
         store.setScenario(curr.scenario ?? null);
         const activationOrigin =
-          this.mission === 'first_contact'
-            ? curr.scenario?.operationalAtTick
-            : this.mission === 'skirmish'
+          this.mission === 'first_contact' && curr.scenario && 'operationalAtTick' in curr.scenario
+            ? curr.scenario.operationalAtTick
+            : this.mission === 'skirmish' || this.mission === 'iron_pass'
               ? 0
               : null;
         store.setAiActivationSeconds(
@@ -606,7 +624,7 @@ export class GameRenderer {
 
   private drawScenarioSite(curr: Snapshot): void {
     const scenario = curr.scenario;
-    if (!scenario || scenario.phase === 'operational') return;
+    if (!scenario || !('recoveryAt' in scenario) || scenario.phase === 'operational') return;
     const { sx, sy } = this.camera.worldToScreen(scenario.recoveryAt.x, scenario.recoveryAt.y);
     const size = Math.max(16, this.camera.scale * 1.5);
     this.units
@@ -861,7 +879,13 @@ export class GameRenderer {
 
   private drawObjectiveDirection(): void {
     const scenario = this.bridge.latest.curr?.scenario;
-    if (!scenario || scenario.phase === 'operational' || scenario.phase === 'failed') return;
+    if (
+      !scenario ||
+      !('recoveryAt' in scenario) ||
+      scenario.phase === 'operational' ||
+      scenario.phase === 'failed'
+    )
+      return;
 
     const target = this.camera.worldToScreen(scenario.recoveryAt.x, scenario.recoveryAt.y);
     const width = this.app.screen.width;

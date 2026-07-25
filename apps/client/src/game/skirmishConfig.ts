@@ -3,13 +3,14 @@ import type { MapDef } from '@iron/shared';
 
 export type EnemyStartingForce = 0 | 2 | 4;
 export type GracePeriodSeconds = 120 | 180 | 300;
-export type MissionId = 'base_foundations' | 'first_contact' | 'skirmish';
+export type MissionId = 'base_foundations' | 'first_contact' | 'iron_pass' | 'skirmish';
 
 export interface MissionRules {
   playerStart: 'base' | 'patrol';
   playerCredits: number;
   enemyEnabled: boolean;
   recoveryScenario: boolean;
+  ambushScenario: boolean;
   matchEnabled: boolean;
 }
 
@@ -19,6 +20,7 @@ export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
     playerCredits: 3200,
     enemyEnabled: false,
     recoveryScenario: false,
+    ambushScenario: false,
     matchEnabled: false,
   },
   first_contact: {
@@ -26,6 +28,15 @@ export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
     playerCredits: 0,
     enemyEnabled: true,
     recoveryScenario: true,
+    ambushScenario: false,
+    matchEnabled: true,
+  },
+  iron_pass: {
+    playerStart: 'base',
+    playerCredits: 3200,
+    enemyEnabled: true,
+    recoveryScenario: false,
+    ambushScenario: true,
     matchEnabled: true,
   },
   skirmish: {
@@ -33,6 +44,7 @@ export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
     playerCredits: 3200,
     enemyEnabled: true,
     recoveryScenario: false,
+    ambushScenario: false,
     matchEnabled: true,
   },
 };
@@ -82,6 +94,38 @@ export function firstContactLayout(map: MapDef): FirstContactLayout {
     resistance: [-2, 0, 2].map((offset) => ({
       x: clampX(routeX + perpendicular.x * offset),
       y: clampY(routeY + perpendicular.y * offset),
+    })),
+  };
+}
+
+export interface IronPassLayout {
+  trigger: { x: number; y: number };
+  ambush: Array<{ x: number; y: number }>;
+}
+
+export function ironPassLayout(map: MapDef): IronPassLayout {
+  const friendly = map.spawns.find((spawn) => spawn.player === 0);
+  const hostile = map.spawns.find((spawn) => spawn.player === 1);
+  if (!friendly || !hostile) throw new Error('Iron Pass requires two player spawns');
+
+  const dx = hostile.x - friendly.x;
+  const dy = hostile.y - friendly.y;
+  const clampX = (x: number): number => Math.min(map.width - 2, Math.max(1, Math.round(x)));
+  const clampY = (y: number): number => Math.min(map.height - 2, Math.max(1, Math.round(y)));
+  const trigger = {
+    x: clampX(friendly.x + dx * 0.45),
+    y: clampY(friendly.y + dy * 0.45),
+  };
+
+  const flankX = friendly.x + dx * 0.55;
+  const flankY = friendly.y + dy * 0.55;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const perpendicular = { x: -dy / length, y: dx / length };
+  return {
+    trigger,
+    ambush: [-3, 0, 3].map((offset) => ({
+      x: clampX(flankX + perpendicular.x * offset),
+      y: clampY(flankY + perpendicular.y * offset),
     })),
   };
 }

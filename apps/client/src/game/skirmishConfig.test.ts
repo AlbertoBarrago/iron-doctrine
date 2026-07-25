@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { MapDef } from '@iron/shared';
-import { firstContactLayout, MISSION_RULES } from './skirmishConfig.js';
+import { firstContactLayout, ironPassLayout, MISSION_RULES } from './skirmishConfig.js';
 
 const mapWithSpawns = (
   friendly: { x: number; y: number },
@@ -36,8 +36,19 @@ describe('First Contact layout', () => {
     expect(layout.recovery.x).toBeLessThan(80);
     expect(layout.recovery.y).toBeGreaterThan(18);
     expect(layout.resistance).toHaveLength(3);
-    expect(layout.resistance.every(({ x, y }) => x > layout.recovery.x && y < layout.recovery.y))
-      .toBe(true);
+    expect(
+      layout.resistance.every(({ x, y }) => x > layout.recovery.x && y < layout.recovery.y),
+    ).toBe(true);
+  });
+});
+
+describe('Iron Pass layout', () => {
+  it('places the ambush trigger inside the chokepoint and spreads reinforcements across it', () => {
+    const layout = ironPassLayout(mapWithSpawns({ x: 16, y: 48 }, { x: 80, y: 48 }));
+    expect(layout.trigger.x).toBeGreaterThan(16);
+    expect(layout.trigger.x).toBeLessThan(80);
+    expect(layout.ambush).toHaveLength(3);
+    expect(new Set(layout.ambush.map((spawn) => spawn.y)).size).toBe(3);
   });
 });
 
@@ -47,11 +58,19 @@ describe('mission profiles', () => {
       playerStart: 'base',
       enemyEnabled: false,
       recoveryScenario: false,
+      ambushScenario: false,
     });
     expect(MISSION_RULES.first_contact).toMatchObject({
       playerStart: 'patrol',
       enemyEnabled: true,
       recoveryScenario: true,
+      ambushScenario: false,
+    });
+    expect(MISSION_RULES.iron_pass).toMatchObject({
+      playerStart: 'base',
+      enemyEnabled: true,
+      recoveryScenario: false,
+      ambushScenario: true,
     });
   });
 });

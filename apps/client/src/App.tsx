@@ -5,7 +5,7 @@ import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { CampaignScreen } from './ui/CampaignScreen.js';
-import { loadMapCatalog } from './maps/mapCatalog.js';
+import { IRON_PASS_MAP, loadMapCatalog } from './maps/mapCatalog.js';
 import { DEFAULT_SKIRMISH_SETTINGS, type SkirmishConfig } from './game/skirmishConfig.js';
 import { completeCampaignMission, loadCampaignProgress } from './game/campaignProgress.js';
 import type { CampaignMissionId } from './game/campaign.js';
@@ -47,7 +47,7 @@ export function App(): JSX.Element {
           setSkirmish({
             ...DEFAULT_SKIRMISH_SETTINGS,
             mission: mission.runtimeMission,
-            map: maps[0].map,
+            map: mission.runtimeMission === 'iron_pass' ? IRON_PASS_MAP : maps[0].map,
           });
           setMode('game');
         }}
@@ -144,6 +144,12 @@ function Game({
       match.winner === 0
     ) {
       completedMission = 'first_contact';
+    } else if (
+      config.mission === 'iron_pass' &&
+      match?.status === 'finished' &&
+      match.winner === 0
+    ) {
+      completedMission = 'iron_pass';
     }
     if (!completedMission) return;
     completionReported.current = true;

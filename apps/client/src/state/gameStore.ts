@@ -4,8 +4,11 @@ import {
   UNIT_STATS,
   type EntitySnapshot,
   type FirstContactSnapshot,
+  type IronPassSnapshot,
   type MatchStateSnapshot,
 } from '@iron/engine';
+
+type ScenarioSnapshot = FirstContactSnapshot | IronPassSnapshot;
 
 export type TutorialMilestone =
   'select' | 'power' | 'refinery' | 'gather' | 'barracks' | 'produce' | 'defense';
@@ -108,7 +111,7 @@ interface GameUiState {
   selectedProduction: SelectedProduction | null;
   placingBuilding: string | null;
   match: MatchStateSnapshot | null;
-  scenario: FirstContactSnapshot | null;
+  scenario: ScenarioSnapshot | null;
   aiActivationSeconds: number;
   tutorialStep: TutorialStep;
   completedTutorial: TutorialMilestone[];
@@ -121,7 +124,7 @@ interface GameUiState {
   setSelectedProduction: (production: SelectedProduction | null) => void;
   setPlacingBuilding: (building: string | null) => void;
   setMatch: (match: MatchStateSnapshot | null) => void;
-  setScenario: (scenario: FirstContactSnapshot | null) => void;
+  setScenario: (scenario: ScenarioSnapshot | null) => void;
   setAiActivationSeconds: (seconds: number) => void;
   advanceTutorial: (milestone: TutorialMilestone) => void;
   resetTutorial: () => void;
@@ -213,6 +216,20 @@ export function selectionCommands(entities: readonly EntitySnapshot[]): Selectio
   return COMMAND_ORDER.filter((command) => available.has(command));
 }
 
+function sameScenario(left: ScenarioSnapshot | null, right: ScenarioSnapshot | null): boolean {
+  if (!left || !right) return left === right;
+  if (left.phase !== right.phase || left.objective !== right.objective) return false;
+  if ('recoveryAt' in left && 'recoveryAt' in right) {
+    return (
+      left.progress === right.progress &&
+      left.recoveryAt.x === right.recoveryAt.x &&
+      left.recoveryAt.y === right.recoveryAt.y &&
+      left.operationalAtTick === right.operationalAtTick
+    );
+  }
+  return 'recoveryAt' in left === 'recoveryAt' in right;
+}
+
 function sameProduction(
   left: SelectedProduction | null,
   right: SelectedProduction | null,
@@ -278,16 +295,7 @@ export const useGameStore = create<GameUiState>((set) => ({
         : { match },
     ),
   setScenario: (scenario) =>
-    set((state) =>
-      state.scenario?.phase === scenario?.phase &&
-      state.scenario?.objective === scenario?.objective &&
-      state.scenario?.progress === scenario?.progress &&
-      state.scenario?.recoveryAt.x === scenario?.recoveryAt.x &&
-      state.scenario?.recoveryAt.y === scenario?.recoveryAt.y &&
-      state.scenario?.operationalAtTick === scenario?.operationalAtTick
-        ? state
-        : { scenario },
-    ),
+    set((state) => (sameScenario(state.scenario, scenario) ? state : { scenario })),
   setAiActivationSeconds: (aiActivationSeconds) =>
     set((state) =>
       state.aiActivationSeconds === aiActivationSeconds ? state : { aiActivationSeconds },
