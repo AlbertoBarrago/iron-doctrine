@@ -54,6 +54,12 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 2. Show invalid, blocked and unavailable orders clearly.
 3. Tune ore income, construction time and hostile pressure through complete matches.
 
+### Campaign persistence
+
+1. Add a local commander profile identified by an exact three-letter callsign.
+2. Scope campaign completion and unlocks to that profile in versioned browser `localStorage`.
+3. Migrate the current global campaign progress without losing completed missions.
+
 ### Base building
 
 1. Add buildable wall segments and a clear placement workflow.
