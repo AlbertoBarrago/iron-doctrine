@@ -13,6 +13,7 @@ First Contact is a playable vertical slice:
 - explore a full-screen battlefield through persistent fog of war;
 - harvest ore, construct a base and produce units;
 - read harvester load, extraction and deposit state directly on the battlefield;
+- run multiple harvesters through shared ore and refinery approaches without deadlocking;
 - identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
@@ -22,7 +23,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 189 automated tests;
+- 193 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -41,6 +42,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
 - Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
 - Building operation and construction state drive ambient animation without entering the simulation.
+- Campaign victories prioritize returning to the campaign route; defeats prioritize retrying the mission.
 - Prettier remains the formatter; ESLint and Biome both provide diagnostics.
 - Large changes use dedicated branches and small Conventional Commits.
 
