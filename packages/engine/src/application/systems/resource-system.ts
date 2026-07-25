@@ -27,11 +27,11 @@ const GATHER_TICKS = 8;
 /** Units of ore extracted per gather batch. */
 const GATHER_RATE = 20;
 /**
- * Interaction distance (squared) for node/drop-off proximity. Generous enough that a
- * harvester stopping at a cell adjacent to a multi-cell building footprint still counts
- * as "arrived" for depositing.
+ * Interaction distance (squared) for node/drop-off proximity. This includes enough
+ * queueing space for unit separation to keep multiple harvesters from converging on
+ * the same target just outside the interaction boundary.
  */
-const REACH_SQ = fp.fromFloat(12.25); // 3.5 units
+const REACH_SQ = fp.fromInt(16); // 4 units
 
 export function createResourceSystem(economy: PlayerEconomy): System {
   return {

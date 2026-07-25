@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
 import { NavGrid } from './pathfinding/nav-grid.js';
-import { Harvest, ResourceNode } from '../domain/components/index.js';
+import { Harvest, ResourceCarrier, ResourceNode } from '../domain/components/index.js';
 import { PlayerEconomy } from '../domain/economy/player-economy.js';
 import * as fp from '../domain/math/fixed.js';
 
@@ -46,6 +46,32 @@ describe('Harvester economy loop', () => {
     }
     expect(deposited).toBe(true);
     expect(sim.economy.credits(0)).toBeGreaterThanOrEqual(200); // one full carrier
+  });
+
+  it('keeps overlapping harvesters progressing through independent economy cycles', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnResource', amount: 10_000, at: at(9, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3, 0) });
+    sim.step();
+
+    const harvesters = sim.world.query(Harvest);
+    const deposits = new Map(harvesters.map((entity) => [entity, 0]));
+    const previousCargo = new Map(harvesters.map((entity) => [entity, 0]));
+
+    for (let tick = 0; tick < 4_000; tick++) {
+      sim.step();
+      for (const entity of harvesters) {
+        const cargo = sim.world.get(entity, ResourceCarrier)!.amount;
+        if (cargo === 0 && previousCargo.get(entity)! > 0) {
+          deposits.set(entity, deposits.get(entity)! + 1);
+        }
+        previousCargo.set(entity, cargo);
+      }
+    }
+
+    expect([...deposits.values()].every((count) => count > 0)).toBe(true);
   });
 
   it('depletes the ore node over time', () => {
