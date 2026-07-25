@@ -373,6 +373,7 @@ export class GameRenderer {
       if (isNewTick) {
         this.detectCombatEffects(prev, curr);
         this.detectHarvestEffects(prev, curr);
+        this.detectAmbientEffects(curr);
       }
       this.drawEntities(prev, curr, alpha);
       this.drawScenarioSite(curr);
@@ -458,6 +459,24 @@ export class GameRenderer {
     }
   }
 
+  private detectAmbientEffects(curr: Snapshot): void {
+    for (const entity of curr.entities) {
+      if (
+        entity.kind !== 'building' ||
+        entity.construction ||
+        !['power_plant', 'refinery', 'factory'].includes(entity.buildingType ?? '') ||
+        (curr.tick + entity.id * 7) % 12 !== 0
+      ) {
+        continue;
+      }
+      this.particles.smoke(
+        entity.x + entity.radius * 0.38,
+        entity.y - entity.radius * 0.42,
+        Math.max(0.65, entity.radius * 0.32),
+      );
+    }
+  }
+
   /** Emit explosion FX + sound for entities that vanished since the last snapshot. */
   private detectDeaths(curr: Snapshot): void {
     const live = new Set<number>();
@@ -529,11 +548,6 @@ export class GameRenderer {
 
       if (e.kind === 'building') {
         const s = r;
-        if (this.selected.has(e.id)) {
-          this.units
-            .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)
-            .stroke({ width: 2, color: 0xf0c85a });
-        }
         drawBuilding(
           this.units,
           e,
@@ -542,7 +556,18 @@ export class GameRenderer {
           s,
           color,
           e.buildingType === 'concrete_wall' ? wallConnections(e, wallKeys, wallStep) : undefined,
+          {
+            animationTime,
+            constructionProgress: e.construction
+              ? Math.min(1, e.construction.progressTicks / e.construction.buildTicks)
+              : 1,
+          },
         );
+        if (this.selected.has(e.id)) {
+          this.units
+            .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)
+            .stroke({ width: 2, color: 0xf0c85a });
+        }
         if (e.construction) {
           const progress = e.construction.progressTicks / e.construction.buildTicks;
           this.units.rect(sx - s, sy + s + 4, s * 2, 4).fill({ color: 0x14201b });
@@ -556,11 +581,15 @@ export class GameRenderer {
         continue;
       }
 
-      // Selection ring.
+      drawUnit(this.units, e, sx, sy, r, color, {
+        animationTime,
+        moving: Math.hypot(e.x - p.x, e.y - p.y) > 0.001,
+        firing:
+          e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0),
+      });
       if (this.selected.has(e.id)) {
         this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
       }
-      drawUnit(this.units, e, sx, sy, r, color, animationTime);
 
       // Health bar.
       if (e.maxHp > 0) {

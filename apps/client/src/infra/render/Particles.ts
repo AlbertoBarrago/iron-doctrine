@@ -167,6 +167,20 @@ export class ParticleSystem {
     }
   }
 
+  smoke(wx: number, wy: number, scale = 1): void {
+    for (let index = 0; index < 2; index++) {
+      this.spawn(
+        wx + (index - 0.5) * 0.18 * scale,
+        wy,
+        index === 0 ? 0x555b55 : 0x303532,
+        1.8 * scale,
+        0.9 + index * 0.18,
+        0.12 * (index === 0 ? -1 : 1),
+        -0.65 - index * 0.12,
+      );
+    }
+  }
+
   update(dtSec: number): void {
     for (const p of this.pool) {
       if (!p.active) continue;
