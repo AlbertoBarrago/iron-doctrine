@@ -136,6 +136,37 @@ export class ParticleSystem {
     }
   }
 
+  oreDust(wx: number, wy: number, angle: number, scale = 1): void {
+    for (const offset of [-0.3, 0.3]) {
+      const direction = angle + Math.PI + offset;
+      this.spawn(
+        wx,
+        wy,
+        offset < 0 ? 0xc89a35 : 0x80642d,
+        1.4 * scale,
+        0.28,
+        Math.cos(direction) * 1.8,
+        Math.sin(direction) * 1.8,
+      );
+    }
+  }
+
+  oreDeposit(wx: number, wy: number, scale = 1): void {
+    for (let index = 0; index < 8; index++) {
+      const angle = (index / 8) * Math.PI * 2;
+      this.spawn(
+        wx,
+        wy,
+        index % 2 === 0 ? 0xe1b33b : 0x9f7624,
+        1.5 * scale,
+        0.38,
+        Math.cos(angle) * 2.2,
+        Math.sin(angle) * 2.2,
+        index % 2 === 0 ? 'streak' : 'dot',
+      );
+    }
+  }
+
   update(dtSec: number): void {
     for (const p of this.pool) {
       if (!p.active) continue;

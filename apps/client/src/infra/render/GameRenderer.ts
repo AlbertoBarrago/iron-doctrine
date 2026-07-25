@@ -26,7 +26,7 @@ import {
   type CommandFeedbackKind,
 } from './commandFeedback.js';
 import { clampMovementTarget } from './movementTarget.js';
-import { selectionCommands, useGameStore } from '../../state/gameStore.js';
+import { harvesterStatus, selectionCommands, useGameStore } from '../../state/gameStore.js';
 import {
   firstContactLayout,
   MISSION_RULES,
@@ -370,7 +370,10 @@ export class GameRenderer {
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
       const isNewTick = curr.tick !== this.lastUiTick;
-      if (isNewTick) this.detectCombatEffects(prev, curr);
+      if (isNewTick) {
+        this.detectCombatEffects(prev, curr);
+        this.detectHarvestEffects(prev, curr);
+      }
       this.drawEntities(prev, curr, alpha);
       this.drawScenarioSite(curr);
       if (isNewTick) {
@@ -437,6 +440,24 @@ export class GameRenderer {
     }
   }
 
+  private detectHarvestEffects(prev: Snapshot, curr: Snapshot): void {
+    const previous = new Map(prev.entities.map((entity) => [entity.id, entity]));
+    for (const entity of curr.entities) {
+      if (!entity.cargo) continue;
+      if (entity.cargo.phase === 'gathering') {
+        const scoopX = entity.x + Math.cos(entity.angle) * entity.radius * 1.35;
+        const scoopY = entity.y + Math.sin(entity.angle) * entity.radius * 1.35;
+        this.particles.oreDust(scoopX, scoopY, entity.angle, entity.radius);
+      }
+      if (
+        entity.cargo.phase === 'depositing' &&
+        previous.get(entity.id)?.cargo?.phase !== 'depositing'
+      ) {
+        this.particles.oreDeposit(entity.x, entity.y, entity.radius);
+      }
+    }
+  }
+
   /** Emit explosion FX + sound for entities that vanished since the last snapshot. */
   private detectDeaths(curr: Snapshot): void {
     const live = new Set<number>();
@@ -458,6 +479,7 @@ export class GameRenderer {
   private drawEntities(prev: Snapshot, curr: Snapshot, alpha: number): void {
     const prevById = new Map<number, EntitySnapshot>();
     for (const e of prev.entities) prevById.set(e.id, e);
+    const animationTime = performance.now() / 1000;
     const wallKeys = new Set(
       curr.entities
         .filter((entity) => entity.buildingType === 'concrete_wall')
@@ -538,7 +560,7 @@ export class GameRenderer {
       if (this.selected.has(e.id)) {
         this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
       }
-      drawUnit(this.units, e, sx, sy, r, color);
+      drawUnit(this.units, e, sx, sy, r, color, animationTime);
 
       // Health bar.
       if (e.maxHp > 0) {
@@ -1316,13 +1338,19 @@ export class GameRenderer {
         hp: entity.hp,
         maxHp: entity.maxHp,
         ...(entity.cargo && {
-          cargo: { amount: entity.cargo.amount, capacity: entity.cargo.capacity },
+          cargo: {
+            amount: entity.cargo.amount,
+            capacity: entity.cargo.capacity,
+            phase: entity.cargo.phase,
+          },
         }),
         status: construction
           ? `Under construction · ${Math.round((construction.progressTicks / construction.buildTicks) * 100)}%`
           : entity.production?.queue.length
             ? `Producing ${entity.production.queue[0]!.replaceAll('_', ' ')}`
-            : 'Ready',
+            : entity.cargo
+              ? harvesterStatus(entity.cargo.phase)
+              : 'Ready',
       });
     }
     const building = this.selectedProductionBuilding(snapshot);

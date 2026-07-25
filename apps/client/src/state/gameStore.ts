@@ -12,6 +12,7 @@ export type TutorialMilestone =
 export type TutorialStep = TutorialMilestone | 'complete';
 export type SelectionCommand =
   'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally' | 'demolish' | 'recycle';
+type HarvesterPhase = NonNullable<EntitySnapshot['cargo']>['phase'];
 
 export interface SelectedEntitySummary {
   label: string;
@@ -25,7 +26,7 @@ export interface SelectedEntitySummary {
   hp?: number;
   maxHp?: number;
   status?: string;
-  cargo?: { amount: number; capacity: number };
+  cargo?: { amount: number; capacity: number; phase: HarvesterPhase };
   commands: SelectionCommand[];
 }
 
@@ -77,6 +78,23 @@ export type CommandAvailability =
 export function commandAvailability(credits: number, cost: number): CommandAvailability {
   if (credits >= cost) return { available: true, label: 'Ready' };
   return { available: false, label: `Requires $${cost - credits} more` };
+}
+
+export function harvesterStatus(phase: HarvesterPhase): string {
+  switch (phase) {
+    case 'idle':
+      return 'Searching for ore';
+    case 'toNode':
+      return 'Moving to ore field';
+    case 'gathering':
+      return 'Harvesting ore';
+    case 'toBase':
+      return 'Returning to refinery';
+    case 'depositing':
+      return 'Depositing ore';
+    case 'paused':
+      return 'Awaiting orders';
+  }
 }
 
 interface GameUiState {
@@ -147,6 +165,7 @@ function sameSelectedEntity(
     left.status === right.status &&
     left.cargo?.amount === right.cargo?.amount &&
     left.cargo?.capacity === right.cargo?.capacity &&
+    left.cargo?.phase === right.cargo?.phase &&
     left.commands.join() === right.commands.join()
   );
 }

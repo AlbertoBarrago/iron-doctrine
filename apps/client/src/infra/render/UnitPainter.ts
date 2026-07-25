@@ -13,13 +13,14 @@ export function drawUnit(
   sy: number,
   radius: number,
   color: number,
+  animationTime = 0,
 ): void {
   switch (entity.unitType) {
     case 'tank':
       drawTank(graphics, sx, sy, radius, entity.angle, color);
       return;
     case 'harvester':
-      drawHarvester(graphics, sx, sy, radius, entity.angle, color);
+      drawHarvester(graphics, entity, sx, sy, radius, entity.angle, color, animationTime);
       return;
     case 'engineer':
       drawInfantry(graphics, sx, sy, radius, entity.angle, color, true);
@@ -77,12 +78,20 @@ function drawTank(
 
 function drawHarvester(
   graphics: Graphics,
+  entity: EntitySnapshot,
   sx: number,
   sy: number,
   radius: number,
   angle: number,
   color: number,
+  animationTime: number,
 ): void {
+  const cargoRatio = entity.cargo ? entity.cargo.amount / entity.cargo.capacity : 0;
+  const gathering = entity.cargo?.phase === 'gathering';
+  const depositing = entity.cargo?.phase === 'depositing';
+  const scoopStroke = gathering ? 0xdcc160 : 0xc49a35;
+  const scoopTravel = gathering ? (Math.sin(animationTime * 9) + 1) * radius * 0.08 : 0;
+
   polygon(graphics, sx, sy, angle, [
     { x: -radius, y: -radius * 0.7 },
     { x: radius * 0.7, y: -radius * 0.7 },
@@ -99,7 +108,24 @@ function drawHarvester(
     { x: radius * 0.18, y: radius * 0.5 },
     { x: -radius * 0.86, y: radius * 0.5 },
   ]);
-  graphics.fill({ color: 0x725621 }).stroke({ width: 1, color: 0x16130b });
+  graphics.fill({ color: 0x292619 }).stroke({ width: 1, color: 0x16130b });
+
+  const oreSlots = [
+    { x: -0.63, y: -0.28 },
+    { x: -0.28, y: 0.24 },
+    { x: -0.02, y: -0.2 },
+    { x: -0.55, y: 0.3 },
+    { x: -0.22, y: -0.05 },
+  ];
+  const visibleOre = Math.ceil(cargoRatio * oreSlots.length);
+  for (let index = 0; index < visibleOre; index++) {
+    const slot = oreSlots[index]!;
+    const ore = localToScreen(sx, sy, angle, radius * slot.x, radius * slot.y);
+    graphics
+      .circle(ore.x, ore.y, radius * (0.12 + (index % 2) * 0.025))
+      .fill({ color: index % 2 === 0 ? 0xd2a63a : 0xa87924 })
+      .stroke({ width: 1, color: 0x4e3712 });
+  }
 
   polygon(graphics, sx, sy, angle, [
     { x: radius * 0.28, y: -radius * 0.48 },
@@ -109,14 +135,36 @@ function drawHarvester(
   ]);
   graphics.fill({ color: 0x99a18b }).stroke({ width: 1, color: 0x111812 });
 
-  const scoopLeft = localToScreen(sx, sy, angle, radius * 1.22, -radius * 0.72);
-  const scoopTip = localToScreen(sx, sy, angle, radius * 1.45, 0);
-  const scoopRight = localToScreen(sx, sy, angle, radius * 1.22, radius * 0.72);
+  const scoopLeft = localToScreen(sx, sy, angle, radius * 1.22 + scoopTravel, -radius * 0.72);
+  const scoopTip = localToScreen(sx, sy, angle, radius * 1.45 + scoopTravel, 0);
+  const scoopRight = localToScreen(sx, sy, angle, radius * 1.22 + scoopTravel, radius * 0.72);
   graphics
     .moveTo(scoopLeft.x, scoopLeft.y)
     .lineTo(scoopTip.x, scoopTip.y)
     .lineTo(scoopRight.x, scoopRight.y)
-    .stroke({ width: Math.max(2, radius * 0.14), color: 0xc49a35 });
+    .stroke({ width: Math.max(2, radius * 0.14), color: scoopStroke });
+
+  if (gathering) {
+    const pulse = 0.55 + (Math.sin(animationTime * 12) + 1) * 0.2;
+    graphics
+      .circle(scoopTip.x, scoopTip.y, radius * 0.2)
+      .stroke({ width: Math.max(1.5, radius * 0.09), color: 0xe4bf4c, alpha: pulse });
+  }
+
+  if (depositing) {
+    for (let index = 0; index < 3; index++) {
+      const transfer = localToScreen(
+        sx,
+        sy,
+        angle,
+        -radius * (1.05 + index * 0.18),
+        Math.sin(animationTime * 10 + index) * radius * 0.24,
+      );
+      graphics
+        .circle(transfer.x, transfer.y, radius * 0.1)
+        .fill({ color: 0xe0b43f, alpha: 0.9 - index * 0.2 });
+    }
+  }
 }
 
 function drawInfantry(

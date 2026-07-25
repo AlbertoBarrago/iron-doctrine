@@ -3,6 +3,7 @@ import {
   commandAvailability,
   commandSelectionContext,
   commandTabAvailable,
+  harvesterStatus,
   tutorialProgress,
   preferredCommandTab,
   selectionCommands,
@@ -60,6 +61,17 @@ describe('command availability', () => {
       available: false,
       label: 'Requires $250 more',
     });
+  });
+});
+
+describe('harvester presentation', () => {
+  it('describes every authoritative harvesting phase', () => {
+    expect(harvesterStatus('idle')).toBe('Searching for ore');
+    expect(harvesterStatus('toNode')).toBe('Moving to ore field');
+    expect(harvesterStatus('gathering')).toBe('Harvesting ore');
+    expect(harvesterStatus('toBase')).toBe('Returning to refinery');
+    expect(harvesterStatus('depositing')).toBe('Depositing ore');
+    expect(harvesterStatus('paused')).toBe('Awaiting orders');
   });
 });
 
