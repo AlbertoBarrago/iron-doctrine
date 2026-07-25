@@ -13,6 +13,7 @@ import {
   type TutorialStep,
 } from '../state/gameStore.js';
 import { BUILDING_PROFILES, UNIT_PROFILES, usesContinuousPlacement } from '../game/gameContent.js';
+import { matchResultActions, type MatchResultAction } from '../game/matchResult.js';
 import type { MissionId } from '../game/skirmishConfig.js';
 
 const BUILDABLE_STRUCTURES = [
@@ -124,6 +125,12 @@ export function Hud(props: HudProps): JSX.Element {
   const scenario = useGameStore((state) => state.scenario);
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
+  const resultActions =
+    match?.status === 'finished' ? matchResultActions(props.mission, match.winner) : null;
+  const runResultAction = (action: MatchResultAction): void => {
+    if (action === 'restart') props.onRestart();
+    else props.onExit();
+  };
   const baseOperational = props.mission !== 'first_contact' || scenario?.phase === 'operational';
   const canBuild = commandTabAvailable(
     'build',
@@ -424,7 +431,7 @@ export function Hud(props: HudProps): JSX.Element {
         </div>
       ) : null}
 
-      {match?.status === 'finished' ? (
+      {match?.status === 'finished' && resultActions ? (
         <div className="match-overlay">
           <div className="match-dialog steel-panel">
             <div className="hazard-stripe" />
@@ -443,12 +450,16 @@ export function Hud(props: HudProps): JSX.Element {
               <button
                 type="button"
                 className="metal-button metal-button--primary"
-                onClick={props.onRestart}
+                onClick={() => runResultAction(resultActions.primary)}
               >
-                Restart skirmish
+                {resultActions.primaryLabel}
               </button>
-              <button type="button" className="metal-button" onClick={props.onExit}>
-                Return to main menu
+              <button
+                type="button"
+                className="metal-button"
+                onClick={() => runResultAction(resultActions.secondary)}
+              >
+                {resultActions.secondaryLabel}
               </button>
             </div>
           </div>
