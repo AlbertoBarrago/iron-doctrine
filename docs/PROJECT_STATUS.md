@@ -1,6 +1,6 @@
 # Iron Doctrine — Project Status
 
-Last updated: 2026-07-24
+Last updated: 2026-07-25
 
 This document is the operational source of truth for completed work, known issues and
 the next development slice. The README remains the public presentation of the game.
@@ -12,6 +12,7 @@ First Contact is a playable vertical slice:
 - start with a capable patrol and recover an abandoned command base;
 - explore a full-screen battlefield through persistent fog of war;
 - harvest ore, construct a base and produce units;
+- read harvester load, extraction and deposit state directly on the battlefield;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
 - launch missions from a classic 1990s-inspired RTS command menu;
@@ -20,7 +21,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 162 automated tests;
+- 187 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -50,9 +51,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 ### Combat and economy feedback
 
-1. Add visible gathering and depositing animations.
-2. Show invalid, blocked and unavailable orders clearly.
-3. Tune ore income, construction time and hostile pressure through complete matches.
+1. Show invalid, blocked and unavailable orders clearly.
+2. Tune ore income, construction time and hostile pressure through complete matches.
 
 ### Campaign persistence
 
