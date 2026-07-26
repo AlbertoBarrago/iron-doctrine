@@ -67,15 +67,19 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 ### Campaign production
 
-Operation 03 — Iron Pass is implemented: a dedicated runtime mission (`iron_pass`) with an
-authored chokepoint map, a scripted armored ambush triggered when the player crosses the pass,
-briefing/debriefing copy and campaign unlock wiring. A browser playtest and balance pass are
-still outstanding before it should be considered final.
+Operation 03 — Iron Pass is implemented and browser-playtested: a dedicated runtime mission
+(`iron_pass`) with an authored chokepoint map, a scripted armored ambush triggered when the
+player crosses the pass, briefing/debriefing copy and campaign unlock wiring.
 
-Build the remaining operations in order:
+Operation 04 — Siege Line is implemented: a dedicated runtime mission (`siege_line`) with an
+authored defensible-corridor map, escalating scripted assault waves the player must hold
+against before counter-attacking the hostile command, briefing/debriefing copy and campaign
+unlock wiring. A browser playtest and balance pass are still outstanding before it should be
+considered final.
 
-1. Operation 04 — Siege Line.
-2. Operation 05 — Black Dawn.
+Build the remaining operation:
+
+1. Operation 05 — Black Dawn.
 
 Each operation requires a dedicated runtime mission, authored map, objectives and triggers,
 briefing/debriefing copy, balance pass and complete browser playtest before it can be unlocked.
