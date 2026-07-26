@@ -67,22 +67,23 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 ### Campaign production
 
-Operation 03 — Iron Pass is implemented and browser-playtested: a dedicated runtime mission
-(`iron_pass`) with an authored chokepoint map, a scripted armored ambush triggered when the
-player crosses the pass, briefing/debriefing copy and campaign unlock wiring.
+All five operations of the First Contact campaign arc are implemented:
 
-Operation 04 — Siege Line is implemented: a dedicated runtime mission (`siege_line`) with an
-authored defensible-corridor map, escalating scripted assault waves the player must hold
-against before counter-attacking the hostile command, briefing/debriefing copy and campaign
-unlock wiring. A browser playtest and balance pass are still outstanding before it should be
-considered final.
+- Operation 01 — Base Foundations and Operation 02 — First Contact: playtested, validated.
+- Operation 03 — Iron Pass: browser-playtested. A dedicated runtime mission (`iron_pass`)
+  with an authored chokepoint map and a scripted armored ambush triggered when the player
+  crosses the pass.
+- Operation 04 — Siege Line: browser-playtested, confirmed playable. A dedicated runtime
+  mission (`siege_line`) with an authored defensible-corridor map and escalating scripted
+  assault waves the player must hold against before counter-attacking the hostile command.
+  Difficulty/pacing tuning is still expected as a follow-up, but the base loop holds up.
+- Operation 05 — Black Dawn: implemented, browser playtest still outstanding. A dedicated
+  runtime mission (`black_dawn`) with an authored stronghold-gate map and a scripted last
+  stand triggered once the hostile command drops below a critical health threshold.
 
-Build the remaining operation:
-
-1. Operation 05 — Black Dawn.
-
-Each operation requires a dedicated runtime mission, authored map, objectives and triggers,
-briefing/debriefing copy, balance pass and complete browser playtest before it can be unlocked.
+Next: playtest and balance Black Dawn, then revisit Siege Line's wave pacing/difficulty.
+Beyond that, the campaign is expected to grow with further operations/chapters — scope and
+narrative for those are not yet defined.
 
 ### Base building
 
