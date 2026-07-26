@@ -6,9 +6,10 @@ import {
   type FirstContactSnapshot,
   type IronPassSnapshot,
   type MatchStateSnapshot,
+  type SiegeLineSnapshot,
 } from '@iron/engine';
 
-type ScenarioSnapshot = FirstContactSnapshot | IronPassSnapshot;
+type ScenarioSnapshot = FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot;
 
 export type TutorialMilestone =
   'select' | 'power' | 'refinery' | 'gather' | 'barracks' | 'produce' | 'defense';

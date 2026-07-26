@@ -3,14 +3,16 @@ import type { MapDef } from '@iron/shared';
 
 export type EnemyStartingForce = 0 | 2 | 4;
 export type GracePeriodSeconds = 120 | 180 | 300;
-export type MissionId = 'base_foundations' | 'first_contact' | 'iron_pass' | 'skirmish';
+export type MissionId =
+  'base_foundations' | 'first_contact' | 'iron_pass' | 'siege_line' | 'skirmish';
+
+export type MissionScenario = 'none' | 'recovery' | 'ambush' | 'siege';
 
 export interface MissionRules {
   playerStart: 'base' | 'patrol';
   playerCredits: number;
   enemyEnabled: boolean;
-  recoveryScenario: boolean;
-  ambushScenario: boolean;
+  scenario: MissionScenario;
   matchEnabled: boolean;
 }
 
@@ -19,32 +21,35 @@ export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
     playerStart: 'base',
     playerCredits: 3200,
     enemyEnabled: false,
-    recoveryScenario: false,
-    ambushScenario: false,
+    scenario: 'none',
     matchEnabled: false,
   },
   first_contact: {
     playerStart: 'patrol',
     playerCredits: 0,
     enemyEnabled: true,
-    recoveryScenario: true,
-    ambushScenario: false,
+    scenario: 'recovery',
     matchEnabled: true,
   },
   iron_pass: {
     playerStart: 'base',
     playerCredits: 3200,
     enemyEnabled: true,
-    recoveryScenario: false,
-    ambushScenario: true,
+    scenario: 'ambush',
+    matchEnabled: true,
+  },
+  siege_line: {
+    playerStart: 'base',
+    playerCredits: 3600,
+    enemyEnabled: true,
+    scenario: 'siege',
     matchEnabled: true,
   },
   skirmish: {
     playerStart: 'base',
     playerCredits: 3200,
     enemyEnabled: true,
-    recoveryScenario: false,
-    ambushScenario: false,
+    scenario: 'none',
     matchEnabled: true,
   },
 };
@@ -127,5 +132,35 @@ export function ironPassLayout(map: MapDef): IronPassLayout {
       x: clampX(flankX + perpendicular.x * offset),
       y: clampY(flankY + perpendicular.y * offset),
     })),
+  };
+}
+
+export interface SiegeLineLayout {
+  spawnPoints: Array<{ x: number; y: number }>;
+  targetAt: { x: number; y: number };
+}
+
+export function siegeLineLayout(map: MapDef): SiegeLineLayout {
+  const friendly = map.spawns.find((spawn) => spawn.player === 0);
+  const hostile = map.spawns.find((spawn) => spawn.player === 1);
+  if (!friendly || !hostile) throw new Error('Siege Line requires two player spawns');
+
+  const dx = hostile.x - friendly.x;
+  const dy = hostile.y - friendly.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  const perpendicular = { x: -dy / length, y: dx / length };
+  const clampX = (x: number): number => Math.min(map.width - 2, Math.max(1, Math.round(x)));
+  const clampY = (y: number): number => Math.min(map.height - 2, Math.max(1, Math.round(y)));
+  const staging = {
+    x: friendly.x + dx * 0.4,
+    y: friendly.y + dy * 0.4,
+  };
+
+  return {
+    spawnPoints: [-5, -1.5, 1.5, 5].map((offset) => ({
+      x: clampX(staging.x + perpendicular.x * offset),
+      y: clampY(staging.y + perpendicular.y * offset),
+    })),
+    targetAt: { x: clampX(friendly.x), y: clampY(friendly.y) },
   };
 }

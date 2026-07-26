@@ -89,14 +89,29 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     id: 'siege_line',
     operation: '04',
     title: 'Siege Line',
-    region: 'Classified',
-    situation: 'Operational details remain sealed by Field Command.',
-    objective: 'CLASSIFIED',
-    intelligence: 'CLASSIFIED',
-    forces: ['CLASSIFIED'],
-    authorized: ['CLASSIFIED'],
-    resources: 'CLASSIFIED',
+    region: 'Siege Line',
+    situation:
+      'The pass is open. Field Command holds a forward position while the hostile garrison ' +
+      'mounts a counter-offensive to retake it.',
+    objective: 'Hold the line against the assault, then destroy the hostile command.',
+    intelligence:
+      'Expect escalating armored assault waves at regular intervals before the hostile force ' +
+      'is spent.',
+    forces: ['Construction Yard', 'Harvester'],
+    authorized: [
+      'Power Plant',
+      'Refinery',
+      'Barracks',
+      'Factory',
+      'Rifleman',
+      'Engineer',
+      'Battle Tank',
+      'Concrete Wall',
+      'Defense Turret',
+    ],
+    resources: 'Home ore fields plus a contested deposit near the held line',
     prerequisite: 'iron_pass',
+    runtimeMission: 'siege_line',
     mapPosition: { x: 68, y: 37 },
   },
   {

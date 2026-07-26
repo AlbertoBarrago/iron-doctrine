@@ -44,8 +44,20 @@ describe('campaign', () => {
     ).toBe('available');
   });
 
-  it('keeps Siege Line and Black Dawn classified until authored', () => {
-    expect(campaignMission('siege_line').runtimeMission).toBeUndefined();
+  it('unlocks Siege Line only after Iron Pass', () => {
+    const siegeLine = campaignMission('siege_line');
+    expect(siegeLine.runtimeMission).toBe('siege_line');
+    expect(
+      campaignMissionStatus(siegeLine, { completed: ['base_foundations', 'first_contact'] }),
+    ).toBe('classified');
+    expect(
+      campaignMissionStatus(siegeLine, {
+        completed: ['base_foundations', 'first_contact', 'iron_pass'],
+      }),
+    ).toBe('available');
+  });
+
+  it('keeps Black Dawn classified until authored', () => {
     expect(campaignMission('black_dawn').runtimeMission).toBeUndefined();
   });
 

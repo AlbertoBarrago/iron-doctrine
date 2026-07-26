@@ -5,14 +5,25 @@ import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { CampaignScreen } from './ui/CampaignScreen.js';
-import { IRON_PASS_MAP, loadMapCatalog } from './maps/mapCatalog.js';
-import { DEFAULT_SKIRMISH_SETTINGS, type SkirmishConfig } from './game/skirmishConfig.js';
+import { IRON_PASS_MAP, SIEGE_LINE_MAP, loadMapCatalog } from './maps/mapCatalog.js';
+import {
+  DEFAULT_SKIRMISH_SETTINGS,
+  type MissionId,
+  type SkirmishConfig,
+} from './game/skirmishConfig.js';
 import { completeCampaignMission, loadCampaignProgress } from './game/campaignProgress.js';
 import type { CampaignMissionId } from './game/campaign.js';
 import { useGameStore } from './state/gameStore.js';
+import type { MapDef } from '@iron/shared';
 import './ui/game.css';
 
 type Mode = 'menu' | 'campaign' | 'game' | 'editor';
+
+/** Authored maps for missions with a fixed, hand-designed battlefield. */
+const CAMPAIGN_MAPS: Partial<Record<MissionId, MapDef>> = {
+  iron_pass: IRON_PASS_MAP,
+  siege_line: SIEGE_LINE_MAP,
+};
 
 /** Root: switches between the live game and the map editor. */
 export function App(): JSX.Element {
@@ -47,7 +58,7 @@ export function App(): JSX.Element {
           setSkirmish({
             ...DEFAULT_SKIRMISH_SETTINGS,
             mission: mission.runtimeMission,
-            map: mission.runtimeMission === 'iron_pass' ? IRON_PASS_MAP : maps[0].map,
+            map: CAMPAIGN_MAPS[mission.runtimeMission] ?? maps[0].map,
           });
           setMode('game');
         }}
@@ -150,6 +161,12 @@ function Game({
       match.winner === 0
     ) {
       completedMission = 'iron_pass';
+    } else if (
+      config.mission === 'siege_line' &&
+      match?.status === 'finished' &&
+      match.winner === 0
+    ) {
+      completedMission = 'siege_line';
     }
     if (!completedMission) return;
     completionReported.current = true;

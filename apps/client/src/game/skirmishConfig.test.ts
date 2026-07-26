@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { MapDef } from '@iron/shared';
-import { firstContactLayout, ironPassLayout, MISSION_RULES } from './skirmishConfig.js';
+import {
+  firstContactLayout,
+  ironPassLayout,
+  MISSION_RULES,
+  siegeLineLayout,
+} from './skirmishConfig.js';
 
 const mapWithSpawns = (
   friendly: { x: number; y: number },
@@ -52,25 +57,37 @@ describe('Iron Pass layout', () => {
   });
 });
 
+describe('Siege Line layout', () => {
+  it('stages reinforcements toward the friendly position across distinct lanes', () => {
+    const layout = siegeLineLayout(mapWithSpawns({ x: 16, y: 48 }, { x: 80, y: 48 }));
+    expect(layout.targetAt).toEqual({ x: 16, y: 48 });
+    expect(layout.spawnPoints).toHaveLength(4);
+    expect(new Set(layout.spawnPoints.map((spawn) => spawn.y)).size).toBe(4);
+    expect(layout.spawnPoints.every((spawn) => spawn.x > 16 && spawn.x < 80)).toBe(true);
+  });
+});
+
 describe('mission profiles', () => {
   it('keeps the construction tutorial separate from the recovery mission', () => {
     expect(MISSION_RULES.base_foundations).toMatchObject({
       playerStart: 'base',
       enemyEnabled: false,
-      recoveryScenario: false,
-      ambushScenario: false,
+      scenario: 'none',
     });
     expect(MISSION_RULES.first_contact).toMatchObject({
       playerStart: 'patrol',
       enemyEnabled: true,
-      recoveryScenario: true,
-      ambushScenario: false,
+      scenario: 'recovery',
     });
     expect(MISSION_RULES.iron_pass).toMatchObject({
       playerStart: 'base',
       enemyEnabled: true,
-      recoveryScenario: false,
-      ambushScenario: true,
+      scenario: 'ambush',
+    });
+    expect(MISSION_RULES.siege_line).toMatchObject({
+      playerStart: 'base',
+      enemyEnabled: true,
+      scenario: 'siege',
     });
   });
 });

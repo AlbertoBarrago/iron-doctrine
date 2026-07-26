@@ -67,10 +67,41 @@ export const IRON_PASS_MAP: MapDef = {
   ],
 };
 
+function siegeLineBlocked(): Array<[number, number]> {
+  const cells: Array<[number, number]> = [];
+  for (let x = 24; x <= 40; x++) {
+    for (let y = 20; y < 40; y++) cells.push([x, y]);
+    for (let y = 56; y <= 76; y++) cells.push([x, y]);
+  }
+  return cells;
+}
+
+export const SIEGE_LINE_MAP: MapDef = {
+  format: 'iron-doctrine.map',
+  version: 1,
+  name: 'Siege Line',
+  width: 96,
+  height: 96,
+  cellSize: 1,
+  blocked: siegeLineBlocked(),
+  resources: [
+    { x: 12, y: 30, amount: 8000 },
+    { x: 12, y: 66, amount: 8000 },
+    { x: 20, y: 48, amount: 10000 },
+    { x: 80, y: 30, amount: 8000 },
+    { x: 80, y: 66, amount: 8000 },
+  ],
+  spawns: [
+    { player: 0, x: 16, y: 48 },
+    { player: 1, x: 80, y: 48 },
+  ],
+};
+
 export function loadMapCatalog(storage: MapStorage): MapCatalogEntry[] {
   return [
     { id: 'built-in:iron-dawn', source: 'built-in', map: DEFAULT_MAP },
     { id: 'built-in:iron-pass', source: 'built-in', map: IRON_PASS_MAP },
+    { id: 'built-in:siege-line', source: 'built-in', map: SIEGE_LINE_MAP },
     ...loadLocalMaps(storage).map((map) => ({
       id: `local:${map.name.toLocaleLowerCase()}`,
       source: 'local' as const,

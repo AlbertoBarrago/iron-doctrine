@@ -3,6 +3,7 @@ import { createEmptyMap, validateMap } from '@iron/shared';
 import {
   DEFAULT_MAP,
   IRON_PASS_MAP,
+  SIEGE_LINE_MAP,
   loadMapCatalog,
   parseMapJson,
   saveLocalMap,
@@ -52,6 +53,18 @@ describe('local map catalog', () => {
     expect(isBlocked(48, 48)).toBe(false);
   });
 
+  it('gives Siege Line a defensible corridor near the friendly spawn', () => {
+    expect(validateMap(SIEGE_LINE_MAP)).toEqual([]);
+    const [friendly, hostile] = SIEGE_LINE_MAP.spawns;
+    expect(friendly).toMatchObject({ player: 0 });
+    expect(hostile).toMatchObject({ player: 1 });
+    const isBlocked = (x: number, y: number) =>
+      SIEGE_LINE_MAP.blocked.some(([bx, by]) => bx === x && by === y);
+    expect(isBlocked(friendly!.x, friendly!.y)).toBe(false);
+    expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
+    expect(isBlocked(32, 48)).toBe(false);
+  });
+
   it('saves maps and replaces maps with the same name', () => {
     const storage = memoryStorage();
     saveLocalMap(storage, validMap('Crossfire'));
@@ -60,8 +73,8 @@ describe('local map catalog', () => {
     saveLocalMap(storage, changed);
 
     const entries = loadMapCatalog(storage);
-    expect(entries).toHaveLength(3);
-    expect(entries[2]!.map.resources).toHaveLength(1);
+    expect(entries).toHaveLength(4);
+    expect(entries[3]!.map.resources).toHaveLength(1);
   });
 
   it('rejects malformed imports', () => {

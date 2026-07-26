@@ -31,6 +31,7 @@ import {
   firstContactLayout,
   ironPassLayout,
   MISSION_RULES,
+  siegeLineLayout,
   type SkirmishConfig,
 } from '../../game/skirmishConfig.js';
 import { profileFor, usesContinuousPlacement } from '../../game/gameContent.js';
@@ -110,16 +111,24 @@ export class GameRenderer {
     if (!humanSpawn || !enemySpawn)
       throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
     const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
-    const firstContact = missionRules.recoveryScenario ? firstContactLayout(config.map) : null;
+    const firstContact =
+      missionRules.scenario === 'recovery' ? firstContactLayout(config.map) : null;
     const recoveryAt = firstContact
       ? mapPosition(config.map, firstContact.recovery.x, firstContact.recovery.y)
       : null;
-    const ironPass = missionRules.ambushScenario ? ironPassLayout(config.map) : null;
+    const ironPass = missionRules.scenario === 'ambush' ? ironPassLayout(config.map) : null;
     const triggerAt = ironPass
       ? mapPosition(config.map, ironPass.trigger.x, ironPass.trigger.y)
       : null;
     const ambushSpawns = ironPass
       ? ironPass.ambush.map((spawn) => mapPosition(config.map, spawn.x, spawn.y))
+      : null;
+    const siegeLine = missionRules.scenario === 'siege' ? siegeLineLayout(config.map) : null;
+    const siegeSpawnPoints = siegeLine
+      ? siegeLine.spawnPoints.map((spawn) => mapPosition(config.map, spawn.x, spawn.y))
+      : null;
+    const siegeTargetAt = siegeLine
+      ? mapPosition(config.map, siegeLine.targetAt.x, siegeLine.targetAt.y)
       : null;
     const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
 
@@ -182,6 +191,17 @@ export class GameRenderer {
               ambushPlayer: 1,
               triggerAt,
               ambushSpawns,
+            },
+          }
+        : {}),
+      ...(siegeSpawnPoints && siegeTargetAt
+        ? {
+            siegeLine: {
+              hostilePlayer: 1,
+              waveIntervalTicks: SIM_HZ * 45,
+              waveCount: 4,
+              spawnPoints: siegeSpawnPoints,
+              targetAt: siegeTargetAt,
             },
           }
         : {}),
@@ -409,7 +429,9 @@ export class GameRenderer {
         const activationOrigin =
           this.mission === 'first_contact' && curr.scenario && 'operationalAtTick' in curr.scenario
             ? curr.scenario.operationalAtTick
-            : this.mission === 'skirmish' || this.mission === 'iron_pass'
+            : this.mission === 'skirmish' ||
+                this.mission === 'iron_pass' ||
+                this.mission === 'siege_line'
               ? 0
               : null;
         store.setAiActivationSeconds(
