@@ -5,7 +5,12 @@ import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
 import { CampaignScreen } from './ui/CampaignScreen.js';
-import { IRON_PASS_MAP, SIEGE_LINE_MAP, loadMapCatalog } from './maps/mapCatalog.js';
+import {
+  BLACK_DAWN_MAP,
+  IRON_PASS_MAP,
+  SIEGE_LINE_MAP,
+  loadMapCatalog,
+} from './maps/mapCatalog.js';
 import {
   DEFAULT_SKIRMISH_SETTINGS,
   type MissionId,
@@ -23,7 +28,16 @@ type Mode = 'menu' | 'campaign' | 'game' | 'editor';
 const CAMPAIGN_MAPS: Partial<Record<MissionId, MapDef>> = {
   iron_pass: IRON_PASS_MAP,
   siege_line: SIEGE_LINE_MAP,
+  black_dawn: BLACK_DAWN_MAP,
 };
+
+/** Campaign missions completed by winning the match rather than a bespoke condition. */
+const MATCH_VICTORY_MISSIONS: ReadonlySet<CampaignMissionId> = new Set([
+  'first_contact',
+  'iron_pass',
+  'siege_line',
+  'black_dawn',
+]);
 
 /** Root: switches between the live game and the map editor. */
 export function App(): JSX.Element {
@@ -150,23 +164,11 @@ function Game({
     if (config.mission === 'base_foundations' && tutorialStep === 'complete') {
       completedMission = 'base_foundations';
     } else if (
-      config.mission === 'first_contact' &&
       match?.status === 'finished' &&
-      match.winner === 0
+      match.winner === 0 &&
+      MATCH_VICTORY_MISSIONS.has(config.mission as CampaignMissionId)
     ) {
-      completedMission = 'first_contact';
-    } else if (
-      config.mission === 'iron_pass' &&
-      match?.status === 'finished' &&
-      match.winner === 0
-    ) {
-      completedMission = 'iron_pass';
-    } else if (
-      config.mission === 'siege_line' &&
-      match?.status === 'finished' &&
-      match.winner === 0
-    ) {
-      completedMission = 'siege_line';
+      completedMission = config.mission as CampaignMissionId;
     }
     if (!completedMission) return;
     completionReported.current = true;

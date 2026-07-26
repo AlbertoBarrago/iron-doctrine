@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createEmptyMap, validateMap } from '@iron/shared';
 import {
+  BLACK_DAWN_MAP,
   DEFAULT_MAP,
   IRON_PASS_MAP,
   SIEGE_LINE_MAP,
@@ -65,6 +66,18 @@ describe('local map catalog', () => {
     expect(isBlocked(32, 48)).toBe(false);
   });
 
+  it('gives Black Dawn a fortified gate guarding the hostile stronghold', () => {
+    expect(validateMap(BLACK_DAWN_MAP)).toEqual([]);
+    const [friendly, hostile] = BLACK_DAWN_MAP.spawns;
+    expect(friendly).toMatchObject({ player: 0 });
+    expect(hostile).toMatchObject({ player: 1 });
+    const isBlocked = (x: number, y: number) =>
+      BLACK_DAWN_MAP.blocked.some(([bx, by]) => bx === x && by === y);
+    expect(isBlocked(friendly!.x, friendly!.y)).toBe(false);
+    expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
+    expect(isBlocked(72, 48)).toBe(false);
+  });
+
   it('saves maps and replaces maps with the same name', () => {
     const storage = memoryStorage();
     saveLocalMap(storage, validMap('Crossfire'));
@@ -73,8 +86,8 @@ describe('local map catalog', () => {
     saveLocalMap(storage, changed);
 
     const entries = loadMapCatalog(storage);
-    expect(entries).toHaveLength(4);
-    expect(entries[3]!.map.resources).toHaveLength(1);
+    expect(entries).toHaveLength(5);
+    expect(entries[4]!.map.resources).toHaveLength(1);
   });
 
   it('rejects malformed imports', () => {

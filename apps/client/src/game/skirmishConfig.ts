@@ -4,9 +4,9 @@ import type { MapDef } from '@iron/shared';
 export type EnemyStartingForce = 0 | 2 | 4;
 export type GracePeriodSeconds = 120 | 180 | 300;
 export type MissionId =
-  'base_foundations' | 'first_contact' | 'iron_pass' | 'siege_line' | 'skirmish';
+  'base_foundations' | 'first_contact' | 'iron_pass' | 'siege_line' | 'black_dawn' | 'skirmish';
 
-export type MissionScenario = 'none' | 'recovery' | 'ambush' | 'siege';
+export type MissionScenario = 'none' | 'recovery' | 'ambush' | 'siege' | 'finale';
 
 export interface MissionRules {
   playerStart: 'base' | 'patrol';
@@ -43,6 +43,13 @@ export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
     playerCredits: 3600,
     enemyEnabled: true,
     scenario: 'siege',
+    matchEnabled: true,
+  },
+  black_dawn: {
+    playerStart: 'base',
+    playerCredits: 4000,
+    enemyEnabled: true,
+    scenario: 'finale',
     matchEnabled: true,
   },
   skirmish: {

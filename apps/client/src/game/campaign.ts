@@ -118,14 +118,29 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     id: 'black_dawn',
     operation: '05',
     title: 'Black Dawn',
-    region: 'Classified',
-    situation: 'Operational details remain sealed by Field Command.',
-    objective: 'CLASSIFIED',
-    intelligence: 'CLASSIFIED',
-    forces: ['CLASSIFIED'],
-    authorized: ['CLASSIFIED'],
-    resources: 'CLASSIFIED',
+    region: 'Black Dawn',
+    situation:
+      'The siege is broken. Field Command orders the final assault on the hostile stronghold ' +
+      'before it can regroup.',
+    objective: 'Breach the stronghold and destroy the hostile command.',
+    intelligence:
+      'The stronghold is heavily defended. Expect a desperate last stand once its command is ' +
+      'critically damaged.',
+    forces: ['Construction Yard', 'Harvester'],
+    authorized: [
+      'Power Plant',
+      'Refinery',
+      'Barracks',
+      'Factory',
+      'Rifleman',
+      'Engineer',
+      'Battle Tank',
+      'Concrete Wall',
+      'Defense Turret',
+    ],
+    resources: 'Home ore fields plus a contested deposit at the stronghold gate',
     prerequisite: 'siege_line',
+    runtimeMission: 'black_dawn',
     mapPosition: { x: 86, y: 20 },
   },
 ];

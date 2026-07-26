@@ -97,11 +97,42 @@ export const SIEGE_LINE_MAP: MapDef = {
   ],
 };
 
+function blackDawnBlocked(): Array<[number, number]> {
+  const cells: Array<[number, number]> = [];
+  for (let x = 64; x <= 80; x++) {
+    for (let y = 20; y < 40; y++) cells.push([x, y]);
+    for (let y = 56; y <= 76; y++) cells.push([x, y]);
+  }
+  return cells;
+}
+
+export const BLACK_DAWN_MAP: MapDef = {
+  format: 'iron-doctrine.map',
+  version: 1,
+  name: 'Black Dawn',
+  width: 96,
+  height: 96,
+  cellSize: 1,
+  blocked: blackDawnBlocked(),
+  resources: [
+    { x: 16, y: 30, amount: 8000 },
+    { x: 16, y: 66, amount: 8000 },
+    { x: 28, y: 48, amount: 10000 },
+    { x: 84, y: 30, amount: 8000 },
+    { x: 84, y: 66, amount: 8000 },
+  ],
+  spawns: [
+    { player: 0, x: 16, y: 48 },
+    { player: 1, x: 84, y: 48 },
+  ],
+};
+
 export function loadMapCatalog(storage: MapStorage): MapCatalogEntry[] {
   return [
     { id: 'built-in:iron-dawn', source: 'built-in', map: DEFAULT_MAP },
     { id: 'built-in:iron-pass', source: 'built-in', map: IRON_PASS_MAP },
     { id: 'built-in:siege-line', source: 'built-in', map: SIEGE_LINE_MAP },
+    { id: 'built-in:black-dawn', source: 'built-in', map: BLACK_DAWN_MAP },
     ...loadLocalMaps(storage).map((map) => ({
       id: `local:${map.name.toLocaleLowerCase()}`,
       source: 'local' as const,

@@ -89,5 +89,10 @@ describe('mission profiles', () => {
       enemyEnabled: true,
       scenario: 'siege',
     });
+    expect(MISSION_RULES.black_dawn).toMatchObject({
+      playerStart: 'base',
+      enemyEnabled: true,
+      scenario: 'finale',
+    });
   });
 });

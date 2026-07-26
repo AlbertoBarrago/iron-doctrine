@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import {
   UNIT_STATS,
+  type BlackDawnSnapshot,
   type EntitySnapshot,
   type FirstContactSnapshot,
   type IronPassSnapshot,
@@ -9,7 +10,8 @@ import {
   type SiegeLineSnapshot,
 } from '@iron/engine';
 
-type ScenarioSnapshot = FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot;
+type ScenarioSnapshot =
+  FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot | BlackDawnSnapshot;
 
 export type TutorialMilestone =
   'select' | 'power' | 'refinery' | 'gather' | 'barracks' | 'produce' | 'defense';

@@ -130,6 +130,7 @@ export class GameRenderer {
     const siegeTargetAt = siegeLine
       ? mapPosition(config.map, siegeLine.targetAt.x, siegeLine.targetAt.y)
       : null;
+    const blackDawn = missionRules.scenario === 'finale';
     const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
 
     await this.app.init({
@@ -202,6 +203,14 @@ export class GameRenderer {
               waveCount: 4,
               spawnPoints: siegeSpawnPoints,
               targetAt: siegeTargetAt,
+            },
+          }
+        : {}),
+      ...(blackDawn
+        ? {
+            blackDawn: {
+              hostilePlayer: 1,
+              healthThreshold: 0.3,
             },
           }
         : {}),
@@ -427,13 +436,11 @@ export class GameRenderer {
         store.setMatch(curr.match ?? null);
         store.setScenario(curr.scenario ?? null);
         const activationOrigin =
-          this.mission === 'first_contact' && curr.scenario && 'operationalAtTick' in curr.scenario
-            ? curr.scenario.operationalAtTick
-            : this.mission === 'skirmish' ||
-                this.mission === 'iron_pass' ||
-                this.mission === 'siege_line'
-              ? 0
-              : null;
+          MISSION_RULES[this.mission].scenario === 'recovery'
+            ? curr.scenario && 'operationalAtTick' in curr.scenario
+              ? curr.scenario.operationalAtTick
+              : null
+            : 0;
         store.setAiActivationSeconds(
           activationOrigin === null || activationOrigin === undefined
             ? 0

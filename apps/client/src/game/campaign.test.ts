@@ -57,8 +57,19 @@ describe('campaign', () => {
     ).toBe('available');
   });
 
-  it('keeps Black Dawn classified until authored', () => {
-    expect(campaignMission('black_dawn').runtimeMission).toBeUndefined();
+  it('unlocks Black Dawn only after Siege Line', () => {
+    const blackDawn = campaignMission('black_dawn');
+    expect(blackDawn.runtimeMission).toBe('black_dawn');
+    expect(
+      campaignMissionStatus(blackDawn, {
+        completed: ['base_foundations', 'first_contact', 'iron_pass'],
+      }),
+    ).toBe('classified');
+    expect(
+      campaignMissionStatus(blackDawn, {
+        completed: ['base_foundations', 'first_contact', 'iron_pass', 'siege_line'],
+      }),
+    ).toBe('available');
   });
 
   it('persists completion idempotently and survives invalid storage', () => {
