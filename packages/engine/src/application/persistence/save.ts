@@ -18,6 +18,7 @@ import type { MatchStateSnapshot } from '../match/match-state.js';
 import type { FirstContactConfig, FirstContactPhase } from '../scenario/first-contact.js';
 import type { IronPassConfig, IronPassPhase } from '../scenario/iron-pass.js';
 import type { SiegeLineConfig, SiegeLinePhase } from '../scenario/siege-line.js';
+import type { BlackDawnConfig, BlackDawnPhase } from '../scenario/black-dawn.js';
 
 interface ComponentBlock {
   name: string;
@@ -53,6 +54,10 @@ export interface SaveState {
   siegeLine?: {
     config: SiegeLineConfig;
     state: { phase: SiegeLinePhase; wavesDispatched: number };
+  };
+  blackDawn?: {
+    config: BlackDawnConfig;
+    state: { phase: BlackDawnPhase };
   };
 }
 
@@ -106,6 +111,12 @@ export function saveSimulation(
         state: sim.siegeLine.serialize(),
       },
     }),
+    ...(sim.blackDawn && {
+      blackDawn: {
+        config: sim.blackDawn.config,
+        state: sim.blackDawn.serialize(),
+      },
+    }),
   };
 }
 
@@ -127,6 +138,7 @@ export function loadSimulation(save: SaveState): Simulation {
     ...(save.firstContact && { firstContact: save.firstContact.config }),
     ...(save.ironPass && { ironPass: save.ironPass.config }),
     ...(save.siegeLine && { siegeLine: save.siegeLine.config }),
+    ...(save.blackDawn && { blackDawn: save.blackDawn.config }),
   });
 
   sim.world.entities.restore(save.entityManager);
@@ -147,6 +159,7 @@ export function loadSimulation(save: SaveState): Simulation {
   if (save.firstContact && sim.firstContact) sim.firstContact.restore(save.firstContact.state);
   if (save.ironPass && sim.ironPass) sim.ironPass.restore(save.ironPass.state);
   if (save.siegeLine && sim.siegeLine) sim.siegeLine.restore(save.siegeLine.state);
+  if (save.blackDawn && sim.blackDawn) sim.blackDawn.restore(save.blackDawn.state);
   return sim;
 }
 

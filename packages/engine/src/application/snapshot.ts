@@ -28,6 +28,7 @@ import type { MatchStateSnapshot } from './match/match-state.js';
 import type { FirstContactSnapshot } from './scenario/first-contact.js';
 import type { IronPassSnapshot } from './scenario/iron-pass.js';
 import type { SiegeLineSnapshot } from './scenario/siege-line.js';
+import type { BlackDawnSnapshot } from './scenario/black-dawn.js';
 
 export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource';
 
@@ -99,7 +100,7 @@ export interface Snapshot {
   players: PlayerSnapshot[];
   fog?: FogSnapshot;
   match?: MatchStateSnapshot;
-  scenario?: FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot;
+  scenario?: FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot | BlackDawnSnapshot;
 }
 
 export function buildSnapshot(

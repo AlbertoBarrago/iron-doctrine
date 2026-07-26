@@ -104,6 +104,12 @@ export type {
   SiegeLinePhase,
   SiegeLineSnapshot,
 } from './application/scenario/siege-line.js';
+export { BlackDawnState } from './application/scenario/black-dawn.js';
+export type {
+  BlackDawnConfig,
+  BlackDawnPhase,
+  BlackDawnSnapshot,
+} from './application/scenario/black-dawn.js';
 export { buildSnapshot, hashState } from './application/snapshot.js';
 export type {
   Snapshot,

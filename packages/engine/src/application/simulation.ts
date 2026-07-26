@@ -42,6 +42,11 @@ import {
   SiegeLineState,
   type SiegeLineConfig,
 } from './scenario/siege-line.js';
+import {
+  createBlackDawnSystem,
+  BlackDawnState,
+  type BlackDawnConfig,
+} from './scenario/black-dawn.js';
 
 export interface SimulationConfig {
   seed: number;
@@ -63,6 +68,8 @@ export interface SimulationConfig {
   ironPass?: IronPassConfig;
   /** Optional scripted assault waves the player must hold a position against. */
   siegeLine?: SiegeLineConfig;
+  /** Optional scripted last stand triggered once the hostile command is critically damaged. */
+  blackDawn?: BlackDawnConfig;
 }
 
 interface Deps {
@@ -77,6 +84,7 @@ interface Deps {
   firstContact: FirstContactState | null;
   ironPass: IronPassState | null;
   siegeLine: SiegeLineState | null;
+  blackDawn: BlackDawnState | null;
 }
 
 /** Default ordered pipeline for the current milestone. */
@@ -86,6 +94,7 @@ const defaultSystems = (d: Deps): System[] => [
   ...(d.firstContact ? [createFirstContactSystem(d.firstContact, d.grid, d.economy)] : []),
   ...(d.ironPass ? [createIronPassSystem(d.ironPass)] : []),
   ...(d.siegeLine ? [createSiegeLineSystem(d.siegeLine)] : []),
+  ...(d.blackDawn ? [createBlackDawnSystem(d.blackDawn)] : []),
   createAISystem(
     d.aiPlayers,
     d.bus,
@@ -122,6 +131,7 @@ export class Simulation {
   readonly firstContact: FirstContactState | null;
   readonly ironPass: IronPassState | null;
   readonly siegeLine: SiegeLineState | null;
+  readonly blackDawn: BlackDawnState | null;
   private readonly scheduler = new Scheduler();
   private readonly dt = fp.fromFloat(1 / SIM_HZ);
   private currentTick = 0;
@@ -137,6 +147,7 @@ export class Simulation {
     this.firstContact = config.firstContact ? new FirstContactState(config.firstContact) : null;
     this.ironPass = config.ironPass ? new IronPassState(config.ironPass) : null;
     this.siegeLine = config.siegeLine ? new SiegeLineState(config.siegeLine) : null;
+    this.blackDawn = config.blackDawn ? new BlackDawnState(config.blackDawn) : null;
     if (config.startingCredits) {
       for (const [player, amount] of Object.entries(config.startingCredits)) {
         this.economy.addCredits(Number(player), amount);
@@ -159,6 +170,7 @@ export class Simulation {
       firstContact: this.firstContact,
       ironPass: this.ironPass,
       siegeLine: this.siegeLine,
+      blackDawn: this.blackDawn,
     });
     for (const s of systems) this.scheduler.add(s);
   }
@@ -207,6 +219,7 @@ export class Simulation {
     if (this.firstContact) snap.scenario = this.firstContact.snapshot();
     else if (this.ironPass) snap.scenario = this.ironPass.snapshot();
     else if (this.siegeLine) snap.scenario = this.siegeLine.snapshot();
+    else if (this.blackDawn) snap.scenario = this.blackDawn.snapshot();
     snap.fog = {
       width: this.fog.width,
       height: this.fog.height,
