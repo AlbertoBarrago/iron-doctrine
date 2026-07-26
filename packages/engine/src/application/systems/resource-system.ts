@@ -33,6 +33,29 @@ const GATHER_RATE = 20;
  */
 const REACH_SQ = fp.fromInt(16); // 4 units
 
+/**
+ * Fixed approach directions, cycled per entity so harvesters converging on the same
+ * node or drop-off spread their walking targets around it instead of all pathing to
+ * the identical point and relying entirely on unit separation to untangle the pile-up.
+ */
+const DIAGONAL = v2.normalize({ x: fp.FP.ONE, y: fp.FP.ONE });
+const APPROACH_DIRECTIONS: readonly v2.Vec2[] = [
+  { x: fp.FP.ONE, y: fp.FP.ZERO },
+  DIAGONAL,
+  { x: fp.FP.ZERO, y: fp.FP.ONE },
+  { x: fp.neg(DIAGONAL.x), y: DIAGONAL.y },
+  { x: fp.neg(fp.FP.ONE), y: fp.FP.ZERO },
+  { x: fp.neg(DIAGONAL.x), y: fp.neg(DIAGONAL.y) },
+  { x: fp.FP.ZERO, y: fp.neg(fp.FP.ONE) },
+  { x: DIAGONAL.x, y: fp.neg(DIAGONAL.y) },
+];
+const APPROACH_STANDOFF = fp.fromFloat(2);
+
+function approachTarget(entity: EntityId, targetPos: v2.Vec2): v2.Vec2 {
+  const direction = APPROACH_DIRECTIONS[indexOf(entity) % APPROACH_DIRECTIONS.length]!;
+  return v2.add(targetPos, v2.scale(direction, APPROACH_STANDOFF));
+}
+
 export function createResourceSystem(economy: PlayerEconomy): System {
   return {
     name: 'ResourceSystem',
@@ -51,7 +74,7 @@ export function createResourceSystem(economy: PlayerEconomy): System {
             const node = nearestNode(world, pos);
             if (node !== undefined) {
               h.node = node as number;
-              move.target = worldOf(world, node);
+              move.target = approachTarget(e, worldOf(world, node));
               h.phase = 'toNode';
             }
             break;
@@ -99,7 +122,7 @@ export function createResourceSystem(economy: PlayerEconomy): System {
               h.phase = 'depositing';
               move.target = null;
             } else {
-              move.target = worldOf(world, base);
+              move.target = approachTarget(e, worldOf(world, base));
             }
             break;
           }
@@ -125,8 +148,7 @@ function routeToBase(
 ): void {
   const base = nearestDropOff(world, pos, owner);
   h.phase = 'toBase';
-  if (base !== undefined) move.target = worldOf(world, base);
-  void e;
+  if (base !== undefined) move.target = approachTarget(e, worldOf(world, base));
 }
 
 function worldOf(world: World, e: EntityId): v2.Vec2 {

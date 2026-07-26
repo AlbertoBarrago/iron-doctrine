@@ -74,6 +74,33 @@ describe('Harvester economy loop', () => {
     expect([...deposits.values()].every((count) => count > 0)).toBe(true);
   });
 
+  it('keeps a full squad of harvesters progressing through a shared node and drop-off', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnResource', amount: 20_000, at: at(9, 0) });
+    for (let i = 0; i < 5; i++) {
+      sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3 + i, 0) });
+    }
+    sim.step();
+
+    const harvesters = sim.world.query(Harvest);
+    const deposits = new Map(harvesters.map((entity) => [entity, 0]));
+    const previousCargo = new Map(harvesters.map((entity) => [entity, 0]));
+
+    for (let tick = 0; tick < 6_000; tick++) {
+      sim.step();
+      for (const entity of harvesters) {
+        const cargo = sim.world.get(entity, ResourceCarrier)!.amount;
+        if (cargo === 0 && previousCargo.get(entity)! > 0) {
+          deposits.set(entity, deposits.get(entity)! + 1);
+        }
+        previousCargo.set(entity, cargo);
+      }
+    }
+
+    expect([...deposits.values()].every((count) => count > 0)).toBe(true);
+  });
+
   it('depletes the ore node over time', () => {
     const sim = makeSim();
     sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });

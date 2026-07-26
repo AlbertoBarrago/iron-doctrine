@@ -64,7 +64,7 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
     buildTicks: 140,
     weapon: { damage: 30, range: 7, cooldownTicks: 30, projectileSpeed: 14 },
   },
-  harvester: { hp: 600, speed: 2, radius: 1.2, cost: 1400, buildTicks: 180 },
+  harvester: { hp: 600, speed: 2, radius: 1, cost: 1400, buildTicks: 180 },
 };
 
 export function spawnUnit(world: World, unit: string, player: number, at: Vec2): EntityId {
