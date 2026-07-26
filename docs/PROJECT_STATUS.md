@@ -52,7 +52,17 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 1. Reproduce the reported mixed-selection order issue in the browser.
 2. Decide how unarmed selected units should react when an enemy is right-clicked.
-3. Playtest unit separation around structures, chokepoints and resource drop-offs.
+3. Harvesters got a fluidity pass: their collision radius shrank from 1.2 to 1 (matching the
+   tank), and each harvester now aims at a point offset around the shared node/drop-off
+   instead of the exact centre, so a group spreads out instead of piling onto one spot.
+   Root cause found in the process: unit separation and straight-line movement can reach a
+   genuine deadlock when two units' paths stay nearly parallel and converge on the same
+   point — smaller radii make this easier to trigger, not harder, until a floor is
+   reached (radius 1 is the verified-safe floor for the existing regression scenario).
+   This is a known limitation of the current push-apart separation model, not fully solved
+   here; the SDD's planned RVO-lite/steering pass (§12) is the eventual real fix. Still
+   pending: an in-browser playtest of harvester flow around chokepoints on the new
+   campaign maps (Iron Pass, Siege Line, Black Dawn corridors).
 
 ### Combat and economy feedback
 
