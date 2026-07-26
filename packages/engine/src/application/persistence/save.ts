@@ -17,6 +17,7 @@ import type { AIPlayerConfig } from '../ai/ai-director.js';
 import type { MatchStateSnapshot } from '../match/match-state.js';
 import type { FirstContactConfig, FirstContactPhase } from '../scenario/first-contact.js';
 import type { IronPassConfig, IronPassPhase } from '../scenario/iron-pass.js';
+import type { SiegeLineConfig, SiegeLinePhase } from '../scenario/siege-line.js';
 
 interface ComponentBlock {
   name: string;
@@ -48,6 +49,10 @@ export interface SaveState {
   ironPass?: {
     config: IronPassConfig;
     state: { phase: IronPassPhase };
+  };
+  siegeLine?: {
+    config: SiegeLineConfig;
+    state: { phase: SiegeLinePhase; wavesDispatched: number };
   };
 }
 
@@ -95,6 +100,12 @@ export function saveSimulation(
         state: sim.ironPass.serialize(),
       },
     }),
+    ...(sim.siegeLine && {
+      siegeLine: {
+        config: sim.siegeLine.config,
+        state: sim.siegeLine.serialize(),
+      },
+    }),
   };
 }
 
@@ -115,6 +126,7 @@ export function loadSimulation(save: SaveState): Simulation {
     ...(save.match && { matchPlayers: save.match.players }),
     ...(save.firstContact && { firstContact: save.firstContact.config }),
     ...(save.ironPass && { ironPass: save.ironPass.config }),
+    ...(save.siegeLine && { siegeLine: save.siegeLine.config }),
   });
 
   sim.world.entities.restore(save.entityManager);
@@ -134,6 +146,7 @@ export function loadSimulation(save: SaveState): Simulation {
   if (save.match && sim.match) sim.match.restore(save.match.state);
   if (save.firstContact && sim.firstContact) sim.firstContact.restore(save.firstContact.state);
   if (save.ironPass && sim.ironPass) sim.ironPass.restore(save.ironPass.state);
+  if (save.siegeLine && sim.siegeLine) sim.siegeLine.restore(save.siegeLine.state);
   return sim;
 }
 

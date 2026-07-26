@@ -98,6 +98,12 @@ export type {
   IronPassPhase,
   IronPassSnapshot,
 } from './application/scenario/iron-pass.js';
+export { SiegeLineState } from './application/scenario/siege-line.js';
+export type {
+  SiegeLineConfig,
+  SiegeLinePhase,
+  SiegeLineSnapshot,
+} from './application/scenario/siege-line.js';
 export { buildSnapshot, hashState } from './application/snapshot.js';
 export type {
   Snapshot,

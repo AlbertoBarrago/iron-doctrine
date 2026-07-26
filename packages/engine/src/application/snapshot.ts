@@ -27,6 +27,7 @@ import * as fp from '../domain/math/fixed.js';
 import type { MatchStateSnapshot } from './match/match-state.js';
 import type { FirstContactSnapshot } from './scenario/first-contact.js';
 import type { IronPassSnapshot } from './scenario/iron-pass.js';
+import type { SiegeLineSnapshot } from './scenario/siege-line.js';
 
 export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource';
 
@@ -98,7 +99,7 @@ export interface Snapshot {
   players: PlayerSnapshot[];
   fog?: FogSnapshot;
   match?: MatchStateSnapshot;
-  scenario?: FirstContactSnapshot | IronPassSnapshot;
+  scenario?: FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot;
 }
 
 export function buildSnapshot(
