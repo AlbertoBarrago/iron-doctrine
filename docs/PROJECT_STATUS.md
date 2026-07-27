@@ -43,6 +43,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
 - Building operation and construction state drive ambient animation without entering the simulation.
 - Campaign victories prioritize returning to the campaign route; defeats prioritize retrying the mission.
+- Procedural unit silhouettes, ballistic combat cues and distinct weapon audio improve battlefield readability.
 - Prettier remains the formatter; ESLint and Biome both provide diagnostics.
 - Large changes use dedicated branches and small Conventional Commits.
 
