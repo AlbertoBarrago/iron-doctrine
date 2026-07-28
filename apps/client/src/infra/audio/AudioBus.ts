@@ -18,40 +18,80 @@ export const SOUND_KINDS = [
 export type SoundKind = (typeof SOUND_KINDS)[number];
 
 export const normalizeVolume = (volume: number): number => Math.min(1, Math.max(0, volume));
+export const busGain = (volume: number, muted: boolean, scale: number): number =>
+  muted ? 0 : normalizeVolume(volume) * scale;
+
+const AMBIENT_CHORDS = [
+  [73.42, 110, 146.83], // D minor
+  [65.41, 98, 130.81], // C major
+  [58.27, 87.31, 116.54], // B-flat major
+  [65.41, 98, 130.81], // C major
+] as const;
+
+export const ambientChord = (phrase: number): readonly number[] =>
+  AMBIENT_CHORDS[((phrase % AMBIENT_CHORDS.length) + AMBIENT_CHORDS.length) %
+    AMBIENT_CHORDS.length]!;
 
 export class AudioBus {
   private ctx: AudioContext | null = null;
-  private master: GainNode | null = null;
-  private muted = false;
-  private volume = 0.7;
+  private sfxGain: GainNode | null = null;
+  private musicGain: GainNode | null = null;
+  private sfxMuted = false;
+  private sfxVolume = 0.7;
+  private musicMuted = false;
+  private musicVolume = 0.35;
+  private ambientRequested = false;
+  private ambientPhrase = 0;
+  private ambientTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly ambientSources = new Set<OscillatorNode>();
 
   private ensure(): AudioContext | null {
-    if (this.muted) return null;
     if (!this.ctx) {
       const Ctor =
         globalThis.AudioContext ??
         (globalThis as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
       if (!Ctor) return null;
       this.ctx = new Ctor();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.volume * 0.35;
-      this.master.connect(this.ctx.destination);
+      this.sfxGain = this.ctx.createGain();
+      this.musicGain = this.ctx.createGain();
+      this.updateGains();
+      this.sfxGain.connect(this.ctx.destination);
+      this.musicGain.connect(this.ctx.destination);
     }
     return this.ctx;
   }
 
   setMuted(muted: boolean): void {
-    this.muted = muted;
+    this.sfxMuted = muted;
+    this.updateGains();
   }
 
   setVolume(volume: number): void {
-    this.volume = normalizeVolume(volume);
-    if (this.master) this.master.gain.value = this.volume * 0.35;
+    this.sfxVolume = normalizeVolume(volume);
+    this.updateGains();
+  }
+
+  setMusicMuted(muted: boolean): void {
+    this.musicMuted = muted;
+    this.updateGains();
+  }
+
+  setMusicVolume(volume: number): void {
+    this.musicVolume = normalizeVolume(volume);
+    this.updateGains();
+  }
+
+  requestAmbient(): void {
+    this.ambientRequested = true;
+    if (this.ctx) this.startAmbientIfNeeded(this.ctx);
   }
 
   play(kind: SoundKind): void {
     const ctx = this.ensure();
-    if (!ctx || !this.master) return;
+    if (!ctx || !this.sfxGain) return;
+    if (ctx.state === 'suspended') void ctx.resume();
+    this.startAmbientIfNeeded(ctx);
+    if (this.sfxMuted) return;
     const now = ctx.currentTime;
     switch (kind) {
       case 'select':
@@ -82,6 +122,63 @@ export class AudioBus {
     }
   }
 
+  dispose(): void {
+    this.ambientRequested = false;
+    if (this.ambientTimer) clearTimeout(this.ambientTimer);
+    this.ambientTimer = null;
+    for (const source of this.ambientSources) source.stop();
+    this.ambientSources.clear();
+    if (this.ctx) void this.ctx.close();
+    this.ctx = null;
+    this.sfxGain = null;
+    this.musicGain = null;
+  }
+
+  private updateGains(): void {
+    if (this.sfxGain) this.sfxGain.gain.value = busGain(this.sfxVolume, this.sfxMuted, 0.35);
+    if (this.musicGain)
+      this.musicGain.gain.value = busGain(this.musicVolume, this.musicMuted, 0.16);
+  }
+
+  private startAmbientIfNeeded(ctx: AudioContext): void {
+    if (!this.ambientRequested || this.ambientTimer || !this.musicGain) return;
+    this.scheduleAmbientPhrase(ctx);
+  }
+
+  private scheduleAmbientPhrase(ctx: AudioContext): void {
+    if (!this.ambientRequested || !this.musicGain) return;
+    const now = ctx.currentTime + 0.05;
+    const duration = 9;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 520;
+    filter.Q.value = 0.6;
+    filter.connect(this.musicGain);
+
+    for (const [voice, frequency] of ambientChord(this.ambientPhrase).entries()) {
+      const oscillator = ctx.createOscillator();
+      const envelope = ctx.createGain();
+      oscillator.type = voice === 0 ? 'sine' : 'triangle';
+      oscillator.frequency.value = frequency;
+      oscillator.detune.value = voice === 2 ? 3 : 0;
+      envelope.gain.setValueAtTime(0.0001, now);
+      envelope.gain.exponentialRampToValueAtTime(voice === 0 ? 0.7 : 0.32, now + 2.2);
+      envelope.gain.setValueAtTime(voice === 0 ? 0.7 : 0.32, now + duration - 2.5);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      oscillator.connect(envelope).connect(filter);
+      oscillator.onended = () => this.ambientSources.delete(oscillator);
+      this.ambientSources.add(oscillator);
+      oscillator.start(now);
+      oscillator.stop(now + duration);
+    }
+
+    this.ambientPhrase++;
+    this.ambientTimer = setTimeout(() => {
+      this.ambientTimer = null;
+      this.scheduleAmbientPhrase(ctx);
+    }, 8_500);
+  }
+
   private blip(
     ctx: AudioContext,
     now: number,
@@ -96,7 +193,7 @@ export class AudioBus {
     gain.gain.setValueAtTime(0.0001, now);
     gain.gain.exponentialRampToValueAtTime(0.5, now + 0.005);
     gain.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-    osc.connect(gain).connect(this.master!);
+    osc.connect(gain).connect(this.sfxGain!);
     osc.start(now);
     osc.stop(now + dur);
   }
@@ -117,7 +214,7 @@ export class AudioBus {
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = cutoff;
-    src.connect(filter).connect(this.master!);
+    src.connect(filter).connect(this.sfxGain!);
     src.start(now);
   }
 }

@@ -219,6 +219,7 @@ export class GameRenderer {
         : {}),
     });
     this.bridge.start();
+    this.audio.requestAmbient();
     useGameStore.getState().setPlaying(true);
     useGameStore.getState().setMatch(null);
     useGameStore.getState().setScenario(null);
@@ -332,6 +333,14 @@ export class GameRenderer {
 
   setAudioVolume(volume: number): void {
     this.audio.setVolume(volume);
+  }
+
+  setMusicMuted(muted: boolean): void {
+    this.audio.setMusicMuted(muted);
+  }
+
+  setMusicVolume(volume: number): void {
+    this.audio.setMusicVolume(volume);
   }
 
   /** Queue a unit in the currently selected production building. */
@@ -1485,6 +1494,7 @@ export class GameRenderer {
   dispose(): void {
     this.disposed = true;
     this.bridge.dispose();
+    this.audio.dispose();
     // Only destroy Pixi if init finished; otherwise start() will tear it down itself.
     if (this.ready) this.app.destroy(true, { children: true });
   }

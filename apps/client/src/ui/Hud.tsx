@@ -93,10 +93,14 @@ interface HudProps {
   paused: boolean;
   audioMuted: boolean;
   audioVolume: number;
+  musicMuted: boolean;
+  musicVolume: number;
   onSetupChange(open: boolean): void;
   onPausedChange(paused: boolean): void;
   onAudioMutedChange(muted: boolean): void;
   onAudioVolumeChange(volume: number): void;
+  onMusicMutedChange(muted: boolean): void;
+  onMusicVolumeChange(volume: number): void;
   onQueueProduction(unit: string): void;
   onCancelProduction(): void;
   onPlaceBuilding(building: string): void;
@@ -350,6 +354,8 @@ export function Hud(props: HudProps): JSX.Element {
         <SetupOverlay
           audioMuted={props.audioMuted}
           audioVolume={props.audioVolume}
+          musicMuted={props.musicMuted}
+          musicVolume={props.musicVolume}
           assets={entityCount}
           fps={fps}
           baseOperational={baseOperational}
@@ -358,6 +364,8 @@ export function Hud(props: HudProps): JSX.Element {
           onClose={() => props.onSetupChange(false)}
           onMutedChange={props.onAudioMutedChange}
           onVolumeChange={props.onAudioVolumeChange}
+          onMusicMutedChange={props.onMusicMutedChange}
+          onMusicVolumeChange={props.onMusicVolumeChange}
         />
       ) : null}
 
@@ -795,6 +803,8 @@ function Stat({
 function SetupOverlay({
   audioMuted,
   audioVolume,
+  musicMuted,
+  musicVolume,
   assets,
   fps,
   baseOperational,
@@ -803,9 +813,13 @@ function SetupOverlay({
   onClose,
   onMutedChange,
   onVolumeChange,
+  onMusicMutedChange,
+  onMusicVolumeChange,
 }: {
   audioMuted: boolean;
   audioVolume: number;
+  musicMuted: boolean;
+  musicVolume: number;
   assets: number;
   fps: number;
   baseOperational: boolean;
@@ -814,6 +828,8 @@ function SetupOverlay({
   onClose(): void;
   onMutedChange(muted: boolean): void;
   onVolumeChange(volume: number): void;
+  onMusicMutedChange(muted: boolean): void;
+  onMusicVolumeChange(volume: number): void;
 }): JSX.Element {
   const controls = [
     ['LMB', 'Select unit'],
@@ -882,6 +898,27 @@ function SetupOverlay({
                 value={audioVolume}
                 disabled={audioMuted}
                 onChange={(event) => onVolumeChange(Number(event.target.value))}
+              />
+            </label>
+            <label className="setup-toggle">
+              <input
+                type="checkbox"
+                checked={!musicMuted}
+                onChange={(event) => onMusicMutedChange(!event.target.checked)}
+              />
+              <span>Ambient music enabled</span>
+            </label>
+            <label className="setup-volume">
+              <span>Music volume</span>
+              <strong>{Math.round(musicVolume * 100)}%</strong>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={musicVolume}
+                disabled={musicMuted}
+                onChange={(event) => onMusicVolumeChange(Number(event.target.value))}
               />
             </label>
           </section>

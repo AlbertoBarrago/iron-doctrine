@@ -127,10 +127,17 @@ function Game({
   const [quitConfirmationOpen, setQuitConfirmationOpen] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.7);
+  const [musicMuted, setMusicMuted] = useState(false);
+  const [musicVolume, setMusicVolume] = useState(0.35);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
   const minimapCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const initialAudio = useRef({ muted: audioMuted, volume: audioVolume });
+  const initialAudio = useRef({
+    muted: audioMuted,
+    volume: audioVolume,
+    musicMuted,
+    musicVolume,
+  });
   const completionReported = useRef(false);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
@@ -146,6 +153,8 @@ function Game({
       renderer.attachMinimap(minimapCanvasRef.current);
       renderer.setAudioMuted(initialAudio.current.muted);
       renderer.setAudioVolume(initialAudio.current.volume);
+      renderer.setMusicMuted(initialAudio.current.musicMuted);
+      renderer.setMusicVolume(initialAudio.current.musicVolume);
     });
     return () => {
       renderer.dispose();
@@ -228,6 +237,8 @@ function Game({
         paused={manualPaused}
         audioMuted={audioMuted}
         audioVolume={audioVolume}
+        musicMuted={musicMuted}
+        musicVolume={musicVolume}
         onSetupChange={(open) => {
           setSetupOpen(open);
         }}
@@ -239,6 +250,14 @@ function Game({
         onAudioVolumeChange={(volume) => {
           setAudioVolume(volume);
           rendererRef.current?.setAudioVolume(volume);
+        }}
+        onMusicMutedChange={(muted) => {
+          setMusicMuted(muted);
+          rendererRef.current?.setMusicMuted(muted);
+        }}
+        onMusicVolumeChange={(volume) => {
+          setMusicVolume(volume);
+          rendererRef.current?.setMusicVolume(volume);
         }}
         onQueueProduction={(unit) => rendererRef.current?.queueProduction(unit)}
         onCancelProduction={() => rendererRef.current?.cancelProduction()}
