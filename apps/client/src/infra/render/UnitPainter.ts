@@ -43,10 +43,13 @@ export function drawUnit(
       drawScout(graphics, sx, sy, radius, entity.angle, color);
       return;
     case 'engineer':
-      drawInfantry(graphics, sx, sy, radius, entity.angle, color, true, presentation);
+      drawInfantry(graphics, sx, sy, radius, entity.angle, color, 'engineer', presentation);
+      return;
+    case 'medic':
+      drawInfantry(graphics, sx, sy, radius, entity.angle, color, 'medic', presentation, entity);
       return;
     default:
-      drawInfantry(graphics, sx, sy, radius, entity.angle, color, false, presentation);
+      drawInfantry(graphics, sx, sy, radius, entity.angle, color, 'rifleman', presentation);
   }
 }
 
@@ -275,8 +278,9 @@ function drawInfantry(
   radius: number,
   angle: number,
   color: number,
-  engineer: boolean,
+  role: 'rifleman' | 'engineer' | 'medic',
   presentation: UnitPresentation,
+  entity?: EntitySnapshot,
 ): void {
   const motion = infantryMotion(
     presentation.animationTime + sx * 0.013 + sy * 0.007,
@@ -316,7 +320,7 @@ function drawInfantry(
     { x: -radius * 0.42, y: radius * 0.42 },
   ]);
   graphics
-    .fill({ color: shadeColor(color, engineer ? 0.83 : 0.92) })
+    .fill({ color: shadeColor(color, role === 'engineer' ? 0.83 : 0.92) })
     .stroke({ width: 1.25, color: 0x080b08 });
 
   const leftShoulder = localToScreen(bodyX, bodyY, angle, radius * 0.12, -radius * 0.58);
@@ -335,7 +339,7 @@ function drawInfantry(
     .lineTo(helmetBandEnd.x, helmetBandEnd.y)
     .stroke({ width: Math.max(1, radius * 0.11), color: MATERIAL.factionRed });
 
-  if (engineer) {
+  if (role === 'engineer') {
     const toolMotion = engineerToolMotion(presentation.animationTime, presentation.moving);
     const pack = localToScreen(bodyX, bodyY, angle, -radius * 0.48, 0);
     graphics
@@ -361,6 +365,38 @@ function drawInfantry(
       graphics
         .circle(toolEnd.x, toolEnd.y, radius * (0.12 + toolMotion.pulse * 0.12))
         .fill({ color: 0xf5d675, alpha: toolMotion.pulse * 0.7 });
+    }
+    return;
+  }
+
+  if (role === 'medic') {
+    const treating = entity?.healingTarget !== undefined;
+    const treatmentPulse = treating ? (Math.sin(presentation.animationTime * 10) + 1) / 2 : 0;
+    const bag = localToScreen(bodyX, bodyY, angle, -radius * 0.48, 0);
+    graphics
+      .rect(bag.x - radius * 0.3, bag.y - radius * 0.38, radius * 0.6, radius * 0.76)
+      .fill({ color: 0xd0c9a6 })
+      .stroke({ width: 1, color: MATERIAL.armorDark });
+    graphics
+      .rect(bag.x - radius * 0.07, bag.y - radius * 0.24, radius * 0.14, radius * 0.48)
+      .rect(bag.x - radius * 0.24, bag.y - radius * 0.07, radius * 0.48, radius * 0.14)
+      .fill({ color: 0x9f2f2a });
+
+    const injector = localToScreen(
+      bodyX,
+      bodyY,
+      angle,
+      radius * (0.82 + treatmentPulse * 0.18),
+      -radius * 0.42,
+    );
+    graphics
+      .moveTo(weaponStart.x, weaponStart.y)
+      .lineTo(injector.x, injector.y)
+      .stroke({ width: Math.max(1.5, radius * 0.16), color: 0xb9c5b0 });
+    if (treating) {
+      graphics
+        .circle(injector.x, injector.y, radius * (0.12 + treatmentPulse * 0.18))
+        .stroke({ width: 1.5, color: 0x8fd18b, alpha: 0.6 + treatmentPulse * 0.35 });
     }
     return;
   }

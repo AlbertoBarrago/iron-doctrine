@@ -37,7 +37,7 @@ const BUILDABLE_STRUCTURES = [
   },
   {
     id: 'barracks',
-    unlocks: 'Riflemen · Engineers',
+    unlocks: 'Riflemen · Engineers · Medics',
   },
   {
     id: 'factory',

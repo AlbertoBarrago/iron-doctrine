@@ -11,6 +11,7 @@ describe('battlefield profiles', () => {
     expect(Object.keys(UNIT_PROFILES)).toEqual([
       'rifleman',
       'engineer',
+      'medic',
       'scout',
       'tank',
       'harvester',

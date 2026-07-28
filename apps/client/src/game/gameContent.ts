@@ -24,6 +24,12 @@ export const UNIT_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
     description: 'Unarmed specialist intended for technical battlefield objectives.',
     tacticalNote: 'Keep protected behind combat units.',
   },
+  medic: {
+    label: 'Medic',
+    role: 'Infantry support',
+    description: 'Unarmed field specialist who automatically treats nearby allied infantry.',
+    tacticalNote: 'Keep close to wounded squads and protected from direct fire.',
+  },
   scout: {
     label: 'Scout buggy',
     role: 'Fast reconnaissance',
@@ -72,7 +78,7 @@ export const BUILDING_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
   barracks: {
     label: 'Barracks',
     role: 'Infantry production',
-    description: 'Trains riflemen and battlefield engineers.',
+    description: 'Trains riflemen, battlefield engineers and Medics.',
     tacticalNote: 'The fastest way to establish an inexpensive fighting force.',
   },
   factory: {
