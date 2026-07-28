@@ -1,9 +1,34 @@
 import { describe, expect, it } from 'vitest';
 import { Simulation } from '../../simulation.js';
 import { loadSimulation, saveSimulation } from '../../persistence/save.js';
+import { Health, Owner } from '../../../domain/components/index.js';
 import * as fp from '../../../domain/math/fixed.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
+
+function activeSiege(): Simulation {
+  const sim = new Simulation({
+    seed: 7,
+    matchPlayers: [0, 1],
+    siegeLine: {
+      hostilePlayer: 1,
+      waveIntervalTicks: 4,
+      waveCount: 1,
+      spawnPoints: [at(20, 0)],
+      targetAt: at(0, 0),
+    },
+  });
+  sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: at(-8, 0) });
+  sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 1, at: at(8, 0) });
+  sim.step();
+  return sim;
+}
+
+function destroyHostileCommand(sim: Simulation): void {
+  for (const entity of sim.world.query(Health, Owner)) {
+    if (sim.world.get(entity, Owner)!.player === 1) sim.world.get(entity, Health)!.hp = 0;
+  }
+}
 
 describe('siege line scenario', () => {
   it('dispatches an escalating wave every interval and orders it toward the held position', () => {
@@ -70,5 +95,31 @@ describe('siege line scenario', () => {
       phase: 'holding',
       objective: expect.stringContaining('2 assault waves'),
     });
+  });
+
+  it('does not award an early victory when the hostile command is rushed', () => {
+    const sim = activeSiege();
+    destroyHostileCommand(sim);
+    sim.step();
+
+    expect(sim.snapshot().scenario).toMatchObject({
+      phase: 'holding',
+      objective: expect.stringContaining('before counter-attacking'),
+    });
+    expect(sim.snapshot().match).toEqual({ status: 'playing', winner: null });
+
+    while (sim.snapshot().scenario?.phase === 'holding') sim.step();
+    expect(sim.snapshot().match).toEqual({ status: 'finished', winner: 0 });
+  });
+
+  it('preserves the early-victory gate across save and load', () => {
+    const sim = activeSiege();
+    destroyHostileCommand(sim);
+    sim.step();
+
+    const loaded = loadSimulation(saveSimulation(sim, 7));
+    expect(loaded.snapshot().match).toEqual({ status: 'playing', winner: null });
+    loaded.step();
+    expect(loaded.snapshot().match).toEqual({ status: 'playing', winner: null });
   });
 });

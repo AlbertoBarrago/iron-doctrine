@@ -31,7 +31,7 @@ export class SiegeLineState {
       const remaining = this.config.waveCount - this.wavesDispatched;
       return {
         phase: this.phase,
-        objective: `Hold the line — ${remaining} assault wave${remaining === 1 ? '' : 's'} incoming`,
+        objective: `Hold the line — survive ${remaining} assault wave${remaining === 1 ? '' : 's'} before counter-attacking`,
       };
     }
     return { phase: this.phase, objective: 'Push out and destroy the hostile command' };

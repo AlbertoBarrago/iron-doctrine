@@ -116,7 +116,14 @@ const defaultSystems = (d: Deps): System[] => [
   createCombatSystem(d.economy),
   ProjectileSystem,
   createHealthSystem(d.grid),
-  ...(d.match ? [createMatchSystem(d.match)] : []),
+  ...(d.match
+    ? [
+        createMatchSystem(
+          d.match,
+          d.siegeLine ? () => d.siegeLine!.phase === 'counter-attack' : undefined,
+        ),
+      ]
+    : []),
   createFogSystem(d.fog, d.teamOf),
 ];
 

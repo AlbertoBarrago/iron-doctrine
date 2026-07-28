@@ -44,7 +44,7 @@ export class MatchState {
     this.winner = winner;
   }
 
-  update(world: World): void {
+  update(world: World, canFinish = true): void {
     if (this.isFinished) return;
     const alive = this.players.filter((player) => hasObjective(world, player));
 
@@ -53,17 +53,17 @@ export class MatchState {
       return;
     }
 
-    if (alive.length > 1) return;
+    if (alive.length > 1 || !canFinish) return;
     this.status = 'finished';
     this.winner = alive[0] ?? null;
   }
 }
 
-export function createMatchSystem(match: MatchState): System {
+export function createMatchSystem(match: MatchState, canFinish: () => boolean = () => true): System {
   return {
     name: 'MatchSystem',
     update(world: World): void {
-      match.update(world);
+      match.update(world, canFinish());
     },
   };
 }
