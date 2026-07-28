@@ -180,9 +180,10 @@ narrative for those are not yet defined.
 5. Add maps designed around scouting, expansion and defensible terrain.
 6. Run a browser playtest pass at common desktop resolutions.
 7. Browser-playtest explored fog readability, scout recognition and engineer idle motion together.
-8. Tune the procedural ambient score after playtest feedback found it too dark and slow;
-   retain its independent mute/volume controls and add more forward motion without turning
-   the later adaptive-combat milestone into part of this pass.
+8. Browser-playtest the retuned procedural score: its higher-register minor/major progression,
+   six-second phrases and restrained pulse respond to feedback that the first pass felt too
+   dark and slow. Independent mute/volume controls remain unchanged; adaptive combat intensity
+   is still a later milestone.
 
 ## Session close procedure
 
