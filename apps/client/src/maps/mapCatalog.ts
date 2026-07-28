@@ -95,6 +95,11 @@ export const SIEGE_LINE_MAP: MapDef = {
   width: 96,
   height: 96,
   cellSize: 1,
+  environment: {
+    version: MAP_ENVIRONMENT_VERSION,
+    biome: 'temperate',
+    seed: 404,
+  },
   blocked: siegeLineBlocked(),
   resources: [
     { x: 12, y: 30, amount: 8000 },
@@ -125,6 +130,11 @@ export const BLACK_DAWN_MAP: MapDef = {
   width: 96,
   height: 96,
   cellSize: 1,
+  environment: {
+    version: MAP_ENVIRONMENT_VERSION,
+    biome: 'mediterranean',
+    seed: 1984,
+  },
   blocked: blackDawnBlocked(),
   resources: [
     { x: 16, y: 30, amount: 8000 },

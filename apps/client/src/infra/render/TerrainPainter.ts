@@ -51,6 +51,8 @@ export interface TerrainSample {
   scale: number;
 }
 
+export type WarRemains = 'none' | 'shells' | 'bones' | 'wreckage';
+
 /**
  * Stable cosmetic sampling. It deliberately uses integer hashing so identical map
  * metadata produces the same battlefield without entering authoritative simulation.
@@ -65,6 +67,21 @@ export function terrainSample(seed: number, x: number, y: number): TerrainSample
     rotation: (((hash >>> 13) & 255) / 255) * Math.PI * 2,
     scale: 0.72 + (((hash >>> 21) & 31) / 31) * 0.46,
   };
+}
+
+/** Sparse presentation-only remains. Traversable cells always stay visually clear. */
+export function warRemainsSample(
+  seed: number,
+  x: number,
+  y: number,
+  blocked: boolean,
+): WarRemains {
+  if (!blocked) return 'none';
+  const roll = terrainHash(seed ^ 0x6d2b79f5, x, y) & 127;
+  if (roll < 2) return 'shells';
+  if (roll === 2) return 'bones';
+  if (roll === 3) return 'wreckage';
+  return 'none';
 }
 
 export function mapEnvironment(map: MapDef): MapEnvironment {
@@ -98,6 +115,7 @@ export class TerrainPainter {
         const ground = new Graphics();
         const details = new Graphics();
         const cliffs = new Graphics();
+        const remains = new Graphics();
         const maxY = Math.min(map.height, chunkY + CHUNK_CELLS);
         const maxX = Math.min(map.width, chunkX + CHUNK_CELLS);
 
@@ -117,13 +135,22 @@ export class TerrainPainter {
             const screenX = left + x * cellPixels;
             const screenY = top + y * cellPixels;
             if (blocked.has(`${x}:${y}`)) {
+              const rockSample = terrainSample(environment.seed ^ 0x51f15e, x, y);
               drawCliffCell(
                 cliffs,
                 screenX,
                 screenY,
                 cellPixels,
                 palette,
-                terrainSample(environment.seed ^ 0x51f15e, x, y),
+                rockSample,
+              );
+              drawWarRemains(
+                remains,
+                screenX + cellPixels / 2,
+                screenY + cellPixels / 2,
+                cellPixels,
+                rockSample,
+                warRemainsSample(environment.seed, x, y, true),
               );
               continue;
             }
@@ -138,7 +165,7 @@ export class TerrainPainter {
           }
         }
 
-        this.container.addChild(ground, details, cliffs);
+        this.container.addChild(ground, details, cliffs, remains);
       }
     }
   }
@@ -196,18 +223,81 @@ function drawCliffCell(
   palette: TerrainPalette,
   sample: TerrainSample,
 ): void {
-  const inset = size * (0.06 + (sample.scale - 0.72) * 0.04);
+  const centerX = x + size / 2;
+  const centerY = y + size / 2;
+  const inset = size * (0.05 + (sample.scale - 0.72) * 0.04);
+  const variation = (sample.scale - 0.95) * size * 0.14;
   graphics
-    .rect(x + size * 0.12, y + size * 0.16, size * 0.92, size * 0.92)
+    .ellipse(centerX + size * 0.09, centerY + size * 0.12, size * 0.54, size * 0.48)
     .fill({ color: palette.cliffShadow, alpha: 0.72 })
-    .rect(x + inset, y + inset, size - inset * 2, size - inset * 2)
-    .fill({ color: palette.stone })
-    .moveTo(x + inset, y + inset)
-    .lineTo(x + size - inset, y + inset)
-    .lineTo(x + size * 0.72, y + size * 0.38)
-    .lineTo(x + size * 0.18, y + size * 0.46)
+    .moveTo(x + inset, y + size * (0.28 + variation / size))
+    .lineTo(x + size * 0.25, y + inset)
+    .lineTo(x + size * 0.72, y + inset * 0.8)
+    .lineTo(x + size - inset, y + size * 0.32)
+    .lineTo(x + size * 0.9, y + size * 0.8)
+    .lineTo(x + size * 0.42, y + size - inset)
+    .lineTo(x + inset * 0.8, y + size * 0.68)
     .closePath()
-    .fill({ color: palette.stoneLight, alpha: 0.52 });
+    .fill({ color: palette.stone })
+    .moveTo(x + size * 0.18, y + size * 0.3)
+    .lineTo(x + size * 0.7, y + size * 0.12)
+    .lineTo(x + size * 0.82, y + size * 0.36)
+    .lineTo(x + size * 0.38, y + size * 0.5)
+    .closePath()
+    .fill({ color: palette.stoneLight, alpha: 0.48 })
+    .circle(
+      centerX + Math.cos(sample.rotation) * size * 0.2,
+      centerY + Math.sin(sample.rotation) * size * 0.2,
+      size * (0.13 + sample.scale * 0.04),
+    )
+    .fill({ color: palette.stoneLight, alpha: 0.32 });
+}
+
+function drawWarRemains(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  sample: TerrainSample,
+  remains: WarRemains,
+): void {
+  if (remains === 'none') return;
+  const cos = Math.cos(sample.rotation);
+  const sin = Math.sin(sample.rotation);
+  if (remains === 'shells') {
+    for (let index = -1; index <= 1; index++) {
+      graphics
+        .rect(x + cos * index * size * 0.13 - size * 0.035, y + sin * index * size * 0.13, size * 0.07, size * 0.2)
+        .fill({ color: 0x8f7745 })
+        .stroke({ width: 1, color: 0x332d20 });
+    }
+    return;
+  }
+  if (remains === 'bones') {
+    graphics
+      .moveTo(x - size * 0.25, y - size * 0.18)
+      .lineTo(x + size * 0.24, y + size * 0.2)
+      .moveTo(x - size * 0.22, y + size * 0.2)
+      .lineTo(x + size * 0.24, y - size * 0.18)
+      .stroke({ width: Math.max(1.5, size * 0.08), color: 0xc6bb91 })
+      .circle(x, y, size * 0.14)
+      .fill({ color: 0xb7aa80 })
+      .circle(x - size * 0.05, y - size * 0.02, size * 0.025)
+      .circle(x + size * 0.05, y - size * 0.02, size * 0.025)
+      .fill({ color: 0x29271f });
+    return;
+  }
+  graphics
+    .moveTo(x - size * 0.34, y + size * 0.18)
+    .lineTo(x - size * 0.12, y - size * 0.25)
+    .lineTo(x + size * 0.33, y - size * 0.14)
+    .lineTo(x + size * 0.18, y + size * 0.28)
+    .closePath()
+    .fill({ color: 0x323832 })
+    .stroke({ width: 1.5, color: 0x141814 })
+    .moveTo(x - size * 0.1, y - size * 0.2)
+    .lineTo(x + cos * size * 0.5, y + sin * size * 0.5)
+    .stroke({ width: Math.max(1, size * 0.055), color: 0x77745e });
 }
 
 function terrainHash(seed: number, x: number, y: number): number {

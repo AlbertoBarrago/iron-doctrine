@@ -25,6 +25,36 @@ function validMap(name: string) {
   return map;
 }
 
+function spawnsAreConnected(map: typeof IRON_PASS_MAP): boolean {
+  const [start, goal] = map.spawns;
+  if (!start || !goal) return false;
+  const blocked = new Set(map.blocked.map(([x, y]) => `${x}:${y}`));
+  const visited = new Set([`${start.x}:${start.y}`]);
+  const queue = [[start.x, start.y] as const];
+  for (let cursor = 0; cursor < queue.length; cursor++) {
+    const [x, y] = queue[cursor]!;
+    if (x === goal.x && y === goal.y) return true;
+    for (const [dx, dy] of [[-1, 0], [1, 0], [0, -1], [0, 1]] as const) {
+      const nextX = x + dx;
+      const nextY = y + dy;
+      const key = `${nextX}:${nextY}`;
+      if (
+        nextX < 0 ||
+        nextY < 0 ||
+        nextX >= map.width ||
+        nextY >= map.height ||
+        blocked.has(key) ||
+        visited.has(key)
+      ) {
+        continue;
+      }
+      visited.add(key);
+      queue.push([nextX, nextY]);
+    }
+  }
+  return false;
+}
+
 describe('local map catalog', () => {
   it('gives both bases a sustainable home economy plus contested central ore', () => {
     expect(DEFAULT_MAP.resources).toHaveLength(7);
@@ -56,6 +86,7 @@ describe('local map catalog', () => {
     expect(isBlocked(friendly!.x, friendly!.y)).toBe(false);
     expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
     expect(isBlocked(48, 48)).toBe(false);
+    expect(spawnsAreConnected(IRON_PASS_MAP)).toBe(true);
   });
 
   it('gives Siege Line a defensible corridor near the friendly spawn', () => {
@@ -68,6 +99,8 @@ describe('local map catalog', () => {
     expect(isBlocked(friendly!.x, friendly!.y)).toBe(false);
     expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
     expect(isBlocked(32, 48)).toBe(false);
+    expect(SIEGE_LINE_MAP.environment).toMatchObject({ biome: 'temperate', seed: 404 });
+    expect(spawnsAreConnected(SIEGE_LINE_MAP)).toBe(true);
   });
 
   it('gives Black Dawn a fortified gate guarding the hostile stronghold', () => {
@@ -80,6 +113,8 @@ describe('local map catalog', () => {
     expect(isBlocked(friendly!.x, friendly!.y)).toBe(false);
     expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
     expect(isBlocked(72, 48)).toBe(false);
+    expect(BLACK_DAWN_MAP.environment).toMatchObject({ biome: 'mediterranean', seed: 1984 });
+    expect(spawnsAreConnected(BLACK_DAWN_MAP)).toBe(true);
   });
 
   it('saves maps and replaces maps with the same name', () => {
