@@ -24,11 +24,12 @@ First Contact is a playable vertical slice:
 - restart a finished match or return cleanly to the main menu;
 - launch missions from a classic 1990s-inspired RTS command menu;
 - navigate with mouse, keyboard and tactical radar;
+- assign and recall nine local control groups, with army composition and selected counts in the HUD;
 - pause with `P`, quit to the main menu with `Q` or open the in-game Setup panel.
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 230 automated tests;
+- 238 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -48,6 +49,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Resource nodes remain traversable presentation/economy entities and never stamp navigation obstacles.
 - Explicit group attacks preserve one target and assign armed units deterministic, multi-ring
   engagement slots; selected unarmed support units stop instead of entering the kill zone.
+- Control groups are local presentation state: `Ctrl+1…9` assigns owned units, `1…9` recalls,
+  a quick second recall centers the camera, and destroyed units are pruned automatically.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
 - Map environment metadata is presentation-only, backwards-compatible and versioned independently

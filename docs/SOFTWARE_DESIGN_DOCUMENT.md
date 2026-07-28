@@ -717,6 +717,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 30  | Battlefield life and cover    | authored rock formations, tactical blockers, seeded war remains, cosmetic aircraft flyovers and non-blocking ambient fauna                                                                                 | planned                                                |
 | 31  | Infantry condition and morale | deterministic steady/shaken/panicked/sick states, readable behavioral effects and fast Medic stabilization actions                                                                                         | planned                                                |
 | 32  | HUD build iconography         | production-quality unit/building icons in the build and production queue UI, once the faction sprite pass defines how tanks, vehicles and helicopters read at HUD scale                                   | planned                                                |
+| 33  | Army control HUD              | nine local control groups with assign/recall/focus shortcuts, clickable group chips and owned-force composition with selected counts                                                                       | ✅ done                                                |
 
 ---
 
