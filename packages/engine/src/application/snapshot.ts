@@ -21,6 +21,7 @@ import {
   Attack,
   ResourceCarrier,
   Harvest,
+  Healing,
 } from '../domain/components/index.js';
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
@@ -55,6 +56,8 @@ export interface EntitySnapshot {
   /** Presentation-only combat timing used for muzzle and tracer feedback. */
   weaponCooldownLeft?: number;
   attackTarget?: number;
+  /** Active field-treatment target, used only to animate the Medic. */
+  healingTarget?: number;
   /** Present for harvesters so presentation can render their authoritative cargo. */
   cargo?: CargoSnapshot;
   /** Present for finite ore fields so the UI can display the authoritative remainder. */
@@ -129,6 +132,7 @@ export function buildSnapshot(
     const construction = world.get(e, Construction);
     const weapon = world.get(e, Weapon);
     const attack = world.get(e, Attack);
+    const healing = world.get(e, Healing);
     const carrier = world.get(e, ResourceCarrier);
     const harvest = world.get(e, Harvest);
     const resource = world.get(e, ResourceNode);
@@ -167,6 +171,7 @@ export function buildSnapshot(
       }),
       ...(weapon && { weaponCooldownLeft: weapon.cooldownLeft }),
       ...(attack && attack.target !== -1 && { attackTarget: attack.target }),
+      ...(healing && healing.target !== -1 && { healingTarget: healing.target }),
       ...(carrier &&
         harvest && {
           cargo: {

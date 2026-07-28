@@ -17,6 +17,7 @@ import { createVehicleCrushSystem } from './systems/vehicle-crush.js';
 import { createCombatSystem } from './systems/combat.js';
 import { createProjectileSystem } from './systems/projectile.js';
 import { createHealthSystem } from './systems/health.js';
+import { HealingSystem } from './systems/healing-system.js';
 import { createResourceSystem } from './systems/resource-system.js';
 import { createEnergySystem } from './systems/energy-system.js';
 import { createFogSystem, type TeamResolver } from './systems/fog-system.js';
@@ -118,6 +119,7 @@ const defaultSystems = (d: Deps): System[] => [
   createVehicleCrushSystem(d.teamOf, d.metrics),
   createCombatSystem(d.economy, d.metrics),
   createProjectileSystem(d.metrics),
+  HealingSystem,
   createHealthSystem(d.grid, d.metrics),
   ...(d.match
     ? [

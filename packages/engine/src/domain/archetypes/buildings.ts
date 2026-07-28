@@ -63,7 +63,7 @@ export const BUILDING_STATS: Readonly<Record<string, BuildingStats>> = {
     cost: 600,
     buildTicks: 120,
     power: -20,
-    produces: ['rifleman', 'engineer'],
+    produces: ['rifleman', 'engineer', 'medic'],
   },
   factory: {
     hp: 1000,

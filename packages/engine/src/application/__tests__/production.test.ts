@@ -11,6 +11,8 @@ import {
   ResourceNode,
   Selectable,
   Vision,
+  Healing,
+  Weapon,
 } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
@@ -125,6 +127,28 @@ describe('ProductionSystem', () => {
     });
     expect(fp.toFloat(sim.world.get(scout!, Movement)!.speed)).toBe(6);
     expect(fp.toFloat(sim.world.get(scout!, Vision)!.radius)).toBe(11);
+  });
+
+  it('trains an unarmed Medic from the barracks', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnBuilding', building: 'barracks', player: 0, at: at(0, 0) });
+    sim.step();
+    const barracks = sim.world.query(Building, Owner)[0]!;
+
+    sim.enqueue({ type: 'queueProduction', building: barracks, unit: 'medic' });
+    for (let tick = 0; tick < 100; tick++) sim.step();
+
+    const medic = sim.world
+      .query(UnitType)
+      .find((entity) => sim.world.get(entity, UnitType)?.kind === 'medic');
+    expect(medic).toBeDefined();
+    expect(sim.world.has(medic!, Healing)).toBe(true);
+    expect(sim.world.has(medic!, Weapon)).toBe(false);
+    expect(sim.snapshot().entities.find((entity) => entity.id === medic)).toMatchObject({
+      hp: 75,
+      maxHp: 75,
+      unitType: 'medic',
+    });
   });
 
   it('sends a finished unit to the rally point', () => {

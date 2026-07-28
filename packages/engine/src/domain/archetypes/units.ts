@@ -18,6 +18,7 @@ import {
   Vision,
   ResourceCarrier,
   Harvest,
+  Healing,
 } from '../components/index.js';
 import * as fp from '../math/fixed.js';
 import { zero, type Vec2 } from '../math/vec2.js';
@@ -70,6 +71,15 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
     vision: 7,
     cost: 500,
     buildTicks: 100,
+  },
+  medic: {
+    hp: 75,
+    movementClass: 'infantry',
+    speed: 3,
+    radius: 0.5,
+    vision: 7,
+    cost: 300,
+    buildTicks: 80,
   },
   scout: {
     hp: 120,
@@ -131,6 +141,15 @@ export function spawnUnit(world: World, unit: string, player: number, at: Vec2):
   if (unit === 'harvester') {
     world.add(e, ResourceCarrier, { amount: 0, capacity: 200 });
     world.add(e, Harvest, { phase: 'idle', node: -1, gatherLeft: 0 });
+  }
+  if (unit === 'medic') {
+    world.add(e, Healing, {
+      target: -1,
+      range: fp.fromInt(3),
+      amount: 10,
+      cooldownTicks: 20,
+      cooldownLeft: 0,
+    });
   }
   return e;
 }

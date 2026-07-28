@@ -124,6 +124,22 @@ export const Attack = defineComponent<AttackData>('Attack', () => ({
   formationIndex: 0,
 }));
 
+/** Automatic field-treatment state for an unarmed Medic. */
+export interface HealingData {
+  target: number;
+  range: fp.Fixed;
+  amount: number;
+  cooldownTicks: number;
+  cooldownLeft: number;
+}
+export const Healing = defineComponent<HealingData>('Healing', () => ({
+  target: -1,
+  range: fp.fromInt(3),
+  amount: 10,
+  cooldownTicks: 20,
+  cooldownLeft: 0,
+}));
+
 /** A harvestable resource deposit (ore field) with a finite amount remaining. */
 export interface ResourceNodeData {
   amount: number;

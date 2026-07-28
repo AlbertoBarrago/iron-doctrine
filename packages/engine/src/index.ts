@@ -18,6 +18,7 @@ export { createPathfindingSystem } from './application/systems/pathfinding-syste
 export { createFlowMovementSystem, FlowFieldCache } from './application/systems/flow-movement.js';
 export { createCombatSystem } from './application/systems/combat.js';
 export { ProjectileSystem, createProjectileSystem } from './application/systems/projectile.js';
+export { HealingSystem } from './application/systems/healing-system.js';
 export { createHealthSystem } from './application/systems/health.js';
 export { createProductionSystem } from './application/systems/production-system.js';
 export { ConstructionSystem } from './application/systems/construction-system.js';
