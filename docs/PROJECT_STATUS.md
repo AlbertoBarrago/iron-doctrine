@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 238 automated tests;
+- 240 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -155,8 +155,9 @@ All five operations of the First Contact campaign arc are implemented:
   triggered when the player crosses the pass. A restrained procedural ambient score now supports
   exploration and base-building without requiring licensed assets.
 - Operation 04 — Siege Line: browser-playtested and completed again on 2026-07-28 without
-  blockers. General playability is good, but an early aggressive push can end the operation
-  too quickly and needs a pacing/defensive-response tuning pass. A dedicated runtime
+  blockers. General playability is good. An early aggressive push previously ended the operation
+  before its assault waves; match completion is now gated until the hold phase finishes, without
+  making the hostile command invulnerable. This correction still needs browser verification. A dedicated runtime
   mission (`siege_line`) with an authored defensible-corridor map and escalating scripted
   assault waves the player must hold against before counter-attacking the hostile command.
   Difficulty/pacing tuning is still expected as a follow-up, but the base loop holds up.
