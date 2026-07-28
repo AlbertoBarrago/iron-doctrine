@@ -16,6 +16,7 @@ import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron
 import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
+import { TerrainPainter } from './TerrainPainter.js';
 import { drawUnit } from './UnitPainter.js';
 import { drawBuilding, type WallConnections } from './BuildingPainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
@@ -56,7 +57,7 @@ export class GameRenderer {
   private readonly app = new Application();
   private readonly camera: Camera;
   private readonly world = new Container();
-  private readonly grid = new Graphics();
+  private readonly terrain = new TerrainPainter();
   private readonly units = new Graphics();
   private readonly fogGfx = new Graphics();
   private readonly overlay = new Graphics();
@@ -148,7 +149,8 @@ export class GameRenderer {
     this.ready = true;
     this.container.appendChild(this.app.canvas);
 
-    this.app.stage.addChild(this.grid, this.world);
+    this.terrain.build(config.map);
+    this.app.stage.addChild(this.terrain.container, this.world);
     this.world.addChild(this.units);
     this.app.stage.addChild(this.particles.gfx, this.fogGfx, this.overlay);
 
@@ -411,7 +413,7 @@ export class GameRenderer {
     this.updatePan(dtMs);
 
     const { prev, curr, at } = this.bridge.latest;
-    this.drawGrid();
+    this.terrain.updateView(this.camera, this.app.renderer.width, this.app.renderer.height);
     this.units.clear();
     this.particles.update(dtMs / 1000);
     if (prev && curr) {
@@ -672,61 +674,6 @@ export class GameRenderer {
         .rect(sx - size, sy + size + 5, size * 2 * scenario.progress, 4)
         .fill({ color: 0x78d46a });
     }
-  }
-
-  private drawGrid(): void {
-    this.grid.clear();
-    const w = this.app.renderer.width;
-    const h = this.app.renderer.height;
-    this.grid.rect(0, 0, w, h).fill({ color: 0x2d3827 });
-
-    // Deterministic cosmetic terrain. This never enters authoritative sim state.
-    const tileWorld = 8;
-    const topLeft = this.camera.screenToWorld(0, 0);
-    const bottomRight = this.camera.screenToWorld(w, h);
-    const minX = Math.floor(topLeft.wx / tileWorld) - 1;
-    const maxX = Math.ceil(bottomRight.wx / tileWorld) + 1;
-    const minY = Math.floor(topLeft.wy / tileWorld) - 1;
-    const maxY = Math.ceil(bottomRight.wy / tileWorld) + 1;
-    for (let ty = minY; ty <= maxY; ty++) {
-      for (let tx = minX; tx <= maxX; tx++) {
-        const hash = Math.imul(tx, 73856093) ^ Math.imul(ty, 19349663);
-        if ((hash & 3) === 0) continue;
-        const screen = this.camera.worldToScreen(tx * tileWorld, ty * tileWorld);
-        const size = tileWorld * this.camera.scale;
-        const color = (hash & 1) === 0 ? 0x35402c : 0x293323;
-        this.grid.rect(screen.sx, screen.sy, size + 1, size + 1).fill({ color, alpha: 0.38 });
-        if ((hash & 7) === 3) {
-          this.grid
-            .circle(screen.sx + size * 0.55, screen.sy + size * 0.45, size * 0.22)
-            .fill({ color: 0x4a3c25, alpha: 0.26 });
-        }
-      }
-    }
-
-    if (this.activeMap) {
-      const size = this.activeMap.cellSize * this.camera.scale;
-      for (const [x, y] of this.activeMap.blocked) {
-        const worldX = (x - this.activeMap.width / 2) * this.activeMap.cellSize;
-        const worldY = (y - this.activeMap.height / 2) * this.activeMap.cellSize;
-        const screen = this.camera.worldToScreen(worldX, worldY);
-        this.grid
-          .rect(screen.sx, screen.sy, size + 1, size + 1)
-          .fill({ color: 0x171a14, alpha: 0.92 });
-      }
-    }
-
-    const step = this.camera.scale * 4;
-    const origin = this.camera.worldToScreen(0, 0);
-    const startX = origin.sx % step;
-    const startY = origin.sy % step;
-    for (let x = startX; x < w; x += step) {
-      this.grid.moveTo(x, 0).lineTo(x, h);
-    }
-    for (let y = startY; y < h; y += step) {
-      this.grid.moveTo(0, y).lineTo(w, y);
-    }
-    this.grid.stroke({ width: 1, color: 0x78805a, alpha: 0.09 });
   }
 
   /** Draws hidden/explored fog over cells within the viewport (visible cells clear). */
