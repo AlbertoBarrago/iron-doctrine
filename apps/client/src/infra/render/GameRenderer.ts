@@ -11,7 +11,7 @@
  * It reads snapshots but never mutates simulation state — the clean sim/render split.
  */
 import { Application, Container, Graphics } from 'pixi.js';
-import { BUILDING_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
+import { BUILDING_STATS, UNIT_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
 import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
@@ -1248,13 +1248,25 @@ export class GameRenderer {
 
     const enemy = curr ? this.findEnemyAt(sx, sy, curr) : null;
     if (enemy) {
+      const attackers = units.filter(
+        (entity) => entity.unitType && UNIT_STATS[entity.unitType]?.weapon,
+      );
+      const support = units.filter((entity) => !attackers.includes(entity));
       this.showCommandFeedback(sx, sy, 'attack');
       this.audio.play('move');
-      this.bridge.command({
-        type: 'attack',
-        entities: units.map((entity) => asEntityId(entity.id)),
-        target: asEntityId(enemy.id),
-      });
+      if (support.length > 0) {
+        this.bridge.command({
+          type: 'stop',
+          entities: support.map((entity) => asEntityId(entity.id)),
+        });
+      }
+      if (attackers.length > 0) {
+        this.bridge.command({
+          type: 'attack',
+          entities: attackers.map((entity) => asEntityId(entity.id)),
+          target: asEntityId(enemy.id),
+        });
+      }
       return;
     }
     this.showCommandFeedback(sx, sy, 'move');

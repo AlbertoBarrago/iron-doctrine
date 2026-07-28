@@ -144,7 +144,7 @@ export function activateBuilding(world: World, entity: EntityId, stats: Building
       cooldownLeft: 0,
       projectileSpeed: fp.fromInt(stats.weapon.projectileSpeed),
     });
-    world.add(entity, Attack, { target: -1, chase: false });
+    world.add(entity, Attack, { target: -1, chase: false, formationIndex: 0 });
   }
 }
 

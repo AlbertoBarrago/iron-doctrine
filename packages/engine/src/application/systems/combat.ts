@@ -18,12 +18,14 @@ import {
   Movement,
   Building,
   Projectile,
+  Selectable,
 } from '../../domain/components/index.js';
 import type { PlayerEconomy } from '../../domain/economy/player-economy.js';
 import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import { indexOf } from '../ecs/entity.js';
 import { asEntityId, type EntityId } from '@iron/shared';
+import { engagementPosition } from '../../domain/movement/engagement-formation.js';
 
 /**
  * Combat with power-gated defensive structures: a building weapon (turret) cannot fire
@@ -33,78 +35,70 @@ export function createCombatSystem(economy: PlayerEconomy): System {
   return {
     name: 'CombatSystem',
     update(world: World): void {
-    const armed = world.query(Weapon, Position, Owner, Attack);
-    for (const e of armed) {
-      const weapon = world.get(e, Weapon)!;
-      if (weapon.cooldownLeft > 0) weapon.cooldownLeft--;
+      const armed = world.query(Weapon, Position, Owner, Attack);
+      for (const e of armed) {
+        const weapon = world.get(e, Weapon)!;
+        if (weapon.cooldownLeft > 0) weapon.cooldownLeft--;
 
-      const pos = world.get(e, Position)!;
-      const owner = world.get(e, Owner)!;
+        const pos = world.get(e, Position)!;
+        const owner = world.get(e, Owner)!;
 
-      // Powered-down defenses can neither acquire nor fire.
-      if (world.has(e, Building)) {
-        const power = economy.get(owner.player).power;
-        if (power.consumed > power.produced) continue;
-      }
-      const attack = world.get(e, Attack)!;
-      const rangeSq = fp.mul(weapon.range, weapon.range);
-
-      // Validate existing target: must be a living enemy. Range is NOT part of
-      // validity — an explicit order pursues out-of-range targets (see below).
-      let target = attack.target === -1 ? undefined : asEntityId(attack.target);
-      if (target !== undefined && !isLivingEnemy(world, target, owner.player)) {
-        target = undefined;
-        attack.target = -1;
-        attack.chase = false;
-      }
-
-      // Auto-acquire nearest enemy IN RANGE when idle.
-      if (target === undefined) {
-        target = acquire(world, e, owner.player, pos, rangeSq);
-        attack.target = target === undefined ? -1 : (target as number);
-        attack.chase = false;
-      }
-      if (target === undefined) continue;
-
-      const targetPos = world.get(target, Position)!;
-      const inRange = v2.distSq(pos, targetPos) <= rangeSq;
-
-      if (inRange) {
-        if (attack.chase) {
-          const move = world.get(e, Movement); // stop chasing once in range
-          if (move) move.target = null;
+        // Powered-down defenses can neither acquire nor fire.
+        if (world.has(e, Building)) {
+          const power = economy.get(owner.player).power;
+          if (power.consumed > power.produced) continue;
         }
-        if (weapon.cooldownLeft === 0) {
-          fire(world, e, target, weapon, pos);
-          weapon.cooldownLeft = weapon.cooldownTicks;
+        const attack = world.get(e, Attack)!;
+        const rangeSq = fp.mul(weapon.range, weapon.range);
+
+        // Validate existing target: must be a living enemy. Range is NOT part of
+        // validity — an explicit order pursues out-of-range targets (see below).
+        let target = attack.target === -1 ? undefined : asEntityId(attack.target);
+        if (target !== undefined && !isLivingEnemy(world, target, owner.player)) {
+          target = undefined;
+          attack.target = -1;
+          attack.chase = false;
+          attack.formationIndex = 0;
         }
-      } else if (attack.chase) {
-        const move = world.get(e, Movement); // pursue the target
-        if (move) move.target = engagementPosition(e, targetPos, weapon.range);
-      } else {
-        attack.target = -1; // auto target left range: break leash
+
+        // Auto-acquire nearest enemy IN RANGE when idle.
+        if (target === undefined) {
+          target = acquire(world, e, owner.player, pos, rangeSq);
+          attack.target = target === undefined ? -1 : (target as number);
+          attack.chase = false;
+          attack.formationIndex = 0;
+        }
+        if (target === undefined) continue;
+
+        const targetPos = world.get(target, Position)!;
+        const inRange = v2.distSq(pos, targetPos) <= rangeSq;
+
+        if (inRange) {
+          if (attack.chase) {
+            const move = world.get(e, Movement); // stop chasing once in range
+            if (move) move.target = null;
+          }
+          if (weapon.cooldownLeft === 0) {
+            fire(world, e, target, weapon, pos);
+            weapon.cooldownLeft = weapon.cooldownTicks;
+          }
+        } else if (attack.chase) {
+          const move = world.get(e, Movement); // pursue the target
+          if (move) {
+            move.target = engagementPosition(
+              targetPos,
+              attack.formationIndex,
+              weapon.range,
+              world.get(e, Selectable)?.radius ?? fp.fromFloat(0.5),
+              world.get(target, Selectable)?.radius ?? fp.fromFloat(0.5),
+            );
+          }
+        } else {
+          attack.target = -1; // auto target left range: break leash
+        }
       }
-    }
     },
   };
-}
-
-const DIAGONAL = v2.normalize({ x: fp.FP.ONE, y: fp.FP.ONE });
-const ENGAGEMENT_DIRECTIONS: readonly v2.Vec2[] = [
-  { x: fp.FP.ONE, y: fp.FP.ZERO },
-  DIAGONAL,
-  { x: fp.FP.ZERO, y: fp.FP.ONE },
-  { x: fp.neg(DIAGONAL.x), y: DIAGONAL.y },
-  { x: fp.neg(fp.FP.ONE), y: fp.FP.ZERO },
-  { x: fp.neg(DIAGONAL.x), y: fp.neg(DIAGONAL.y) },
-  { x: fp.FP.ZERO, y: fp.neg(fp.FP.ONE) },
-  { x: DIAGONAL.x, y: fp.neg(DIAGONAL.y) },
-];
-
-function engagementPosition(entity: EntityId, target: v2.Vec2, range: fp.Fixed): v2.Vec2 {
-  const direction = ENGAGEMENT_DIRECTIONS[indexOf(entity) % ENGAGEMENT_DIRECTIONS.length]!;
-  const standOff = fp.mul(range, fp.fromFloat(0.75));
-  return v2.add(target, v2.scale(direction, standOff));
 }
 
 function isLivingEnemy(world: World, target: EntityId, myPlayer: number): boolean {

@@ -115,8 +115,14 @@ export const Weapon = defineComponent<WeaponData>('Weapon', () => ({
 export interface AttackData {
   target: number;
   chase: boolean;
+  /** Stable slot assigned by an explicit group attack order. */
+  formationIndex: number;
 }
-export const Attack = defineComponent<AttackData>('Attack', () => ({ target: -1, chase: false }));
+export const Attack = defineComponent<AttackData>('Attack', () => ({
+  target: -1,
+  chase: false,
+  formationIndex: 0,
+}));
 
 /** A harvestable resource deposit (ore field) with a finite amount remaining. */
 export interface ResourceNodeData {

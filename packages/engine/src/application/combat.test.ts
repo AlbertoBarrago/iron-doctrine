@@ -89,9 +89,45 @@ describe('Combat', () => {
 
     const initialHealth = sim.world.get(enemy, Health)!.hp;
     for (let i = 0; i < 200; i++) sim.step();
+    expect(!sim.world.isAlive(enemy) || sim.world.get(enemy, Health)!.hp < initialHealth).toBe(
+      true,
+    );
+  });
+
+  it('keeps a large explicit group on one target with distinct engagement slots', () => {
+    const sim = new Simulation({ seed: 1 });
+    const attackers = Array.from({ length: 24 }, (_, index) =>
+      spawn(sim, 'rifleman', 0, -18 - Math.floor(index / 8), (index % 8) - 4),
+    );
+    const enemy = spawn(sim, 'tank', 1, 0, 0);
+    sim.enqueue({ type: 'attack', entities: attackers, target: enemy });
+    sim.step();
+
     expect(
-      !sim.world.isAlive(enemy) || sim.world.get(enemy, Health)!.hp < initialHealth,
-    ).toBe(true);
+      new Set(attackers.map((entity) => sim.world.get(entity, Attack)!.formationIndex)).size,
+    ).toBe(24);
+    expect(attackers.every((entity) => sim.world.get(entity, Attack)!.target === enemy)).toBe(true);
+
+    const initialHealth = sim.world.get(enemy, Health)!.hp;
+    for (let tick = 0; tick < 600 && sim.world.isAlive(enemy); tick++) sim.step();
+
+    expect(!sim.world.isAlive(enemy) || sim.world.get(enemy, Health)!.hp < initialHealth).toBe(
+      true,
+    );
+  });
+
+  it('stops unarmed support units in an explicit mixed attack order', () => {
+    const sim = new Simulation({ seed: 1 });
+    const rifleman = spawn(sim, 'rifleman', 0, -10, 0);
+    const engineer = spawn(sim, 'engineer', 0, -10, 1);
+    const enemy = spawn(sim, 'tank', 1, 10, 0);
+    sim.enqueue({ type: 'move', entities: [engineer], target: at(20, 20) });
+    sim.step();
+    sim.enqueue({ type: 'attack', entities: [rifleman, engineer], target: enemy });
+    sim.step();
+
+    expect(sim.world.get(rifleman, Attack)?.target).toBe(enemy);
+    expect(sim.world.get(engineer, Movement)?.target).toBeNull();
   });
 
   it('combat remains deterministic across runs', () => {

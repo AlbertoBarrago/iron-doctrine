@@ -125,7 +125,7 @@ export function spawnUnit(world: World, unit: string, player: number, at: Vec2):
       cooldownLeft: 0,
       projectileSpeed: fp.fromInt(stats.weapon.projectileSpeed),
     });
-    world.add(e, Attack, { target: -1, chase: false });
+    world.add(e, Attack, { target: -1, chase: false, formationIndex: 0 });
   }
 
   if (unit === 'harvester') {

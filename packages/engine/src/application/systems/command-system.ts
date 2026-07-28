@@ -91,13 +91,24 @@ export function createCommandSystem(
             }
             break;
           case 'attack':
-            for (const e of cmd.entities) {
-              if (world.has(e, FlowMovement)) world.remove(e, FlowMovement);
-              if (world.has(e, Path)) world.remove(e, Path);
-              const atk = world.get(e, Attack);
-              if (atk) {
+            {
+              const ordered = [...cmd.entities].sort((a, b) => indexOf(a) - indexOf(b));
+              const attackers = ordered.filter((entity) => world.has(entity, Attack));
+              for (const e of ordered) {
+                pauseHarvest(world, e);
+                const atk = world.get(e, Attack);
+                if (!atk) {
+                  const move = world.get(e, Movement);
+                  if (move) move.target = null;
+                  if (world.has(e, FlowMovement)) world.remove(e, FlowMovement);
+                  if (world.has(e, Path)) world.remove(e, Path);
+                  continue;
+                }
                 atk.target = cmd.target as number;
-                atk.chase = true; // explicit order pursues the target
+                atk.chase = true;
+                atk.formationIndex = attackers.indexOf(e);
+                if (world.has(e, FlowMovement)) world.remove(e, FlowMovement);
+                if (world.has(e, Path)) world.remove(e, Path);
               }
             }
             break;
