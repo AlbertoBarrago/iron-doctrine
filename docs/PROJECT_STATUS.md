@@ -131,14 +131,18 @@ achievements, and fast treatment actions for the later morale/condition system.
 
 ### Battlefield life and cover
 
-1. Add authored rock formations as navigation blockers and approach-shaping terrain; introduce
-   combat cover bonuses only after the placement and pathing rules are proven readable.
-2. Scatter deterministic war remains and environmental props such as wrecked aircraft, skulls
-   and abandoned equipment without polluting authoritative simulation state.
-3. Add presentation-only ambient life and flyovers — small animals crossing or fleeing the
-   battlefield and distant military aircraft — with restrained frequency and no unit collision.
-4. Keep interactive/tactical props in map data while purely cosmetic decoration remains seeded
-   by environment metadata.
+The first static environment slice is implemented:
+
+1. Authored blocked cells render as irregular, layered rock formations while retaining their
+   existing authoritative navigation behavior.
+2. Sparse bossoli, bones and wreck fragments are seeded from presentation-only environment
+   metadata and restricted to impassable cells, so traversable terrain remains readable.
+3. Iron Pass, Siege Line and Black Dawn have explicit biome seeds; connectivity regressions
+   verify that their two spawns remain joined through the intended corridors.
+4. No map-format migration or simulation state was introduced.
+
+Still pending: combat cover bonuses, authored interactive props, ambient animals, distant
+aircraft and the rare commander-profile easter eggs.
 
 ### Cosmetic easter eggs
 
@@ -164,7 +168,7 @@ achievements, and fast treatment actions for the later morale/condition system.
 
 All 51 test files now live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports. The current full baseline is 260 passing tests.
+only file locations and relative imports. The current full baseline is 261 passing tests.
 
 ### Campaign production
 
