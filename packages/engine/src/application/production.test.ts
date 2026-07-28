@@ -10,6 +10,7 @@ import {
   UnitType,
   ResourceNode,
   Selectable,
+  Vision,
 } from '../domain/components/index.js';
 import * as fp from '../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
@@ -101,9 +102,29 @@ describe('ProductionSystem', () => {
         queue: ['tank'],
         progressTicks: 1,
         currentBuildTicks: 140,
-        produces: ['tank', 'harvester'],
+        produces: ['scout', 'tank', 'harvester'],
       },
     });
+  });
+
+  it('produces a fast low-health scout with extended vision', () => {
+    const sim = makeSim();
+    const fac = factory(sim);
+    sim.enqueue({ type: 'queueProduction', building: fac, unit: 'scout' });
+    for (let i = 0; i < 100; i++) sim.step();
+
+    const scout = sim.world
+      .query(UnitType)
+      .find((entity) => sim.world.get(entity, UnitType)!.kind === 'scout');
+
+    expect(scout).toBeDefined();
+    expect(sim.snapshot().entities.find((entity) => entity.id === scout)).toMatchObject({
+      unitType: 'scout',
+      hp: 120,
+      maxHp: 120,
+    });
+    expect(fp.toFloat(sim.world.get(scout!, Movement)!.speed)).toBe(6);
+    expect(fp.toFloat(sim.world.get(scout!, Vision)!.radius)).toBe(11);
   });
 
   it('sends a finished unit to the rally point', () => {

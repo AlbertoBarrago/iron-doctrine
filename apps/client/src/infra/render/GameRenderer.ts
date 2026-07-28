@@ -723,7 +723,7 @@ export class GameRenderer {
         const { sx, sy } = this.camera.worldToScreen(wx, wy);
         this.fogGfx.rect(sx, sy, size + 1, size + 1).fill({
           color: 0x000000,
-          alpha: state === 0 ? 1 : 0.28,
+          alpha: state === 0 ? 1 : 0.18,
         });
       }
     }

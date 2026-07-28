@@ -1,6 +1,6 @@
 import type { Graphics } from 'pixi.js';
 import type { EntitySnapshot } from '@iron/engine';
-import { infantryMotion, MATERIAL, shadeColor } from './renderStyle.js';
+import { engineerToolMotion, infantryMotion, MATERIAL, shadeColor } from './renderStyle.js';
 
 interface Point {
   x: number;
@@ -39,12 +39,61 @@ export function drawUnit(
         presentation.animationTime,
       );
       return;
+    case 'scout':
+      drawScout(graphics, sx, sy, radius, entity.angle, color);
+      return;
     case 'engineer':
       drawInfantry(graphics, sx, sy, radius, entity.angle, color, true, presentation);
       return;
     default:
       drawInfantry(graphics, sx, sy, radius, entity.angle, color, false, presentation);
   }
+}
+
+function drawScout(
+  graphics: Graphics,
+  sx: number,
+  sy: number,
+  radius: number,
+  angle: number,
+  color: number,
+): void {
+  for (const side of [-1, 1]) {
+    for (const offset of [-0.52, 0.48]) {
+      const wheel = localToScreen(sx, sy, angle, radius * offset, radius * side * 0.72);
+      graphics
+        .circle(wheel.x, wheel.y, radius * 0.28)
+        .fill({ color: 0x0d110f })
+        .stroke({ width: 1, color: MATERIAL.armorMid });
+    }
+  }
+
+  polygon(graphics, sx, sy, angle, [
+    { x: -radius * 0.88, y: -radius * 0.58 },
+    { x: radius * 0.55, y: -radius * 0.58 },
+    { x: radius, y: 0 },
+    { x: radius * 0.55, y: radius * 0.58 },
+    { x: -radius * 0.88, y: radius * 0.58 },
+  ]);
+  graphics.fill({ color }).stroke({ width: 1.25, color: MATERIAL.armorDark });
+
+  const cabin = localToScreen(sx, sy, angle, radius * 0.12, 0);
+  polygon(graphics, cabin.x, cabin.y, angle, [
+    { x: -radius * 0.35, y: -radius * 0.4 },
+    { x: radius * 0.34, y: -radius * 0.3 },
+    { x: radius * 0.34, y: radius * 0.3 },
+    { x: -radius * 0.35, y: radius * 0.4 },
+  ]);
+  graphics.fill({ color: MATERIAL.glass }).stroke({ width: 1, color: shadeColor(color, 0.55) });
+
+  const antennaBase = localToScreen(sx, sy, angle, -radius * 0.48, radius * 0.28);
+  const antennaTip = localToScreen(sx, sy, angle, -radius * 0.82, radius * 0.7);
+  graphics
+    .moveTo(antennaBase.x, antennaBase.y)
+    .lineTo(antennaTip.x, antennaTip.y)
+    .stroke({ width: Math.max(1, radius * 0.08), color: MATERIAL.armorLight })
+    .circle(antennaTip.x, antennaTip.y, radius * 0.08)
+    .fill({ color: MATERIAL.amber });
 }
 
 function drawGroundShadow(
@@ -287,13 +336,20 @@ function drawInfantry(
     .stroke({ width: Math.max(1, radius * 0.11), color: MATERIAL.factionRed });
 
   if (engineer) {
+    const toolMotion = engineerToolMotion(presentation.animationTime, presentation.moving);
     const pack = localToScreen(bodyX, bodyY, angle, -radius * 0.48, 0);
     graphics
       .rect(pack.x - radius * 0.29, pack.y - radius * 0.38, radius * 0.58, radius * 0.76)
       .fill({ color: MATERIAL.copper })
       .stroke({ width: 1, color: MATERIAL.armorDark });
     graphics.circle(pack.x, pack.y - radius * 0.17, radius * 0.08).fill({ color: MATERIAL.amber });
-    const toolEnd = localToScreen(bodyX, bodyY, angle, radius * 0.94, -radius * 0.48);
+    const toolEnd = localToScreen(
+      bodyX,
+      bodyY,
+      angle,
+      radius * 0.94,
+      radius * (-0.48 + toolMotion.swing),
+    );
     graphics
       .moveTo(weaponStart.x, weaponStart.y)
       .lineTo(toolEnd.x, toolEnd.y)
@@ -301,6 +357,11 @@ function drawInfantry(
     graphics
       .circle(toolEnd.x, toolEnd.y, radius * 0.1)
       .stroke({ width: 1.5, color: MATERIAL.amber });
+    if (toolMotion.pulse > 0) {
+      graphics
+        .circle(toolEnd.x, toolEnd.y, radius * (0.12 + toolMotion.pulse * 0.12))
+        .fill({ color: 0xf5d675, alpha: toolMotion.pulse * 0.7 });
+    }
     return;
   }
 

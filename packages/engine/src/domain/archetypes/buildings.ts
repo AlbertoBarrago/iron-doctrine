@@ -71,7 +71,7 @@ export const BUILDING_STATS: Readonly<Record<string, BuildingStats>> = {
     cost: 1800,
     buildTicks: 220,
     power: -30,
-    produces: ['tank', 'harvester'],
+    produces: ['scout', 'tank', 'harvester'],
   },
   turret: {
     hp: 600,
@@ -114,11 +114,7 @@ export function spawnBuilding(
 }
 
 /** Clears a destroyed building footprint so navigation can use the cells again. */
-export function clearBuildingFootprint(
-  grid: NavGrid,
-  footprint: number,
-  at: Vec2,
-): void {
+export function clearBuildingFootprint(grid: NavGrid, footprint: number, at: Vec2): void {
   const cell = grid.worldToCell(at.x, at.y);
   const half = Math.floor(footprint / 2);
   grid.stampRect(cell.cx - half, cell.cy - half, footprint, footprint, false);

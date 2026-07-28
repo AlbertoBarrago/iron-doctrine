@@ -8,7 +8,13 @@ import {
 
 describe('battlefield profiles', () => {
   it('documents every currently playable unit and structure', () => {
-    expect(Object.keys(UNIT_PROFILES)).toEqual(['rifleman', 'engineer', 'tank', 'harvester']);
+    expect(Object.keys(UNIT_PROFILES)).toEqual([
+      'rifleman',
+      'engineer',
+      'scout',
+      'tank',
+      'harvester',
+    ]);
     expect(Object.keys(BUILDING_PROFILES)).toEqual([
       'concrete_wall',
       'construction_yard',

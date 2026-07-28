@@ -934,4 +934,4 @@ const buildingSymbol = (building: string): string =>
     turret: '⌖',
   })[building] ?? '■';
 const unitSymbol = (unit: string): string =>
-  ({ rifleman: '▲', engineer: '◇', tank: '▰', harvester: '⬢' })[unit] ?? '●';
+  ({ rifleman: '▲', engineer: '◇', scout: '▱', tank: '▰', harvester: '⬢' })[unit] ?? '●';

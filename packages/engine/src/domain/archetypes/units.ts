@@ -38,6 +38,8 @@ export interface UnitStats {
   speed: number;
   /** selection/collision radius in units */
   radius: number;
+  /** fog-of-war reveal radius in world units */
+  vision: number;
   /** credit cost to produce */
   cost: number;
   /** ticks to build in a production structure */
@@ -51,20 +53,23 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
     hp: 100,
     speed: 4,
     radius: 0.5,
+    vision: 7,
     cost: 100,
     buildTicks: 40,
     weapon: { damage: 8, range: 6, cooldownTicks: 12, projectileSpeed: 0 },
   },
-  engineer: { hp: 60, speed: 3, radius: 0.5, cost: 500, buildTicks: 100 },
+  engineer: { hp: 60, speed: 3, radius: 0.5, vision: 7, cost: 500, buildTicks: 100 },
+  scout: { hp: 120, speed: 6, radius: 0.75, vision: 11, cost: 350, buildTicks: 80 },
   tank: {
     hp: 400,
     speed: 3,
     radius: 1,
+    vision: 7,
     cost: 700,
     buildTicks: 140,
     weapon: { damage: 30, range: 7, cooldownTicks: 30, projectileSpeed: 14 },
   },
-  harvester: { hp: 600, speed: 2, radius: 1, cost: 1400, buildTicks: 180 },
+  harvester: { hp: 600, speed: 2, radius: 1, vision: 5, cost: 1400, buildTicks: 180 },
 };
 
 export function spawnUnit(world: World, unit: string, player: number, at: Vec2): EntityId {
@@ -80,7 +85,7 @@ export function spawnUnit(world: World, unit: string, player: number, at: Vec2):
   world.add(e, UnitType, { kind: unit });
   world.add(e, Movement, { target: null, speed: fp.fromInt(stats.speed) });
   world.add(e, Selectable, { radius: fp.fromFloat(stats.radius) });
-  world.add(e, Vision, { radius: fp.fromInt(unit === 'harvester' ? 5 : 7) });
+  world.add(e, Vision, { radius: fp.fromInt(stats.vision) });
 
   if (stats.weapon) {
     world.add(e, Weapon, {

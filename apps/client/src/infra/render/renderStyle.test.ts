@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { infantryMotion, shadeColor } from './renderStyle.js';
+import { engineerToolMotion, infantryMotion, shadeColor } from './renderStyle.js';
 
 describe('battlefield render style', () => {
   it('shades every channel and clamps highlights', () => {
@@ -11,5 +11,11 @@ describe('battlefield render style', () => {
     expect(infantryMotion(1, false, false)).toEqual({ gait: 0, bob: 0, recoil: 0 });
     expect(infantryMotion(1, false, true)).toEqual({ gait: 0, bob: 0, recoil: 0.16 });
     expect(infantryMotion(0, true, false).bob).toBeGreaterThan(0);
+  });
+
+  it('animates an idle engineer tool without affecting movement', () => {
+    expect(engineerToolMotion(0.5, false).swing).not.toBe(0);
+    expect(engineerToolMotion(0.5, true)).toEqual({ swing: 0, pulse: 0 });
+    expect(engineerToolMotion(0.95, false).pulse).toBeGreaterThan(0);
   });
 });

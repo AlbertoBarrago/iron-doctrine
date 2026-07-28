@@ -24,6 +24,12 @@ export const UNIT_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
     description: 'Unarmed specialist intended for technical battlefield objectives.',
     tacticalNote: 'Keep protected behind combat units.',
   },
+  scout: {
+    label: 'Scout buggy',
+    role: 'Fast reconnaissance',
+    description: 'Light unarmed vehicle with extended battlefield vision.',
+    tacticalNote: 'Use speed to reveal approaches. Avoid every direct engagement.',
+  },
   tank: {
     label: 'Battle tank',
     role: 'Armored assault',
@@ -83,7 +89,10 @@ export const BUILDING_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
   },
 };
 
-export function profileFor(unitType?: string, buildingType?: string): BattlefieldProfile | undefined {
+export function profileFor(
+  unitType?: string,
+  buildingType?: string,
+): BattlefieldProfile | undefined {
   return unitType
     ? UNIT_PROFILES[unitType]
     : buildingType

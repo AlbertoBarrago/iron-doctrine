@@ -17,6 +17,11 @@ export interface InfantryMotion {
   recoil: number;
 }
 
+export interface EngineerToolMotion {
+  swing: number;
+  pulse: number;
+}
+
 export function shadeColor(color: number, factor: number): number {
   const red = clampChannel(((color >> 16) & 0xff) * factor);
   const green = clampChannel(((color >> 8) & 0xff) * factor);
@@ -34,6 +39,15 @@ export function infantryMotion(
     gait,
     bob: moving ? Math.abs(Math.cos(animationTime * 10)) * 0.08 : 0,
     recoil: firing ? 0.16 : 0,
+  };
+}
+
+export function engineerToolMotion(animationTime: number, moving: boolean): EngineerToolMotion {
+  if (moving) return { swing: 0, pulse: 0 };
+  const cycle = (animationTime * 0.8) % 1;
+  return {
+    swing: Math.sin(animationTime * 3.2) * 0.16,
+    pulse: cycle > 0.72 && cycle < 0.84 ? Math.sin(((cycle - 0.72) / 0.12) * Math.PI) : 0,
   };
 }
 
