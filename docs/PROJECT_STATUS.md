@@ -16,6 +16,7 @@ First Contact is a playable vertical slice:
 - read the remaining capacity of selectable, grounded ore fields;
 - run multiple harvesters through shared ore and refinery approaches without deadlocking;
 - dispatch a fast, fragile scout buggy with extended vision ahead of the main force;
+- drive tanks through ore fields and over hostile infantry without vehicle deadlocks;
 - identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
 - distinguish active engineers through a presentation-only tool-check animation;
 - fight through a deterministic, chunk-rendered Mediterranean environment on Iron Pass;
@@ -27,7 +28,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 221 automated tests;
+- 226 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -43,6 +44,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - AI production uses the same validated facility queues, costs and tech gates as players.
 - Completed units wait for a collision-free facility exit instead of spawning into obstacles.
 - Unit separation respects navigation bounds and blocked cells; pathfinding recovers displaced units.
+- Moving tanks can crush hostile infantry; allies and hostile vehicles retain normal separation.
+- Resource nodes remain traversable presentation/economy entities and never stamp navigation obstacles.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
 - Map environment metadata is presentation-only, backwards-compatible and versioned independently
@@ -65,7 +68,11 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 1. Reproduce the reported mixed-selection order issue in the browser.
 2. Decide how unarmed selected units should react when an enemy is right-clicked.
-3. Harvesters got a fluidity pass: their collision radius shrank from 1.2 to 1 (matching the
+3. Reproduce grouped explicit attack orders that leave units jammed in a ring around the
+   target. Passive units may auto-acquire opportunistically, but a player-issued group attack
+   must preserve a precise target and keep every selected unit progressing into a useful
+   firing position.
+4. Harvesters got a fluidity pass: their collision radius shrank from 1.2 to 1 (matching the
    tank), and each harvester now aims at a point offset around the shared node/drop-off
    instead of the exact centre, so a group spreads out instead of piling onto one spot.
    Root cause found in the process: unit separation and straight-line movement can reach a
@@ -87,6 +94,27 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 1. Add a local commander profile identified by an exact three-letter callsign.
 2. Scope campaign completion and unlocks to that profile in versioned browser `localStorage`.
 3. Migrate the current global campaign progress without losing completed missions.
+
+### Commander progression
+
+1. Add a versioned, profile-scoped achievement registry driven by authoritative match metrics.
+2. First trophy set: Cartographer, First Strike, Vanguard, Gold Rush, Untouchable and
+   Campaign Veteran.
+3. Surface unlock notifications in-match and collected decorations in the Battle Report.
+
+### Support units
+
+1. Add an unarmed Medic trained at the barracks.
+2. Heal allied infantry only through a dedicated deterministic healing system; vehicles and
+   structures remain outside the medical loop.
+3. Add treatment animation, explicit/manual healing priority and the Field Medic and Leave
+   No One Behind achievements.
+
+### Test organization
+
+1. Move colocated unit and integration tests into local `__tests__` directories by module.
+2. Preserve cross-package determinism and end-to-end harnesses in a dedicated root test area.
+3. Perform the move mechanically on a separate branch without changing behavior.
 
 ### Campaign production
 
