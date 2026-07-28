@@ -132,6 +132,15 @@ Commander persistence is implemented:
 4. Keep interactive/tactical props in map data while purely cosmetic decoration remains seeded
    by environment metadata.
 
+### Cosmetic easter eggs
+
+1. Add a rare, harmless chicken that runs erratically across the battlefield and ends in an
+   exaggerated presentation-only explosion.
+2. Trigger it after a deterministic number of completed matches stored in the commander profile,
+   rather than through per-frame randomness.
+3. Keep it outside authoritative combat: no damage, collision, commands, economy effects or
+   replay divergence. Further easter-egg ideas can extend the same presentation contract.
+
 ### Infantry condition and morale
 
 1. Model a small deterministic condition set for individual infantry: steady, shaken, panicked
