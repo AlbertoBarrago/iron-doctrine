@@ -106,10 +106,15 @@ Commander persistence is implemented:
 
 ### Commander progression
 
-1. Add a versioned, profile-scoped achievement registry driven by authoritative match metrics.
-2. First trophy set: Cartographer, First Strike, Vanguard, Gold Rush, Untouchable and
-   Campaign Veteran.
-3. Surface unlock notifications in-match and collected decorations in the Battle Report.
+Commander achievements and Battle Reports are implemented:
+
+1. A versioned, profile-scoped achievement registry awards Cartographer, First Strike,
+   Vanguard, Gold Rush, Untouchable and Campaign Veteran from authoritative simulation data.
+2. Combat damage, losses, eliminations by archetype, ore delivery, explored-map peak and match
+   duration survive save/load and feed the final report.
+3. The Battle Report includes a concise tactical analysis of tempo, damage economy,
+   reconnaissance and attrition, plus newly earned decorations.
+4. Collected decorations remain isolated by commander and are visible on the campaign map.
 
 ### Support units
 
@@ -154,9 +159,9 @@ Commander persistence is implemented:
 
 ### Test organization
 
-All 45 test files now live in local `__tests__` directories beside their owning modules.
+All 50 test files now live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports, preserving the full 232-test behavior baseline.
+only file locations and relative imports. The current full baseline is 255 passing tests.
 
 ### Campaign production
 
