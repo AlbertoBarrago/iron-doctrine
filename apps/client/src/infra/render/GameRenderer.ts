@@ -19,6 +19,7 @@ import { ParticleSystem } from './Particles.js';
 import { TerrainPainter } from './TerrainPainter.js';
 import { drawUnit } from './UnitPainter.js';
 import { drawBuilding, type WallConnections } from './BuildingPainter.js';
+import { drawResourceField } from './ResourcePainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import {
@@ -580,15 +581,8 @@ export class GameRenderer {
       }
 
       if (e.kind === 'resource') {
-        const rr = Math.max(3, e.radius * this.camera.scale);
-        this.units
-          .moveTo(sx, sy - rr)
-          .lineTo(sx + rr, sy)
-          .lineTo(sx, sy + rr)
-          .lineTo(sx - rr, sy)
-          .closePath()
-          .fill({ color: 0x9b742a })
-          .stroke({ width: 2, color: 0x4a3514 });
+        const rr = Math.max(7, e.radius * this.camera.scale * 2.8);
+        drawResourceField(this.units, sx, sy, rr, e.id);
         continue;
       }
 

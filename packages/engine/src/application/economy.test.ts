@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from './simulation.js';
 import { NavGrid } from './pathfinding/nav-grid.js';
-import { Harvest, ResourceCarrier, ResourceNode } from '../domain/components/index.js';
+import { Harvest, Position, ResourceCarrier, ResourceNode } from '../domain/components/index.js';
 import { PlayerEconomy } from '../domain/economy/player-economy.js';
 import * as fp from '../domain/math/fixed.js';
 
@@ -46,6 +46,32 @@ describe('Harvester economy loop', () => {
     }
     expect(deposited).toBe(true);
     expect(sim.economy.credits(0)).toBeGreaterThanOrEqual(200); // one full carrier
+  });
+
+  it('reaches the ore field before it starts extracting', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnResource', amount: 500, at: at(8, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(4, 0) });
+    sim.step();
+
+    const harvester = sim.world.query(Harvest)[0]!;
+    const ore = sim.world.query(ResourceNode, Position)[0]!;
+    expect(sim.world.get(harvester, Harvest)!.phase).toBe('toNode');
+
+    for (let tick = 0; tick < 200; tick++) {
+      sim.step();
+      if (sim.world.get(harvester, Harvest)!.phase === 'gathering') break;
+    }
+
+    const harvesterPosition = sim.world.get(harvester, Position)!;
+    const orePosition = sim.world.get(ore, Position)!;
+    const distance = Math.hypot(
+      fp.toFloat(harvesterPosition.x - orePosition.x),
+      fp.toFloat(harvesterPosition.y - orePosition.y),
+    );
+
+    expect(sim.world.get(harvester, Harvest)!.phase).toBe('gathering');
+    expect(distance).toBeLessThanOrEqual(4);
   });
 
   it('keeps overlapping harvesters progressing through independent economy cycles', () => {

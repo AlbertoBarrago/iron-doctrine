@@ -26,18 +26,14 @@ import { asEntityId, type EntityId } from '@iron/shared';
 const GATHER_TICKS = 8;
 /** Units of ore extracted per gather batch. */
 const GATHER_RATE = 20;
+/** Centre distance that puts a harvester alongside the visible edge of an ore field. */
+const NODE_REACH_SQ = fp.fromInt(16); // 4 units
 /**
- * Interaction distance (squared) for node/drop-off proximity. This includes enough
- * queueing space for unit separation to keep multiple harvesters from converging on
- * the same target just outside the interaction boundary.
+ * Drop-offs keep a wider interaction boundary so multiple harvesters can queue around
+ * a large refinery without relying entirely on unit separation.
  */
-const REACH_SQ = fp.fromInt(16); // 4 units
+const DROP_OFF_REACH_SQ = fp.fromInt(16); // 4 units
 
-/**
- * Fixed approach directions, cycled per entity so harvesters converging on the same
- * node or drop-off spread their walking targets around it instead of all pathing to
- * the identical point and relying entirely on unit separation to untangle the pile-up.
- */
 const DIAGONAL = v2.normalize({ x: fp.FP.ONE, y: fp.FP.ONE });
 const APPROACH_DIRECTIONS: readonly v2.Vec2[] = [
   { x: fp.FP.ONE, y: fp.FP.ZERO },
@@ -85,7 +81,7 @@ export function createResourceSystem(economy: PlayerEconomy): System {
               h.phase = 'idle';
               break;
             }
-            if (v2.distSq(pos, world.get(node, Position)!) <= REACH_SQ) {
+            if (v2.distSq(pos, world.get(node, Position)!) <= NODE_REACH_SQ) {
               h.phase = 'gathering';
               h.gatherLeft = GATHER_TICKS;
               move.target = null;
@@ -118,7 +114,7 @@ export function createResourceSystem(economy: PlayerEconomy): System {
           case 'toBase': {
             const base = nearestDropOff(world, pos, owner);
             if (base === undefined) break; // no refinery yet: wait
-            if (v2.distSq(pos, world.get(base, Position)!) <= REACH_SQ) {
+            if (v2.distSq(pos, world.get(base, Position)!) <= DROP_OFF_REACH_SQ) {
               h.phase = 'depositing';
               move.target = null;
             } else {
