@@ -34,6 +34,9 @@ export interface WeaponStats {
 
 export interface UnitStats {
   hp: number;
+  movementClass: 'infantry' | 'vehicle';
+  /** Whether this moving unit can run over hostile infantry. */
+  canCrush?: boolean;
   /** movement speed in units/second */
   speed: number;
   /** selection/collision radius in units */
@@ -51,6 +54,7 @@ export interface UnitStats {
 export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
   rifleman: {
     hp: 100,
+    movementClass: 'infantry',
     speed: 4,
     radius: 0.5,
     vision: 7,
@@ -58,10 +62,28 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
     buildTicks: 40,
     weapon: { damage: 8, range: 6, cooldownTicks: 12, projectileSpeed: 0 },
   },
-  engineer: { hp: 60, speed: 3, radius: 0.5, vision: 7, cost: 500, buildTicks: 100 },
-  scout: { hp: 120, speed: 6, radius: 0.75, vision: 11, cost: 350, buildTicks: 80 },
+  engineer: {
+    hp: 60,
+    movementClass: 'infantry',
+    speed: 3,
+    radius: 0.5,
+    vision: 7,
+    cost: 500,
+    buildTicks: 100,
+  },
+  scout: {
+    hp: 120,
+    movementClass: 'vehicle',
+    speed: 6,
+    radius: 0.75,
+    vision: 11,
+    cost: 350,
+    buildTicks: 80,
+  },
   tank: {
     hp: 400,
+    movementClass: 'vehicle',
+    canCrush: true,
     speed: 3,
     radius: 1,
     vision: 7,
@@ -69,7 +91,15 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
     buildTicks: 140,
     weapon: { damage: 30, range: 7, cooldownTicks: 30, projectileSpeed: 14 },
   },
-  harvester: { hp: 600, speed: 2, radius: 1, vision: 5, cost: 1400, buildTicks: 180 },
+  harvester: {
+    hp: 600,
+    movementClass: 'vehicle',
+    speed: 2,
+    radius: 1,
+    vision: 5,
+    cost: 1400,
+    buildTicks: 180,
+  },
 };
 
 export function spawnUnit(world: World, unit: string, player: number, at: Vec2): EntityId {

@@ -13,6 +13,7 @@ import { createPathfindingSystem } from './systems/pathfinding-system.js';
 import { MovementSystem } from './systems/movement.js';
 import { createFlowMovementSystem } from './systems/flow-movement.js';
 import { createUnitSeparationSystem } from './systems/unit-separation.js';
+import { createVehicleCrushSystem } from './systems/vehicle-crush.js';
 import { createCombatSystem } from './systems/combat.js';
 import { ProjectileSystem } from './systems/projectile.js';
 import { createHealthSystem } from './systems/health.js';
@@ -110,7 +111,8 @@ const defaultSystems = (d: Deps): System[] => [
   createFlowMovementSystem(d.grid),
   createPathfindingSystem(d.grid),
   MovementSystem,
-  createUnitSeparationSystem(d.grid),
+  createUnitSeparationSystem(d.grid, undefined, d.teamOf),
+  createVehicleCrushSystem(d.teamOf),
   createCombatSystem(d.economy),
   ProjectileSystem,
   createHealthSystem(d.grid),
