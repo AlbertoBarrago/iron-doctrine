@@ -35,6 +35,17 @@ describe('Combat', () => {
       }
     }
     expect(killed).toBe(true);
+    expect(sim.snapshot(0).metrics).toMatchObject({
+      firstStrike: true,
+      damageDealt: 60,
+      unitsDestroyed: 1,
+      destroyedByType: { engineer: 1 },
+    });
+    expect(sim.snapshot(1).metrics).toMatchObject({
+      firstStrike: false,
+      damageTaken: 60,
+      unitsLost: 1,
+    });
   });
 
   it('does not target friendlies', () => {
@@ -62,6 +73,7 @@ describe('Combat', () => {
     // Target eventually takes damage (may already be dead if enough shots landed).
     const alive = sim.world.isAlive(enemy);
     if (alive) expect(sim.world.get(enemy, Health)!.hp).toBeLessThan(startHp);
+    expect(sim.snapshot(0).metrics?.damageDealt).toBeGreaterThan(0);
   });
 
   it('explicit attack command sets the target', () => {

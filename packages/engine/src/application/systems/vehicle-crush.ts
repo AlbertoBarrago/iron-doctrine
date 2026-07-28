@@ -17,8 +17,12 @@ import { UNIT_STATS } from '../../domain/archetypes/units.js';
 import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import type { TeamResolver } from './fog-system.js';
+import type { MatchMetrics } from '../match/match-metrics.js';
 
-export function createVehicleCrushSystem(teamOf: TeamResolver): System {
+export function createVehicleCrushSystem(
+  teamOf: TeamResolver,
+  metrics?: MatchMetrics,
+): System {
   return {
     name: 'VehicleCrushSystem',
     update(world: World): void {
@@ -47,7 +51,9 @@ export function createVehicleCrushSystem(teamOf: TeamResolver): System {
           const targetRadius = world.get(target, Selectable)!.radius;
           const contact = fp.add(vehicleRadius, targetRadius);
           if (v2.distSq(vehiclePosition, world.get(target, Position)!) < fp.mul(contact, contact)) {
-            world.get(target, Health)!.hp = 0;
+            const health = world.get(target, Health)!;
+            metrics?.recordDamage(vehicleOwner, targetOwner, target, Math.max(0, health.hp));
+            health.hp = 0;
           }
         }
       }

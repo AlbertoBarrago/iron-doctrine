@@ -46,6 +46,7 @@ describe('Harvester economy loop', () => {
     }
     expect(deposited).toBe(true);
     expect(sim.economy.credits(0)).toBeGreaterThanOrEqual(200); // one full carrier
+    expect(sim.snapshot(0).metrics?.oreDelivered).toBe(sim.economy.credits(0));
   });
 
   it('moves the first harvester onto the edge of an unoccupied ore field', () => {

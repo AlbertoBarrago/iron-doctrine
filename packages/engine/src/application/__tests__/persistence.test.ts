@@ -60,6 +60,25 @@ describe('Save / Load', () => {
     expect(loaded.grid.isBlocked(cell.cx, cell.cy)).toBe(true);
   });
 
+  it('preserves match telemetry and pending kill attribution', () => {
+    const sim = makeMatch();
+    sim.step();
+    const target = sim.world.query(UnitType).find((entity) => sim.world.get(entity, UnitType)?.kind === 'tank')!;
+    sim.metrics.recordDamage(0, 1, target, 40);
+    sim.metrics.recordOreDelivered(0, 600);
+    sim.metrics.recordExplored(0, 72);
+
+    const loaded = loadSimulation(saveSimulation(sim, 12345));
+    loaded.metrics.recordDestroyed(target, 1, 'unit', 'tank');
+    expect(loaded.metrics.snapshot(0, loaded.tick)).toMatchObject({
+      damageDealt: 40,
+      oreDelivered: 600,
+      exploredPercent: 72,
+      unitsDestroyed: 1,
+      destroyedByType: { tank: 1 },
+    });
+  });
+
   it('rejects an incompatible version', () => {
     const sim = makeMatch();
     const save = saveSimulation(sim, 1);

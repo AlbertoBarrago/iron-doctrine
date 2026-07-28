@@ -17,7 +17,7 @@ export { createCommandSystem } from './application/systems/command-system.js';
 export { createPathfindingSystem } from './application/systems/pathfinding-system.js';
 export { createFlowMovementSystem, FlowFieldCache } from './application/systems/flow-movement.js';
 export { createCombatSystem } from './application/systems/combat.js';
-export { ProjectileSystem } from './application/systems/projectile.js';
+export { ProjectileSystem, createProjectileSystem } from './application/systems/projectile.js';
 export { createHealthSystem } from './application/systems/health.js';
 export { createProductionSystem } from './application/systems/production-system.js';
 export { ConstructionSystem } from './application/systems/construction-system.js';
@@ -41,6 +41,12 @@ export {
 export type { SaveState } from './application/persistence/save.js';
 export { ReplayRecorder, runReplay } from './application/persistence/replay.js';
 export type { Replay, ReplayCommand, ReplayResult } from './application/persistence/replay.js';
+export { MatchMetrics } from './application/match/match-metrics.js';
+export type {
+  MatchMetricsSnapshot,
+  MatchMetricsState,
+  PlayerMatchMetrics,
+} from './application/match/match-metrics.js';
 
 // Economy
 export { PlayerEconomy } from './domain/economy/player-economy.js';

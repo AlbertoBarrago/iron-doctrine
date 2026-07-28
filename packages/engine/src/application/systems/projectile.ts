@@ -6,16 +6,18 @@
  */
 import type { System, TickContext } from '../ecs/system.js';
 import type { World } from '../ecs/world.js';
-import { Position, Projectile, Health } from '../../domain/components/index.js';
+import { Position, Projectile, Health, Owner } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import { asEntityId } from '@iron/shared';
+import type { MatchMetrics } from '../match/match-metrics.js';
 
 const IMPACT_EPS_SQ = fp.fromFloat(0.04);
 
-export const ProjectileSystem: System = {
-  name: 'ProjectileSystem',
-  update(world: World, ctx: TickContext): void {
+export function createProjectileSystem(metrics?: MatchMetrics): System {
+  return {
+    name: 'ProjectileSystem',
+    update(world: World, ctx: TickContext): void {
     for (const p of world.query(Projectile, Position)) {
       const proj = world.get(p, Projectile)!;
       const pos = world.get(p, Position)!;
@@ -30,7 +32,16 @@ export const ProjectileSystem: System = {
         const target = asEntityId(proj.target);
         if (world.isAlive(target)) {
           const health = world.get(target, Health);
-          if (health) health.hp -= proj.damage;
+          const owner = world.get(target, Owner);
+          if (health && owner) {
+            metrics?.recordDamage(
+              proj.owner,
+              owner.player,
+              target,
+              Math.min(health.hp, proj.damage),
+            );
+            health.hp -= proj.damage;
+          }
         }
         world.destroyEntity(p);
         continue;
@@ -39,5 +50,8 @@ export const ProjectileSystem: System = {
       const dir = v2.normalize(toTarget);
       world.add(p, Position, v2.add(pos, v2.scale(dir, step)));
     }
-  },
-};
+    },
+  };
+}
+
+export const ProjectileSystem: System = createProjectileSystem();

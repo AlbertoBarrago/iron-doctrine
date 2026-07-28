@@ -26,12 +26,13 @@ import * as v2 from '../../domain/math/vec2.js';
 import { indexOf } from '../ecs/entity.js';
 import { asEntityId, type EntityId } from '@iron/shared';
 import { engagementPosition } from '../../domain/movement/engagement-formation.js';
+import type { MatchMetrics } from '../match/match-metrics.js';
 
 /**
  * Combat with power-gated defensive structures: a building weapon (turret) cannot fire
  * while its owner is in an energy deficit — the classic "low power disables defenses".
  */
-export function createCombatSystem(economy: PlayerEconomy): System {
+export function createCombatSystem(economy: PlayerEconomy, metrics?: MatchMetrics): System {
   return {
     name: 'CombatSystem',
     update(world: World): void {
@@ -79,7 +80,7 @@ export function createCombatSystem(economy: PlayerEconomy): System {
             if (move) move.target = null;
           }
           if (weapon.cooldownLeft === 0) {
-            fire(world, e, target, weapon, pos);
+            fire(world, e, target, weapon, pos, metrics);
             weapon.cooldownLeft = weapon.cooldownTicks;
           }
         } else if (attack.chase) {
@@ -142,12 +143,22 @@ function fire(
   target: EntityId,
   weapon: { damage: number; projectileSpeed: fp.Fixed },
   from: v2.Vec2,
+  metrics?: MatchMetrics,
 ): void {
   const targetPos = world.get(target, Position)!;
   if (weapon.projectileSpeed <= 0) {
     // Instant hit.
     const health = world.get(target, Health);
-    if (health) health.hp -= weapon.damage;
+    if (health) {
+      const damage = Math.min(health.hp, weapon.damage);
+      metrics?.recordDamage(
+        world.get(shooter, Owner)!.player,
+        world.get(target, Owner)!.player,
+        target,
+        damage,
+      );
+      health.hp -= weapon.damage;
+    }
     return;
   }
   // Spawn a projectile entity travelling toward the target's current position.

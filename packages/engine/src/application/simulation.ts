@@ -15,7 +15,7 @@ import { createFlowMovementSystem } from './systems/flow-movement.js';
 import { createUnitSeparationSystem } from './systems/unit-separation.js';
 import { createVehicleCrushSystem } from './systems/vehicle-crush.js';
 import { createCombatSystem } from './systems/combat.js';
-import { ProjectileSystem } from './systems/projectile.js';
+import { createProjectileSystem } from './systems/projectile.js';
 import { createHealthSystem } from './systems/health.js';
 import { createResourceSystem } from './systems/resource-system.js';
 import { createEnergySystem } from './systems/energy-system.js';
@@ -32,6 +32,8 @@ import * as fp from '../domain/math/fixed.js';
 import { buildSnapshot, hashState, type Snapshot } from './snapshot.js';
 import { SIM_HZ, asPlayerId, asTick } from '@iron/shared';
 import { createMatchSystem, MatchState } from './match/match-state.js';
+import { MatchMetrics } from './match/match-metrics.js';
+import { HIDDEN } from './fog/fog-of-war.js';
 import {
   createFirstContactSystem,
   FirstContactState,
@@ -86,6 +88,7 @@ interface Deps {
   ironPass: IronPassState | null;
   siegeLine: SiegeLineState | null;
   blackDawn: BlackDawnState | null;
+  metrics: MatchMetrics;
 }
 
 /** Default ordered pipeline for the current milestone. */
@@ -106,16 +109,16 @@ const defaultSystems = (d: Deps): System[] => [
   ),
   // Energy is recomputed before combat so power-gated defenses see the current balance.
   createEnergySystem(d.economy),
-  createResourceSystem(d.economy),
+  createResourceSystem(d.economy, d.metrics),
   createProductionSystem(d.grid),
   createFlowMovementSystem(d.grid),
   createPathfindingSystem(d.grid),
   MovementSystem,
   createUnitSeparationSystem(d.grid, undefined, d.teamOf),
-  createVehicleCrushSystem(d.teamOf),
-  createCombatSystem(d.economy),
-  ProjectileSystem,
-  createHealthSystem(d.grid),
+  createVehicleCrushSystem(d.teamOf, d.metrics),
+  createCombatSystem(d.economy, d.metrics),
+  createProjectileSystem(d.metrics),
+  createHealthSystem(d.grid, d.metrics),
   ...(d.match
     ? [
         createMatchSystem(
@@ -141,6 +144,7 @@ export class Simulation {
   readonly ironPass: IronPassState | null;
   readonly siegeLine: SiegeLineState | null;
   readonly blackDawn: BlackDawnState | null;
+  readonly metrics = new MatchMetrics();
   private readonly scheduler = new Scheduler();
   private readonly dt = fp.fromFloat(1 / SIM_HZ);
   private currentTick = 0;
@@ -180,6 +184,7 @@ export class Simulation {
       ironPass: this.ironPass,
       siegeLine: this.siegeLine,
       blackDawn: this.blackDawn,
+      metrics: this.metrics,
     });
     for (const s of systems) this.scheduler.add(s);
   }
@@ -203,6 +208,14 @@ export class Simulation {
       rng: this.rng,
     };
     this.scheduler.tick(this.world, ctx);
+    for (const team of this.fog.teams()) {
+      const cells = this.fog.copy(team);
+      const explored = cells.reduce((count, cell) => count + (cell === HIDDEN ? 0 : 1), 0);
+      this.metrics.recordExplored(
+        team,
+        cells.length === 0 ? 0 : (explored / cells.length) * 100,
+      );
+    }
     if (this.firstContact?.phase === 'failed' && this.match) {
       const winner = this.match.players.find(
         (player) => player !== asPlayerId(this.firstContact!.config.player),
@@ -237,6 +250,7 @@ export class Simulation {
       originY: fp.toFloat(this.grid.originY),
       cells: this.fog.copy(viewTeam),
     };
+    snap.metrics = this.metrics.snapshot(viewTeam, this.currentTick);
     return snap;
   }
 

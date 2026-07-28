@@ -19,6 +19,7 @@ import type { FirstContactConfig, FirstContactPhase } from '../scenario/first-co
 import type { IronPassConfig, IronPassPhase } from '../scenario/iron-pass.js';
 import type { SiegeLineConfig, SiegeLinePhase } from '../scenario/siege-line.js';
 import type { BlackDawnConfig, BlackDawnPhase } from '../scenario/black-dawn.js';
+import type { MatchMetricsState } from '../match/match-metrics.js';
 
 interface ComponentBlock {
   name: string;
@@ -38,6 +39,7 @@ export interface SaveState {
   economy: Array<[number, PlayerResources]>;
   tech: Array<[number, string[]]>;
   match?: { players: number[]; state: MatchStateSnapshot };
+  metrics?: MatchMetricsState;
   firstContact?: {
     config: FirstContactConfig;
     state: {
@@ -90,6 +92,7 @@ export function saveSimulation(
     components,
     economy: sim.economy.serialize(),
     tech: sim.tech.serialize(),
+    metrics: sim.metrics.serialize(),
     ...(sim.match && {
       match: { players: [...sim.match.players], state: sim.match.snapshot() },
     }),
@@ -156,6 +159,7 @@ export function loadSimulation(save: SaveState): Simulation {
   sim.rng.setState(save.rngState);
   sim.setTick(save.tick);
   if (save.match && sim.match) sim.match.restore(save.match.state);
+  if (save.metrics) sim.metrics.restore(save.metrics);
   if (save.firstContact && sim.firstContact) sim.firstContact.restore(save.firstContact.state);
   if (save.ironPass && sim.ironPass) sim.ironPass.restore(save.ironPass.state);
   if (save.siegeLine && sim.siegeLine) sim.siegeLine.restore(save.siegeLine.state);

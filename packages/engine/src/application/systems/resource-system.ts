@@ -21,6 +21,7 @@ import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import { indexOf } from '../ecs/entity.js';
 import { asEntityId, type EntityId } from '@iron/shared';
+import type { MatchMetrics } from '../match/match-metrics.js';
 
 /** Ticks spent extracting one batch before the carrier updates. */
 const GATHER_TICKS = 8;
@@ -54,7 +55,7 @@ function approachTarget(entity: EntityId, targetPos: v2.Vec2): v2.Vec2 {
   return v2.add(targetPos, v2.scale(direction, APPROACH_STANDOFF));
 }
 
-export function createResourceSystem(economy: PlayerEconomy): System {
+export function createResourceSystem(economy: PlayerEconomy, metrics?: MatchMetrics): System {
   return {
     name: 'ResourceSystem',
     update(world: World): void {
@@ -134,6 +135,7 @@ export function createResourceSystem(economy: PlayerEconomy): System {
             break;
           }
           case 'depositing': {
+            metrics?.recordOreDelivered(owner, carrier.amount);
             economy.addCredits(owner, carrier.amount);
             carrier.amount = 0;
             h.phase = 'idle';
