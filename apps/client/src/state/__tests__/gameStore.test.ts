@@ -7,6 +7,7 @@ import {
   tutorialProgress,
   preferredCommandTab,
   selectionCommands,
+  summarizeForce,
   useGameStore,
 } from '../gameStore.js';
 
@@ -90,6 +91,36 @@ describe('resource presentation', () => {
     useGameStore.getState().setSelectedEntity({ ...selection, resourceAmount: 730 });
 
     expect(useGameStore.getState().selectedEntity?.resourceAmount).toBe(730);
+  });
+});
+
+describe('force summary', () => {
+  it('counts only owned units and reports selected composition', () => {
+    const entity = (id: number, owner: number, unitType: string) => ({
+      id,
+      kind: 'unit' as const,
+      x: 0,
+      y: 0,
+      angle: 0,
+      hp: 100,
+      maxHp: 100,
+      radius: 1,
+      owner,
+      unitType,
+    });
+    const summary = summarizeForce(
+      [entity(1, 0, 'tank'), entity(2, 0, 'tank'), entity(3, 0, 'rifleman'), entity(4, 1, 'tank')],
+      new Set([2, 3, 4]),
+    );
+
+    expect(summary).toEqual({
+      total: 3,
+      selected: 2,
+      units: [
+        { unitType: 'rifleman', total: 1, selected: 1 },
+        { unitType: 'tank', total: 2, selected: 1 },
+      ],
+    });
   });
 });
 

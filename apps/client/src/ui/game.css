@@ -1767,6 +1767,75 @@ kbd {
 .command-panel__resources .hud-stat strong {
   font-size: 14px;
 }
+.force-roster {
+  display: grid;
+  gap: 5px;
+  margin: -5px 0 9px;
+  padding: 6px;
+  background: #0e1411;
+  border: 1px solid #3e4941;
+}
+.force-roster__units {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.force-roster__units > span {
+  display: grid;
+  flex: 0 0 auto;
+  grid-template-columns: auto auto;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 5px;
+  color: #869087;
+  background: #171f1a;
+  border-left: 2px solid #465149;
+}
+.force-roster__units > span.is-selected {
+  color: #d8d8bd;
+  border-left-color: #c3a744;
+}
+.force-roster__units strong {
+  font: 700 8px var(--body);
+  text-transform: uppercase;
+}
+.force-roster__units b {
+  color: #c8ccbd;
+  font: 800 10px var(--mono);
+}
+.force-roster__units small,
+.force-roster__hint {
+  padding: 2px 3px;
+  color: #6f7971;
+  font: 9px var(--body);
+}
+.force-roster__groups {
+  display: flex;
+  gap: 4px;
+}
+.force-roster__groups button {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 35px;
+  padding: 2px 5px;
+  color: #aeb8ad;
+  cursor: pointer;
+  background: #1a231d;
+  border: 1px solid #4a574d;
+}
+.force-roster__groups button:hover {
+  color: #d9d6b4;
+  border-color: #a18d45;
+}
+.force-roster__groups kbd {
+  color: #d4b94e;
+  font: 800 10px var(--mono);
+}
+.force-roster__groups span {
+  font: 700 9px var(--mono);
+}
 .field-directive {
   display: grid;
   grid-template-columns: 32px 1fr;

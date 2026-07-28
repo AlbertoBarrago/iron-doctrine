@@ -265,6 +265,7 @@ function Game({
         onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
         onGather={() => rendererRef.current?.gatherWithSelectedHarvesters()}
         onStop={() => rendererRef.current?.stopSelectedUnits()}
+        onRecallControlGroup={(slot) => rendererRef.current?.recallControlGroup(slot)}
         onRemoveBuilding={(recycle) => rendererRef.current?.removeSelectedBuilding(recycle)}
         onRestart={() => {
           setSetupOpen(false);

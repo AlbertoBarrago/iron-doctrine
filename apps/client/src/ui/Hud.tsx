@@ -7,6 +7,8 @@ import {
   preferredCommandTab,
   useGameStore,
   type CommandTab,
+  type ControlGroupSummary,
+  type ForceSummary,
   type SelectedEntitySummary,
   type SelectedProduction,
   type SelectionCommand,
@@ -107,6 +109,7 @@ interface HudProps {
   onCancelPlacement(): void;
   onGather(): void;
   onStop(): void;
+  onRecallControlGroup(slot: number): void;
   onRemoveBuilding(recycle: boolean): void;
   onRestart(): void;
   onExit(): void;
@@ -119,6 +122,8 @@ export function Hud(props: HudProps): JSX.Element {
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const fps = useGameStore((state) => state.fps);
   const entityCount = useGameStore((state) => state.entityCount);
+  const forceSummary = useGameStore((state) => state.forceSummary);
+  const controlGroups = useGameStore((state) => state.controlGroups);
   const credits = useGameStore((state) => state.credits);
   const power = useGameStore((state) => state.power);
   const selectedEntity = useGameStore((state) => state.selectedEntity);
@@ -199,8 +204,18 @@ export function Hud(props: HudProps): JSX.Element {
             value={`${power.produced}/${power.consumed}`}
             warning={power.consumed > power.produced}
           />
-          <Stat label="Force" value={String(entityCount)} />
+          <Stat
+            label="Force"
+            value={`${forceSummary.selected}/${forceSummary.total}`}
+            accent={forceSummary.selected > 0}
+          />
         </div>
+
+        <ForceRoster
+          force={forceSummary}
+          groups={controlGroups}
+          onRecallGroup={props.onRecallControlGroup}
+        />
 
         <section className="field-directive">
           <span>!</span>
@@ -580,6 +595,53 @@ const COMMAND_HELP: Record<SelectionCommand, { label: string; instruction: strin
   recycle: { label: 'Recycle', instruction: 'Engineer recovers one third of cost' },
 };
 
+function ForceRoster({
+  force,
+  groups,
+  onRecallGroup,
+}: {
+  force: ForceSummary;
+  groups: readonly ControlGroupSummary[];
+  onRecallGroup(slot: number): void;
+}): JSX.Element {
+  return (
+    <section className="force-roster" aria-label="Army overview">
+      <div className="force-roster__units">
+        {force.units.length > 0 ? (
+          force.units.map((unit) => (
+            <span key={unit.unitType} className={unit.selected > 0 ? 'is-selected' : ''}>
+              <strong>{UNIT_PROFILES[unit.unitType]?.label ?? humanize(unit.unitType)}</strong>
+              <b>
+                {unit.total}
+                {unit.selected > 0 ? `/${unit.selected}` : ''}
+              </b>
+            </span>
+          ))
+        ) : (
+          <small>No field units</small>
+        )}
+      </div>
+      {groups.length > 0 ? (
+        <div className="force-roster__groups">
+          {groups.map((group) => (
+            <button
+              type="button"
+              key={group.slot}
+              onClick={() => onRecallGroup(group.slot)}
+              title={`Recall control group ${group.slot}`}
+            >
+              <kbd>{group.slot}</kbd>
+              <span>{group.count}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <small className="force-roster__hint">Ctrl + 1…9 assigns selected units</small>
+      )}
+    </section>
+  );
+}
+
 function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Element {
   const health = entity.maxHp && entity.hp !== undefined ? (entity.hp / entity.maxHp) * 100 : null;
   return (
@@ -837,6 +899,8 @@ function SetupOverlay({
     ['RMB', 'Move or attack'],
     ['MMB drag', 'Pan camera'],
     ['Double LMB', 'Select same unit type'],
+    ['Ctrl + 1…9', 'Assign control group'],
+    ['1…9 / double', 'Recall / center group'],
     ['Wheel', 'Zoom at cursor'],
     ['WASD / edges', 'Pan camera'],
     ['P', 'Pause or resume'],

@@ -28,7 +28,13 @@ import {
   type CommandFeedbackKind,
 } from './commandFeedback.js';
 import { clampMovementTarget } from './movementTarget.js';
-import { harvesterStatus, selectionCommands, useGameStore } from '../../state/gameStore.js';
+import {
+  harvesterStatus,
+  selectionCommands,
+  summarizeForce,
+  useGameStore,
+} from '../../state/gameStore.js';
+import { ControlGroups } from './controlGroups.js';
 import {
   firstContactLayout,
   ironPassLayout,
@@ -72,6 +78,7 @@ export class GameRenderer {
   private readonly prevIds = new Map<number, { x: number; y: number; kind: string }>();
 
   private readonly selected = new Set<number>();
+  private readonly controlGroups = new ControlGroups();
   private readonly keys = new Set<string>();
   private dragStart: { x: number; y: number } | null = null;
   private dragNow: { x: number; y: number } | null = null;
@@ -104,6 +111,7 @@ export class GameRenderer {
 
   async start(config: SkirmishConfig, seed = 123456789): Promise<void> {
     useGameStore.getState().resetTutorial();
+    useGameStore.getState().setControlGroups([]);
     this.activeMap = config.map;
     this.mission = config.mission;
     const missionRules = MISSION_RULES[config.mission];
@@ -343,6 +351,12 @@ export class GameRenderer {
     this.audio.setMusicVolume(volume);
   }
 
+  recallControlGroup(slot: number): void {
+    const snapshot = this.bridge.latest.curr;
+    if (!snapshot) return;
+    this.recallGroup(slot, snapshot, performance.now());
+  }
+
   /** Queue a unit in the currently selected production building. */
   queueProduction(unit: string): void {
     const building = this.selectedProductionBuilding();
@@ -443,6 +457,7 @@ export class GameRenderer {
         store.setEntityCount(
           curr.entities.filter((e) => e.kind === 'unit' || e.kind === 'building').length,
         );
+        this.syncForceState(curr);
         const me = curr.players.find((p) => p.player === 0);
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
@@ -1033,6 +1048,7 @@ export class GameRenderer {
     window.addEventListener('keydown', (e) => {
       this.keys.add(e.key.toLowerCase());
       if (e.key === 'Escape') this.cancelBuildingPlacement();
+      this.handleControlGroupKey(e);
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
     window.addEventListener('resize', () =>
@@ -1194,6 +1210,67 @@ export class GameRenderer {
 
     this.audio.play('select');
     this.syncSelectionState(curr);
+  }
+
+  private handleControlGroupKey(event: KeyboardEvent): void {
+    if (
+      event.repeat ||
+      event.altKey ||
+      event.shiftKey ||
+      (event.target instanceof HTMLElement &&
+        (event.target.isContentEditable ||
+          ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)))
+    ) {
+      return;
+    }
+    const match = /^(?:Digit|Numpad)([1-9])$/.exec(event.code);
+    if (!match) return;
+    const slot = Number(match[1]);
+    const snapshot = this.bridge.latest.curr;
+    if (!snapshot) return;
+    event.preventDefault();
+
+    if (event.ctrlKey) {
+      const ownedUnits = this.selectedUnits(snapshot).map((entity) => entity.id);
+      if (this.controlGroups.assign(slot, ownedUnits)) {
+        this.syncControlGroups(snapshot);
+        this.audio.play('select');
+      }
+      return;
+    }
+    if (event.metaKey) return;
+    this.recallGroup(slot, snapshot, performance.now());
+  }
+
+  private recallGroup(slot: number, snapshot: Snapshot, now: number): void {
+    const validIds = this.ownedUnitIds(snapshot);
+    const recall = this.controlGroups.recall(slot, validIds, now);
+    if (!recall) {
+      this.syncControlGroups(snapshot);
+      return;
+    }
+    this.selected.clear();
+    for (const id of recall.ids) this.selected.add(id);
+    this.syncSelectionState(snapshot);
+    this.syncControlGroups(snapshot);
+    this.audio.play('select');
+    if (recall.focus) this.focusSelection(snapshot);
+  }
+
+  private focusSelection(snapshot: Snapshot): void {
+    const units = this.selectedUnits(snapshot);
+    if (units.length === 0) return;
+    this.camera.x = units.reduce((sum, unit) => sum + unit.x, 0) / units.length;
+    this.camera.y = units.reduce((sum, unit) => sum + unit.y, 0) / units.length;
+    this.clampCamera();
+  }
+
+  private ownedUnitIds(snapshot: Snapshot): Set<number> {
+    return new Set(
+      snapshot.entities
+        .filter((entity) => entity.kind === 'unit' && entity.owner === 0)
+        .map((entity) => entity.id),
+    );
   }
 
   private canvasPoint(event: MouseEvent): { x: number; y: number } {
@@ -1360,6 +1437,10 @@ export class GameRenderer {
 
   private syncSelectionState(snapshot: Snapshot): void {
     const store = useGameStore.getState();
+    const existingIds = new Set(snapshot.entities.map((entity) => entity.id));
+    for (const id of this.selected) {
+      if (!existingIds.has(id)) this.selected.delete(id);
+    }
     store.setSelectedCount(this.selected.size);
     const selected = snapshot.entities.filter((entity) => this.selected.has(entity.id));
     if (selected.length === 0) {
@@ -1431,6 +1512,18 @@ export class GameRenderer {
           }
         : null,
     );
+    this.syncForceState(snapshot);
+  }
+
+  private syncForceState(snapshot: Snapshot): void {
+    useGameStore.getState().setForceSummary(summarizeForce(snapshot.entities, this.selected));
+    this.syncControlGroups(snapshot);
+  }
+
+  private syncControlGroups(snapshot: Snapshot): void {
+    useGameStore
+      .getState()
+      .setControlGroups(this.controlGroups.summaries(this.ownedUnitIds(snapshot)));
   }
 
   private drawCargoBar(entity: EntitySnapshot, sx: number, sy: number, radius: number): void {

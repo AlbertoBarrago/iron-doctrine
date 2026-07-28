@@ -46,6 +46,45 @@ export interface SelectedProduction {
   produces: string[];
 }
 
+export interface ForceUnitSummary {
+  unitType: string;
+  total: number;
+  selected: number;
+}
+
+export interface ForceSummary {
+  total: number;
+  selected: number;
+  units: ForceUnitSummary[];
+}
+
+export interface ControlGroupSummary {
+  slot: number;
+  count: number;
+}
+
+export function summarizeForce(
+  entities: readonly EntitySnapshot[],
+  selectedIds: ReadonlySet<number>,
+): ForceSummary {
+  const counts = new Map<string, { total: number; selected: number }>();
+  for (const entity of entities) {
+    if (entity.kind !== 'unit' || entity.owner !== 0 || !entity.unitType) continue;
+    const current = counts.get(entity.unitType) ?? { total: 0, selected: 0 };
+    current.total++;
+    if (selectedIds.has(entity.id)) current.selected++;
+    counts.set(entity.unitType, current);
+  }
+  const units = [...counts]
+    .map(([unitType, count]) => ({ unitType, ...count }))
+    .sort((left, right) => left.unitType.localeCompare(right.unitType));
+  return {
+    total: units.reduce((sum, unit) => sum + unit.total, 0),
+    selected: units.reduce((sum, unit) => sum + unit.selected, 0),
+    units,
+  };
+}
+
 export type CommandTab = 'orders' | 'build' | 'production';
 
 export function preferredCommandTab(
@@ -109,6 +148,8 @@ interface GameUiState {
   playing: boolean;
   entityCount: number;
   selectedCount: number;
+  forceSummary: ForceSummary;
+  controlGroups: ControlGroupSummary[];
   selectedEntity: SelectedEntitySummary | null;
   credits: number;
   power: { produced: number; consumed: number };
@@ -123,6 +164,8 @@ interface GameUiState {
   setPlaying: (playing: boolean) => void;
   setEntityCount: (n: number) => void;
   setSelectedCount: (n: number) => void;
+  setForceSummary: (summary: ForceSummary) => void;
+  setControlGroups: (groups: ControlGroupSummary[]) => void;
   setSelectedEntity: (entity: SelectedEntitySummary | null) => void;
   setEconomy: (credits: number, produced: number, consumed: number) => void;
   setSelectedProduction: (production: SelectedProduction | null) => void;
@@ -175,6 +218,33 @@ function sameSelectedEntity(
     left.cargo?.phase === right.cargo?.phase &&
     left.resourceAmount === right.resourceAmount &&
     left.commands.join() === right.commands.join()
+  );
+}
+
+function sameForceSummary(left: ForceSummary, right: ForceSummary): boolean {
+  return (
+    left.total === right.total &&
+    left.selected === right.selected &&
+    left.units.length === right.units.length &&
+    left.units.every(
+      (unit, index) =>
+        unit.unitType === right.units[index]?.unitType &&
+        unit.total === right.units[index]?.total &&
+        unit.selected === right.units[index]?.selected,
+    )
+  );
+}
+
+function sameControlGroups(
+  left: readonly ControlGroupSummary[],
+  right: readonly ControlGroupSummary[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every(
+      (group, index) =>
+        group.slot === right[index]?.slot && group.count === right[index]?.count,
+    )
   );
 }
 
@@ -255,6 +325,8 @@ export const useGameStore = create<GameUiState>((set) => ({
   playing: false,
   entityCount: 0,
   selectedCount: 0,
+  forceSummary: { total: 0, selected: 0, units: [] },
+  controlGroups: [],
   selectedEntity: null,
   credits: 5000,
   power: { produced: 0, consumed: 0 },
@@ -275,6 +347,12 @@ export const useGameStore = create<GameUiState>((set) => ({
     set((state) => (state.entityCount === entityCount ? state : { entityCount })),
   setSelectedCount: (selectedCount) =>
     set((state) => (state.selectedCount === selectedCount ? state : { selectedCount })),
+  setForceSummary: (forceSummary) =>
+    set((state) => (sameForceSummary(state.forceSummary, forceSummary) ? state : { forceSummary })),
+  setControlGroups: (controlGroups) =>
+    set((state) =>
+      sameControlGroups(state.controlGroups, controlGroups) ? state : { controlGroups },
+    ),
   setEconomy: (credits, produced, consumed) =>
     set((state) =>
       state.credits === credits &&
