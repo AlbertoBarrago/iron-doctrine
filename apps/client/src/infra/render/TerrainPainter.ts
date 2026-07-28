@@ -78,9 +78,9 @@ export function warRemainsSample(
 ): WarRemains {
   if (!blocked) return 'none';
   const roll = terrainHash(seed ^ 0x6d2b79f5, x, y) & 127;
-  if (roll < 2) return 'shells';
-  if (roll === 2) return 'bones';
-  if (roll === 3) return 'wreckage';
+  if (roll < 4) return 'shells';
+  if (roll < 6) return 'bones';
+  if (roll < 8) return 'wreckage';
   return 'none';
 }
 
@@ -264,40 +264,50 @@ function drawWarRemains(
   if (remains === 'none') return;
   const cos = Math.cos(sample.rotation);
   const sin = Math.sin(sample.rotation);
+  const propX = x + cos * size * 0.34;
+  const propY = y + sin * size * 0.34;
   if (remains === 'shells') {
-    for (let index = -1; index <= 1; index++) {
+    for (let index = -2; index <= 2; index++) {
       graphics
-        .rect(x + cos * index * size * 0.13 - size * 0.035, y + sin * index * size * 0.13, size * 0.07, size * 0.2)
-        .fill({ color: 0x8f7745 })
+        .rect(
+          propX + cos * index * size * 0.12 - size * 0.045,
+          propY + sin * index * size * 0.12,
+          size * 0.09,
+          size * 0.27,
+        )
+        .fill({ color: 0xc09a4b })
         .stroke({ width: 1, color: 0x332d20 });
     }
     return;
   }
   if (remains === 'bones') {
     graphics
-      .moveTo(x - size * 0.25, y - size * 0.18)
-      .lineTo(x + size * 0.24, y + size * 0.2)
-      .moveTo(x - size * 0.22, y + size * 0.2)
-      .lineTo(x + size * 0.24, y - size * 0.18)
-      .stroke({ width: Math.max(1.5, size * 0.08), color: 0xc6bb91 })
-      .circle(x, y, size * 0.14)
-      .fill({ color: 0xb7aa80 })
-      .circle(x - size * 0.05, y - size * 0.02, size * 0.025)
-      .circle(x + size * 0.05, y - size * 0.02, size * 0.025)
+      .moveTo(propX - size * 0.38, propY - size * 0.28)
+      .lineTo(propX + size * 0.36, propY + size * 0.3)
+      .moveTo(propX - size * 0.34, propY + size * 0.3)
+      .lineTo(propX + size * 0.36, propY - size * 0.28)
+      .stroke({ width: Math.max(2, size * 0.1), color: 0xe0d5ad })
+      .circle(propX, propY, size * 0.22)
+      .fill({ color: 0xd4c69a })
+      .circle(propX - size * 0.075, propY - size * 0.03, size * 0.04)
+      .circle(propX + size * 0.075, propY - size * 0.03, size * 0.04)
       .fill({ color: 0x29271f });
     return;
   }
   graphics
-    .moveTo(x - size * 0.34, y + size * 0.18)
-    .lineTo(x - size * 0.12, y - size * 0.25)
-    .lineTo(x + size * 0.33, y - size * 0.14)
-    .lineTo(x + size * 0.18, y + size * 0.28)
+    .moveTo(propX - size * 0.78, propY + size * 0.18)
+    .lineTo(propX - size * 0.28, propY - size * 0.32)
+    .lineTo(propX + size * 0.72, propY - size * 0.18)
+    .lineTo(propX + size * 0.46, propY + size * 0.38)
     .closePath()
-    .fill({ color: 0x323832 })
-    .stroke({ width: 1.5, color: 0x141814 })
-    .moveTo(x - size * 0.1, y - size * 0.2)
-    .lineTo(x + cos * size * 0.5, y + sin * size * 0.5)
-    .stroke({ width: Math.max(1, size * 0.055), color: 0x77745e });
+    .fill({ color: 0x495149 })
+    .stroke({ width: 2, color: 0x141814 })
+    .moveTo(propX - cos * size * 0.65, propY - sin * size * 0.65)
+    .lineTo(propX + cos * size * 0.88, propY + sin * size * 0.88)
+    .stroke({ width: Math.max(2, size * 0.1), color: 0x99947b })
+    .circle(propX + cos * size * 0.18, propY + sin * size * 0.18, size * 0.14)
+    .fill({ color: 0x252b27 })
+    .stroke({ width: 1, color: 0xc0b57e });
 }
 
 function terrainHash(seed: number, x: number, y: number): number {

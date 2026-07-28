@@ -55,8 +55,20 @@ function spawnsAreConnected(map: typeof IRON_PASS_MAP): boolean {
   return false;
 }
 
+function nearestFormationDistance(map: typeof IRON_PASS_MAP): number {
+  const friendly = map.spawns.find((spawn) => spawn.player === 0)!;
+  return Math.min(
+    ...map.blocked.map(([x, y]) => Math.hypot(x - friendly.x, y - friendly.y)),
+  );
+}
+
 describe('local map catalog', () => {
   it('gives both bases a sustainable home economy plus contested central ore', () => {
+    expect(validateMap(DEFAULT_MAP)).toEqual([]);
+    expect(DEFAULT_MAP.environment).toMatchObject({ biome: 'temperate', seed: 1947 });
+    expect(DEFAULT_MAP.blocked.length).toBeGreaterThan(150);
+    expect(spawnsAreConnected(DEFAULT_MAP)).toBe(true);
+    expect(nearestFormationDistance(DEFAULT_MAP)).toBeLessThanOrEqual(9);
     expect(DEFAULT_MAP.resources).toHaveLength(7);
     expect(DEFAULT_MAP.resources.filter((resource) => resource.amount === 8000)).toHaveLength(6);
     expect(DEFAULT_MAP.resources).toContainEqual({ x: 48, y: 48, amount: 12000 });
@@ -70,6 +82,9 @@ describe('local map catalog', () => {
         .filter((resource) => Math.hypot(resource.x - 79, resource.y - 79) < 16)
         .reduce((total, resource) => total + resource.amount, 0),
     ).toBe(24_000);
+    for (const resource of DEFAULT_MAP.resources) {
+      expect(DEFAULT_MAP.blocked).not.toContainEqual([resource.x, resource.y]);
+    }
   });
 
   it('gives Iron Pass a valid chokepoint corridor connecting both spawns', () => {
@@ -87,6 +102,7 @@ describe('local map catalog', () => {
     expect(isBlocked(hostile!.x, hostile!.y)).toBe(false);
     expect(isBlocked(48, 48)).toBe(false);
     expect(spawnsAreConnected(IRON_PASS_MAP)).toBe(true);
+    expect(nearestFormationDistance(IRON_PASS_MAP)).toBeLessThanOrEqual(9);
   });
 
   it('gives Siege Line a defensible corridor near the friendly spawn', () => {
@@ -101,6 +117,7 @@ describe('local map catalog', () => {
     expect(isBlocked(32, 48)).toBe(false);
     expect(SIEGE_LINE_MAP.environment).toMatchObject({ biome: 'temperate', seed: 404 });
     expect(spawnsAreConnected(SIEGE_LINE_MAP)).toBe(true);
+    expect(nearestFormationDistance(SIEGE_LINE_MAP)).toBeLessThanOrEqual(9);
   });
 
   it('gives Black Dawn a fortified gate guarding the hostile stronghold', () => {
@@ -115,6 +132,7 @@ describe('local map catalog', () => {
     expect(isBlocked(72, 48)).toBe(false);
     expect(BLACK_DAWN_MAP.environment).toMatchObject({ biome: 'mediterranean', seed: 1984 });
     expect(spawnsAreConnected(BLACK_DAWN_MAP)).toBe(true);
+    expect(nearestFormationDistance(BLACK_DAWN_MAP)).toBeLessThanOrEqual(9);
   });
 
   it('saves maps and replaces maps with the same name', () => {

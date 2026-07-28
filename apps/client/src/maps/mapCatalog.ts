@@ -20,6 +20,38 @@ export interface MapCatalogEntry {
   map: MapDef;
 }
 
+function ellipseFormation(
+  centerX: number,
+  centerY: number,
+  radiusX: number,
+  radiusY: number,
+): Array<[number, number]> {
+  const cells: Array<[number, number]> = [];
+  for (let y = centerY - radiusY; y <= centerY + radiusY; y++) {
+    for (let x = centerX - radiusX; x <= centerX + radiusX; x++) {
+      const normalizedX = (x - centerX) / radiusX;
+      const normalizedY = (y - centerY) / radiusY;
+      if (normalizedX * normalizedX + normalizedY * normalizedY <= 1) cells.push([x, y]);
+    }
+  }
+  return cells;
+}
+
+function defaultMapBlocked(): Array<[number, number]> {
+  const cells = new Set<string>();
+  const addFormation = (centerX: number, centerY: number, radiusX: number, radiusY: number) => {
+    for (const [x, y] of ellipseFormation(centerX, centerY, radiusX, radiusY)) {
+      cells.add(`${x}:${y}`);
+    }
+  };
+  addFormation(7, 8, 5, 3);
+  addFormation(42, 8, 7, 3);
+  addFormation(8, 48, 3, 7);
+  addFormation(88, 46, 3, 7);
+  addFormation(48, 88, 8, 3);
+  return [...cells].map((cell) => cell.split(':').map(Number) as [number, number]);
+}
+
 export const DEFAULT_MAP: MapDef = {
   format: 'iron-doctrine.map',
   version: 1,
@@ -27,7 +59,12 @@ export const DEFAULT_MAP: MapDef = {
   width: 96,
   height: 96,
   cellSize: 1,
-  blocked: [],
+  environment: {
+    version: MAP_ENVIRONMENT_VERSION,
+    biome: 'temperate',
+    seed: 1947,
+  },
+  blocked: defaultMapBlocked(),
   resources: [
     { x: 24, y: 20, amount: 8000 },
     { x: 18, y: 28, amount: 8000 },
@@ -49,6 +86,7 @@ function ironPassBlocked(): Array<[number, number]> {
     for (let y = 20; y < 40; y++) cells.push([x, y]);
     for (let y = 56; y <= 76; y++) cells.push([x, y]);
   }
+  cells.push(...ellipseFormation(16, 37, 4, 2));
   return cells;
 }
 
@@ -85,6 +123,7 @@ function siegeLineBlocked(): Array<[number, number]> {
     for (let y = 20; y < 40; y++) cells.push([x, y]);
     for (let y = 56; y <= 76; y++) cells.push([x, y]);
   }
+  cells.push(...ellipseFormation(15, 38, 4, 2));
   return cells;
 }
 
@@ -120,6 +159,7 @@ function blackDawnBlocked(): Array<[number, number]> {
     for (let y = 20; y < 40; y++) cells.push([x, y]);
     for (let y = 56; y <= 76; y++) cells.push([x, y]);
   }
+  cells.push(...ellipseFormation(16, 38, 4, 2));
   return cells;
 }
 

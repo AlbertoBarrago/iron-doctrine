@@ -29,8 +29,8 @@ describe('terrain presentation', () => {
       warRemainsSample(1979, index % 96, Math.floor(index / 96), true),
     );
     const decorated = remains.filter((sample) => sample !== 'none');
-    expect(decorated.length).toBeGreaterThan(100);
-    expect(decorated.length).toBeLessThan(400);
+    expect(decorated.length).toBeGreaterThan(400);
+    expect(decorated.length).toBeLessThan(750);
     expect(new Set(decorated)).toEqual(new Set(['shells', 'bones', 'wreckage']));
   });
 });
