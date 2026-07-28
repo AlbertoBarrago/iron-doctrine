@@ -9,16 +9,27 @@ import {
   campaignMissionStatus,
   type CampaignProgress,
 } from '../game/campaignProgress.js';
+import {
+  normalizeCallsign,
+  type CommanderProfiles,
+} from '../game/commanderProfile.js';
 
 export function CampaignScreen({
   progress,
+  commanders,
   onBack,
   onDeploy,
+  onCreateCommander,
+  onSelectCommander,
 }: {
   progress: CampaignProgress;
+  commanders: CommanderProfiles;
   onBack(): void;
   onDeploy(mission: CampaignMission): void;
+  onCreateCommander(callsign: string): void;
+  onSelectCommander(callsign: string): void;
 }): JSX.Element {
+  const [creatorOpen, setCreatorOpen] = useState(commanders.profiles.length === 0);
   const [selectedId, setSelectedId] = useState<CampaignMissionId>(() => {
     const available = [...CAMPAIGN_MISSIONS]
       .reverse()
@@ -42,6 +53,11 @@ export function CampaignScreen({
           <span>FIELD COMMAND / CAMPAIGN THEATER</span>
           <h1>Operations Map</h1>
         </div>
+        <CommanderControl
+          commanders={commanders}
+          onCreate={() => setCreatorOpen(true)}
+          onSelect={onSelectCommander}
+        />
         <div className="campaign-header__record">
           <span>OPERATIONS CLEARED</span>
           <strong>{String(progress.completed.length).padStart(2, '0')} / 05</strong>
@@ -94,7 +110,113 @@ export function CampaignScreen({
           onDeploy={() => onDeploy(selected)}
         />
       </div>
+      {creatorOpen ? (
+        <CommanderCreator
+          existing={commanders.profiles.map((profile) => profile.callsign)}
+          required={commanders.profiles.length === 0}
+          onCancel={() => setCreatorOpen(false)}
+          onCreate={(callsign) => {
+            onCreateCommander(callsign);
+            setCreatorOpen(false);
+          }}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function CommanderControl({
+  commanders,
+  onCreate,
+  onSelect,
+}: {
+  commanders: CommanderProfiles;
+  onCreate(): void;
+  onSelect(callsign: string): void;
+}): JSX.Element {
+  return (
+    <div className="commander-control">
+      <span>COMMANDER</span>
+      {commanders.profiles.length > 0 ? (
+        <div>
+          <select
+            aria-label="Active commander"
+            value={commanders.activeCallsign ?? ''}
+            onChange={(event) => onSelect(event.target.value)}
+          >
+            {commanders.profiles.map((profile) => (
+              <option key={profile.callsign} value={profile.callsign}>
+                {profile.callsign}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={onCreate} aria-label="Create commander">
+            +
+          </button>
+        </div>
+      ) : (
+        <strong>UNASSIGNED</strong>
+      )}
+    </div>
+  );
+}
+
+function CommanderCreator({
+  existing,
+  required,
+  onCancel,
+  onCreate,
+}: {
+  existing: readonly string[];
+  required: boolean;
+  onCancel(): void;
+  onCreate(callsign: string): void;
+}): JSX.Element {
+  const [value, setValue] = useState('');
+  const callsign = normalizeCallsign(value);
+  const duplicate = callsign ? existing.includes(callsign) : false;
+  return (
+    <div className="commander-creator" role="presentation">
+      <form
+        className="commander-creator__dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="commander-creator-title"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (callsign && !duplicate) onCreate(callsign);
+        }}
+      >
+        <span>FIELD PERSONNEL REGISTRY</span>
+        <h2 id="commander-creator-title">Commander callsign</h2>
+        <p>Enter exactly three letters or numbers. Campaign progress belongs to this profile.</p>
+        <input
+          value={value}
+          maxLength={3}
+          aria-label="Three-character callsign"
+          onChange={(event) =>
+            setValue(event.target.value.replace(/[^a-z0-9]/gi, '').toUpperCase())
+          }
+        />
+        <small>
+          {duplicate
+            ? 'Callsign already registered'
+            : callsign
+              ? `Register commander ${callsign}`
+              : 'Three characters required'}
+        </small>
+        <div>
+          {!required ? (
+            <button type="button" onClick={onCancel}>
+              Cancel
+            </button>
+          ) : null}
+          <button type="submit" disabled={!callsign || duplicate}>
+            Confirm callsign
+          </button>
+        </div>
+      </form>
+    </div>
   );
 }
 

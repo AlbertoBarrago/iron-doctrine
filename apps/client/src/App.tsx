@@ -17,6 +17,11 @@ import {
   type SkirmishConfig,
 } from './game/skirmishConfig.js';
 import { completeCampaignMission, loadCampaignProgress } from './game/campaignProgress.js';
+import {
+  createCommanderProfile,
+  loadCommanderProfiles,
+  selectCommanderProfile,
+} from './game/commanderProfile.js';
 import type { CampaignMissionId } from './game/campaign.js';
 import { useGameStore } from './state/gameStore.js';
 import type { MapDef } from '@iron/shared';
@@ -47,6 +52,8 @@ export function App(): JSX.Element {
   const [skirmish, setSkirmish] = useState<SkirmishConfig | null>(null);
   const [gameReturnMode, setGameReturnMode] = useState<'menu' | 'campaign'>('menu');
   const maps = loadMapCatalog(localStorage);
+  const commanders = loadCommanderProfiles(localStorage);
+  const activeCallsign = commanders.activeCallsign;
   if (mode === 'menu') {
     return (
       <StartScreen
@@ -64,7 +71,19 @@ export function App(): JSX.Element {
   if (mode === 'campaign') {
     return (
       <CampaignScreen
-        progress={loadCampaignProgress(localStorage)}
+        key={activeCallsign ?? 'new-commander'}
+        progress={
+          activeCallsign ? loadCampaignProgress(localStorage, activeCallsign) : { completed: [] }
+        }
+        commanders={commanders}
+        onCreateCommander={(callsign) => {
+          createCommanderProfile(localStorage, callsign);
+          setCampaignRevision((current) => current + 1);
+        }}
+        onSelectCommander={(callsign) => {
+          selectCommanderProfile(localStorage, callsign);
+          setCampaignRevision((current) => current + 1);
+        }}
         onBack={() => setMode('menu')}
         onDeploy={(mission) => {
           if (!mission.runtimeMission || !maps[0]) return;
@@ -96,7 +115,7 @@ export function App(): JSX.Element {
     <Game
       config={skirmish}
       onMissionComplete={(mission) => {
-        completeCampaignMission(localStorage, mission);
+        if (activeCallsign) completeCampaignMission(localStorage, activeCallsign, mission);
         setCampaignRevision((current) => current + 1);
       }}
       onExit={() => {

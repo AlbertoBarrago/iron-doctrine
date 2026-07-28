@@ -74,10 +74,10 @@ describe('campaign', () => {
 
   it('persists completion idempotently and survives invalid storage', () => {
     const storage = memoryStorage();
-    completeCampaignMission(storage, 'base_foundations');
-    completeCampaignMission(storage, 'base_foundations');
-    expect(loadCampaignProgress(storage)).toEqual({ completed: ['base_foundations'] });
-    storage.setItem('iron-doctrine.campaign.v1', '{broken');
-    expect(loadCampaignProgress(storage)).toEqual({ completed: [] });
+    completeCampaignMission(storage, 'FOX', 'base_foundations');
+    completeCampaignMission(storage, 'FOX', 'base_foundations');
+    expect(loadCampaignProgress(storage, 'FOX')).toEqual({ completed: ['base_foundations'] });
+    storage.setItem('iron-doctrine.campaign.v2.FOX', '{broken');
+    expect(loadCampaignProgress(storage, 'FOX')).toEqual({ completed: [] });
   });
 });
