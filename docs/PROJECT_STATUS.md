@@ -13,8 +13,11 @@ First Contact is a playable vertical slice:
 - explore a full-screen battlefield through persistent fog of war;
 - harvest ore, construct a base and produce units;
 - read harvester load, extraction and deposit state directly on the battlefield;
+- read the remaining capacity of selectable, grounded ore fields;
 - run multiple harvesters through shared ore and refinery approaches without deadlocking;
+- dispatch a fast, fragile scout buggy with extended vision ahead of the main force;
 - identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
+- distinguish active engineers through a presentation-only tool-check animation;
 - fight through a deterministic, chunk-rendered Mediterranean environment on Iron Pass;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
@@ -24,7 +27,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 216 automated tests;
+- 221 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -35,6 +38,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Render snapshots are the only simulation-to-client presentation boundary.
 - The battlefield excludes the command sidebar from its camera viewport.
 - Hidden map cells are fully black; explored terrain is remembered but attenuated.
+- Explored terrain uses a lighter veil than hidden terrain so recently travelled ground remains legible.
 - AI production observes unit build times and difficulty-specific army limits.
 - AI production uses the same validated facility queues, costs and tech gates as players.
 - Completed units wait for a collision-free facility exit instead of spawning into obstacles.
@@ -48,6 +52,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Iron Pass is the first Mediterranean visual slice; realism remains subordinate to RTS
   readability and measurable frame-time budgets.
 - Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
+- Engineer tool motion remains presentation-only; the scout is an unarmed player reconnaissance unit.
 - Building operation and construction state drive ambient animation without entering the simulation.
 - Campaign victories prioritize returning to the campaign route; defeats prioritize retrying the mission.
 - Procedural unit silhouettes, ballistic combat cues and distinct weapon audio improve battlefield readability.
@@ -117,6 +122,7 @@ narrative for those are not yet defined.
 4. Decide whether authored roads and terrain decoration belong in map format v2.
 5. Add maps designed around scouting, expansion and defensible terrain.
 6. Run a browser playtest pass at common desktop resolutions.
+7. Browser-playtest explored fog readability, scout recognition and engineer idle motion together.
 
 ## Session close procedure
 
