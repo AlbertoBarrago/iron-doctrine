@@ -28,7 +28,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 226 automated tests;
+- 230 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -46,6 +46,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Unit separation respects navigation bounds and blocked cells; pathfinding recovers displaced units.
 - Moving tanks can crush hostile infantry; allies and hostile vehicles retain normal separation.
 - Resource nodes remain traversable presentation/economy entities and never stamp navigation obstacles.
+- Explicit group attacks preserve one target and assign armed units deterministic, multi-ring
+  engagement slots; selected unarmed support units stop instead of entering the kill zone.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
 - Map environment metadata is presentation-only, backwards-compatible and versioned independently
@@ -66,13 +68,12 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 ### Gameplay correctness
 
-1. Reproduce the reported mixed-selection order issue in the browser.
-2. Decide how unarmed selected units should react when an enemy is right-clicked.
-3. Reproduce grouped explicit attack orders that leave units jammed in a ring around the
-   target. Passive units may auto-acquire opportunistically, but a player-issued group attack
-   must preserve a precise target and keep every selected unit progressing into a useful
-   firing position.
-4. Harvesters got a fluidity pass: their collision radius shrank from 1.2 to 1 (matching the
+Grouped explicit attack orders now assign up to 16 distinct positions per engagement ring,
+continue onto inner rings for larger forces and preserve the selected target. Mixed selections
+send only armed units into combat while unarmed support stops. Automated regression covers a
+24-unit group; browser playtesting remains the final visual acceptance step.
+
+1. Harvesters got a fluidity pass: their collision radius shrank from 1.2 to 1 (matching the
    tank), and each harvester now aims at a point offset around the shared node/drop-off
    instead of the exact centre, so a group spreads out instead of piling onto one spot.
    Root cause found in the process: unit separation and straight-line movement can reach a
