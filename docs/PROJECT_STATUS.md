@@ -137,9 +137,9 @@ send only armed units into combat while unarmed support stops. Automated regress
 
 ### Test organization
 
-1. Move colocated unit and integration tests into local `__tests__` directories by module.
-2. Preserve cross-package determinism and end-to-end harnesses in a dedicated root test area.
-3. Perform the move mechanically on a separate branch without changing behavior.
+All 45 test files now live in local `__tests__` directories beside their owning modules.
+Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
+only file locations and relative imports, preserving the full 232-test behavior baseline.
 
 ### Campaign production
 
@@ -151,7 +151,9 @@ All five operations of the First Contact campaign arc are implemented:
   runtime mission (`iron_pass`) uses an authored chokepoint map and a scripted armored ambush
   triggered when the player crosses the pass. A restrained procedural ambient score now supports
   exploration and base-building without requiring licensed assets.
-- Operation 04 — Siege Line: browser-playtested, confirmed playable. A dedicated runtime
+- Operation 04 — Siege Line: browser-playtested and completed again on 2026-07-28 without
+  blockers. General playability is good, but an early aggressive push can end the operation
+  too quickly and needs a pacing/defensive-response tuning pass. A dedicated runtime
   mission (`siege_line`) with an authored defensible-corridor map and escalating scripted
   assault waves the player must hold against before counter-attacking the hostile command.
   Difficulty/pacing tuning is still expected as a follow-up, but the base loop holds up.
@@ -178,8 +180,9 @@ narrative for those are not yet defined.
 5. Add maps designed around scouting, expansion and defensible terrain.
 6. Run a browser playtest pass at common desktop resolutions.
 7. Browser-playtest explored fog readability, scout recognition and engineer idle motion together.
-8. Browser-playtest and tune the procedural ambient score; it is independently mutable and
-   volume-controlled, while adaptive combat intensity remains a later milestone.
+8. Tune the procedural ambient score after playtest feedback found it too dark and slow;
+   retain its independent mute/volume controls and add more forward motion without turning
+   the later adaptive-combat milestone into part of this pass.
 
 ## Session close procedure
 
