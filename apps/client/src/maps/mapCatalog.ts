@@ -1,4 +1,11 @@
-import { validateMap, type MapDef } from '@iron/shared';
+import {
+  DEFAULT_MAP_ENVIRONMENT,
+  MAP_BIOMES,
+  MAP_ENVIRONMENT_VERSION,
+  validateMap,
+  type MapDef,
+  type MapEnvironment,
+} from '@iron/shared';
 
 const STORAGE_KEY = 'iron-doctrine.maps.v1';
 
@@ -52,6 +59,11 @@ export const IRON_PASS_MAP: MapDef = {
   width: 96,
   height: 96,
   cellSize: 1,
+  environment: {
+    version: MAP_ENVIRONMENT_VERSION,
+    biome: 'mediterranean',
+    seed: 1979,
+  },
   blocked: ironPassBlocked(),
   resources: [
     { x: 16, y: 30, amount: 8000 },
@@ -196,6 +208,7 @@ function normalizeMap(map: MapDef): MapDef {
   return {
     ...map,
     name: map.name.trim(),
+    environment: { ...(map.environment ?? DEFAULT_MAP_ENVIRONMENT) },
     blocked: map.blocked.map(([x, y]) => [x, y]),
     resources: map.resources.map((resource) => ({ ...resource })),
     spawns: map.spawns.map((spawn) => ({ ...spawn })),
@@ -212,6 +225,7 @@ function isMapDef(candidate: unknown): candidate is MapDef {
     typeof map.width === 'number' &&
     typeof map.height === 'number' &&
     typeof map.cellSize === 'number' &&
+    (map.environment === undefined || isMapEnvironment(map.environment)) &&
     Array.isArray(map.blocked) &&
     map.blocked.every(
       (cell) =>
@@ -237,5 +251,16 @@ function isMapDef(candidate: unknown): candidate is MapDef {
         typeof (spawn as { x?: unknown }).x === 'number' &&
         typeof (spawn as { y?: unknown }).y === 'number',
     )
+  );
+}
+
+function isMapEnvironment(candidate: unknown): candidate is MapEnvironment {
+  if (!candidate || typeof candidate !== 'object') return false;
+  const environment = candidate as Partial<MapEnvironment>;
+  return (
+    environment.version === MAP_ENVIRONMENT_VERSION &&
+    typeof environment.biome === 'string' &&
+    MAP_BIOMES.includes(environment.biome as MapEnvironment['biome']) &&
+    typeof environment.seed === 'number'
   );
 }

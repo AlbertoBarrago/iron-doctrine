@@ -1,14 +1,45 @@
 import { describe, it, expect } from 'vitest';
-import { createEmptyMap, validateMap, MAP_VERSION } from './map.js';
+import { createEmptyMap, validateMap, MAP_ENVIRONMENT_VERSION, MAP_VERSION } from './map.js';
 
 describe('MapDef', () => {
   it('creates a valid empty map (after adding a spawn)', () => {
     const m = createEmptyMap('test', 32, 32);
     expect(m.version).toBe(MAP_VERSION);
+    expect(m.environment).toEqual({
+      version: MAP_ENVIRONMENT_VERSION,
+      biome: 'temperate',
+      seed: 1,
+    });
     // Empty map has no spawn → invalid.
     expect(validateMap(m)).toContain('map needs at least one spawn');
     m.spawns.push({ player: 0, x: 4, y: 4 });
     expect(validateMap(m)).toEqual([]);
+  });
+
+  it('accepts legacy maps without environment metadata', () => {
+    const m = createEmptyMap('legacy', 8, 8);
+    delete m.environment;
+    m.spawns.push({ player: 0, x: 1, y: 1 });
+
+    expect(validateMap(m)).toEqual([]);
+  });
+
+  it('rejects unsupported environment metadata', () => {
+    const m = createEmptyMap('bad-environment', 8, 8);
+    m.spawns.push({ player: 0, x: 1, y: 1 });
+    m.environment = {
+      version: 99 as typeof MAP_ENVIRONMENT_VERSION,
+      biome: 'desert' as 'temperate',
+      seed: 1.5,
+    };
+
+    expect(validateMap(m)).toEqual(
+      expect.arrayContaining([
+        'unsupported environment version 99',
+        'unsupported biome desert',
+        'environment seed must be a safe integer',
+      ]),
+    );
   });
 
   it('flags out-of-bounds blocked cells', () => {

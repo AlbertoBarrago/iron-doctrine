@@ -5,6 +5,25 @@
  */
 export const MAP_VERSION = 1;
 
+export const MAP_ENVIRONMENT_VERSION = 1;
+
+export const MAP_BIOMES = ['temperate', 'mediterranean'] as const;
+
+export type MapBiome = (typeof MAP_BIOMES)[number];
+
+export interface MapEnvironment {
+  version: typeof MAP_ENVIRONMENT_VERSION;
+  biome: MapBiome;
+  /** Seed used only for deterministic presentation details. */
+  seed: number;
+}
+
+export const DEFAULT_MAP_ENVIRONMENT: MapEnvironment = {
+  version: MAP_ENVIRONMENT_VERSION,
+  biome: 'temperate',
+  seed: 1,
+};
+
 export interface MapResource {
   x: number;
   y: number;
@@ -24,6 +43,11 @@ export interface MapDef {
   width: number;
   height: number;
   cellSize: number;
+  /**
+   * Presentation-only environment metadata. Optional for backwards compatibility
+   * with maps authored before environments were introduced.
+   */
+  environment?: MapEnvironment;
   /** Blocked cells as [cx, cy] pairs. */
   blocked: Array<[number, number]>;
   resources: MapResource[];
@@ -38,6 +62,7 @@ export function createEmptyMap(name: string, width = 64, height = 64): MapDef {
     width,
     height,
     cellSize: 1,
+    environment: { ...DEFAULT_MAP_ENVIRONMENT },
     blocked: [],
     resources: [],
     spawns: [],
@@ -59,6 +84,17 @@ export function validateMap(map: MapDef): string[] {
   }
   if (!Number.isFinite(map.cellSize) || map.cellSize <= 0)
     errors.push('cell size must be positive');
+  if (map.environment) {
+    if (map.environment.version !== MAP_ENVIRONMENT_VERSION) {
+      errors.push(`unsupported environment version ${map.environment.version}`);
+    }
+    if (!MAP_BIOMES.includes(map.environment.biome)) {
+      errors.push(`unsupported biome ${String(map.environment.biome)}`);
+    }
+    if (!Number.isSafeInteger(map.environment.seed)) {
+      errors.push('environment seed must be a safe integer');
+    }
+  }
   const inBounds = (x: number, y: number) => x >= 0 && y >= 0 && x < map.width && y < map.height;
   for (const [cx, cy] of map.blocked) {
     if (!inBounds(cx, cy)) errors.push(`blocked cell out of bounds: ${cx},${cy}`);

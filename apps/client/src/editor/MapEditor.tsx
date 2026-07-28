@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createEmptyMap, validateMap, type MapDef } from '@iron/shared';
+import {
+  DEFAULT_MAP_ENVIRONMENT,
+  MAP_BIOMES,
+  MAP_ENVIRONMENT_VERSION,
+  createEmptyMap,
+  validateMap,
+  type MapDef,
+} from '@iron/shared';
 import { parseMapJson, saveLocalMap } from '../maps/mapCatalog.js';
 import {
   brushCells,
@@ -46,6 +53,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
   const painting = useRef(false);
   const lastPainted = useRef<string | null>(null);
   const validationErrors = useMemo(() => validateMap(map), [map]);
+  const environment = map.environment ?? DEFAULT_MAP_ENVIRONMENT;
   const displaySize = Math.round(fitSize * zoom);
   const backingSize = canvasBackingSize(displaySize, globalThis.devicePixelRatio ?? 1);
 
@@ -67,19 +75,26 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
     const cellWidth = backingSize / map.width;
     const cellHeight = backingSize / map.height;
 
-    ctx.fillStyle = '#2d3827';
+    const mediterranean = environment.biome === 'mediterranean';
+    ctx.fillStyle = mediterranean ? '#615c42' : '#2d3827';
     ctx.fillRect(0, 0, backingSize, backingSize);
     for (let cy = 0; cy < map.height; cy++) {
       for (let cx = 0; cx < map.width; cx++) {
-        const hash = Math.imul(cx, 73856093) ^ Math.imul(cy, 19349663);
+        const hash = Math.imul(cx, 73856093) ^ Math.imul(cy, 19349663) ^ environment.seed;
         if ((hash & 3) === 0) {
-          ctx.fillStyle = (hash & 4) === 0 ? '#35402c' : '#293323';
+          ctx.fillStyle = mediterranean
+            ? (hash & 4) === 0
+              ? '#777050'
+              : '#6b6648'
+            : (hash & 4) === 0
+              ? '#35402c'
+              : '#293323';
           ctx.fillRect(cx * cellWidth, cy * cellHeight, cellWidth + 1, cellHeight + 1);
         }
       }
     }
 
-    ctx.fillStyle = '#171a14';
+    ctx.fillStyle = mediterranean ? '#665f50' : '#171a14';
     for (const [cx, cy] of map.blocked) {
       ctx.fillRect(cx * cellWidth, cy * cellHeight, cellWidth, cellHeight);
       ctx.strokeStyle = '#555943';
@@ -152,7 +167,7 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
         );
       }
     }
-  }, [backingSize, brushSize, hoveredCell, map, tool]);
+  }, [backingSize, brushSize, environment.biome, environment.seed, hoveredCell, map, tool]);
 
   useEffect(() => draw(), [draw]);
 
@@ -265,6 +280,28 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
             value={map.name}
             onChange={(event) => setMap((current) => ({ ...current, name: event.target.value }))}
           />
+        </label>
+        <label className="editor-name editor-biome">
+          <span>BIOME</span>
+          <select
+            value={environment.biome}
+            onChange={(event) =>
+              setMap((current) => ({
+                ...current,
+                environment: {
+                  version: MAP_ENVIRONMENT_VERSION,
+                  biome: event.target.value as (typeof MAP_BIOMES)[number],
+                  seed: current.environment?.seed ?? DEFAULT_MAP_ENVIRONMENT.seed,
+                },
+              }))
+            }
+          >
+            {MAP_BIOMES.map((biome) => (
+              <option key={biome} value={biome}>
+                {biome}
+              </option>
+            ))}
+          </select>
         </label>
         <div className="editor-summary">
           <span>
@@ -477,6 +514,10 @@ export function MapEditor({ onExit }: { onExit: () => void }): JSX.Element {
             <dd>
               {map.resources.reduce((sum, resource) => sum + resource.amount, 0).toLocaleString()}
             </dd>
+          </div>
+          <div>
+            <dt>Biome</dt>
+            <dd>{environment.biome}</dd>
           </div>
           <div>
             <dt>Player positions</dt>

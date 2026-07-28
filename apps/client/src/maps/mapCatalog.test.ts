@@ -44,6 +44,10 @@ describe('local map catalog', () => {
 
   it('gives Iron Pass a valid chokepoint corridor connecting both spawns', () => {
     expect(validateMap(IRON_PASS_MAP)).toEqual([]);
+    expect(IRON_PASS_MAP.environment).toMatchObject({
+      biome: 'mediterranean',
+      seed: 1979,
+    });
     const [friendly, hostile] = IRON_PASS_MAP.spawns;
     expect(friendly).toMatchObject({ player: 0 });
     expect(hostile).toMatchObject({ player: 1 });
@@ -95,5 +99,16 @@ describe('local map catalog', () => {
     expect(() => parseMapJson(JSON.stringify({ format: 'iron-doctrine.map' }))).toThrow(
       'Invalid map structure',
     );
+  });
+
+  it('normalizes legacy maps to the default environment', () => {
+    const legacy = validMap('Legacy');
+    delete legacy.environment;
+
+    expect(parseMapJson(JSON.stringify(legacy)).environment).toEqual({
+      version: 1,
+      biome: 'temperate',
+      seed: 1,
+    });
   });
 });

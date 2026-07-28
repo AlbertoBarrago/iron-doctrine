@@ -1201,7 +1201,8 @@ kbd {
   font: 10px var(--body);
   letter-spacing: 0.12em;
 }
-.editor-name input {
+.editor-name input,
+.editor-name select {
   width: 210px;
   padding: 6px 8px;
   color: #e0d9ba;
@@ -1209,6 +1210,9 @@ kbd {
   border: 1px inset #62654c;
   font: 700 14px var(--body);
   text-transform: uppercase;
+}
+.editor-name select {
+  width: 150px;
 }
 .editor-summary {
   display: flex;
