@@ -536,7 +536,10 @@ Each is an independently testable module with a clear port/interface.
 - **Spatial partitioning:** uniform **spatial hash** for collision/target queries; **QuadTree** for large-radius range/selection queries and minimap culling.
 - **Object pooling:** projectiles, particles, sprites, path nodes, snapshot buffers.
 - **Texture atlas:** all sprites packed; single-draw-call batching per layer in Pixi.
-- **Dirty rendering:** static layers (terrain, placed buildings) cached to RenderTexture; only dynamic layer redraws each frame.
+- **Static terrain:** deterministic terrain geometry is built once in bounded chunks; pan and zoom
+  update the containing scene transform instead of clearing and rebuilding Pixi `Graphics` every
+  frame. Render textures remain an option only after profiling because they trade draw work for GPU
+  memory.
 - **Culling:** viewport frustum cull sprites; skip fog cells outside view.
 - **LOD:** distant/zoomed-out units drawn as simplified sprites or icon quads; disable per-unit health bars beyond a zoom threshold.
 - **Snapshot transfer:** `SharedArrayBuffer` ring buffer (double-buffered) when cross-origin isolation is available; else transferable `ArrayBuffer` (zero-copy) with structured-clone fallback.
@@ -615,6 +618,12 @@ Replays are **inputs, not frames** — a seed plus the full ordered command log.
 
 ## 18. Asset Pipeline
 
+- **Environment contract:** maps may carry independently versioned, presentation-only biome and
+  seed metadata. The simulation ignores it; the renderer uses it to reproduce cosmetic terrain.
+- **Biome renderers:** each biome owns palette, ground variation, obstacles and decoration behind
+  the terrain painter boundary. The first implementation is the Mediterranean Iron Pass slice.
+- **Production gate:** procedural geometry establishes art direction without a new dependency.
+  Texture atlases, meshes or filters are added only when a profiled visual target justifies them.
 - **Source assets** (original art) live outside `src` in `assets-src/` (Aseprite/SVG/audio). Never imported directly.
 - **Build step** (Vite plugin + script): pack sprites → texture atlas (`.json` + `.webp`/`.png`), transcode audio → `.webm`/`.m4a`, generate typed manifests (`assets.gen.ts`) so references are compile-checked.
 - **Content JSON** (`content/`) validated at build against JSON Schema (Zod/Ajv). Invalid unit/building stats fail the build.

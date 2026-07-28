@@ -1,6 +1,6 @@
 # Iron Doctrine — Project Status
 
-Last updated: 2026-07-25
+Last updated: 2026-07-28
 
 This document is the operational source of truth for completed work, known issues and
 the next development slice. The README remains the public presentation of the game.
@@ -15,6 +15,7 @@ First Contact is a playable vertical slice:
 - read harvester load, extraction and deposit state directly on the battlefield;
 - run multiple harvesters through shared ore and refinery approaches without deadlocking;
 - identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
+- fight through a deterministic, chunk-rendered Mediterranean environment on Iron Pass;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
 - launch missions from a classic 1990s-inspired RTS command menu;
@@ -23,7 +24,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 193 automated tests;
+- 216 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -40,6 +41,12 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Unit separation respects navigation bounds and blocked cells; pathfinding recovers displaced units.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
+- Map environment metadata is presentation-only, backwards-compatible and versioned independently
+  from authoritative simulation state.
+- Static terrain geometry is built once in chunked Pixi containers; camera movement updates its
+  transform instead of rebuilding terrain every frame.
+- Iron Pass is the first Mediterranean visual slice; realism remains subordinate to RTS
+  readability and measurable frame-time budgets.
 - Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
 - Building operation and construction state drive ambient animation without entering the simulation.
 - Campaign victories prioritize returning to the campaign route; defeats prioritize retrying the mission.
@@ -105,9 +112,11 @@ narrative for those are not yet defined.
 ### Content and presentation
 
 1. Expand First Contact with authored triggers and reusable mission objectives.
-2. Playtest the new infantry and structure art pass at normal and minimum zoom.
-3. Add maps designed around scouting, expansion and defensible terrain.
-4. Run a browser playtest pass at common desktop resolutions.
+2. Browser-playtest the Mediterranean Iron Pass slice at normal and minimum zoom.
+3. Profile frame time and GPU memory before adding textured atlases or post-processing.
+4. Decide whether authored roads and terrain decoration belong in map format v2.
+5. Add maps designed around scouting, expansion and defensible terrain.
+6. Run a browser playtest pass at common desktop resolutions.
 
 ## Session close procedure
 
