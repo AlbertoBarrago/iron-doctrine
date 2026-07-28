@@ -22,11 +22,13 @@ export const busGain = (volume: number, muted: boolean, scale: number): number =
   muted ? 0 : normalizeVolume(volume) * scale;
 
 const AMBIENT_CHORDS = [
-  [73.42, 110, 146.83], // D minor
-  [65.41, 98, 130.81], // C major
-  [58.27, 87.31, 116.54], // B-flat major
-  [65.41, 98, 130.81], // C major
+  [146.83, 174.61, 220], // D minor
+  [174.61, 220, 261.63], // F major
+  [130.81, 164.81, 196], // C major
+  [196, 246.94, 293.66], // G major
 ] as const;
+export const AMBIENT_PHRASE_SECONDS = 6;
+export const AMBIENT_PULSE_SECONDS = 1.4;
 
 export const ambientChord = (phrase: number): readonly number[] =>
   AMBIENT_CHORDS[((phrase % AMBIENT_CHORDS.length) + AMBIENT_CHORDS.length) %
@@ -148,22 +150,23 @@ export class AudioBus {
   private scheduleAmbientPhrase(ctx: AudioContext): void {
     if (!this.ambientRequested || !this.musicGain) return;
     const now = ctx.currentTime + 0.05;
-    const duration = 9;
+    const duration = AMBIENT_PHRASE_SECONDS + 0.6;
+    const chord = ambientChord(this.ambientPhrase);
     const filter = ctx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.value = 520;
-    filter.Q.value = 0.6;
+    filter.frequency.value = 940;
+    filter.Q.value = 0.45;
     filter.connect(this.musicGain);
 
-    for (const [voice, frequency] of ambientChord(this.ambientPhrase).entries()) {
+    for (const [voice, frequency] of chord.entries()) {
       const oscillator = ctx.createOscillator();
       const envelope = ctx.createGain();
       oscillator.type = voice === 0 ? 'sine' : 'triangle';
       oscillator.frequency.value = frequency;
       oscillator.detune.value = voice === 2 ? 3 : 0;
       envelope.gain.setValueAtTime(0.0001, now);
-      envelope.gain.exponentialRampToValueAtTime(voice === 0 ? 0.7 : 0.32, now + 2.2);
-      envelope.gain.setValueAtTime(voice === 0 ? 0.7 : 0.32, now + duration - 2.5);
+      envelope.gain.exponentialRampToValueAtTime(voice === 0 ? 0.42 : 0.25, now + 0.9);
+      envelope.gain.setValueAtTime(voice === 0 ? 0.42 : 0.25, now + duration - 1.4);
       envelope.gain.exponentialRampToValueAtTime(0.0001, now + duration);
       oscillator.connect(envelope).connect(filter);
       oscillator.onended = () => this.ambientSources.delete(oscillator);
@@ -172,11 +175,35 @@ export class AudioBus {
       oscillator.stop(now + duration);
     }
 
+    for (let pulse = 0; pulse < 4; pulse++) {
+      this.scheduleAmbientPulse(ctx, filter, now + 0.45 + pulse * AMBIENT_PULSE_SECONDS, chord);
+    }
+
     this.ambientPhrase++;
     this.ambientTimer = setTimeout(() => {
       this.ambientTimer = null;
       this.scheduleAmbientPhrase(ctx);
-    }, 8_500);
+    }, AMBIENT_PHRASE_SECONDS * 1_000);
+  }
+
+  private scheduleAmbientPulse(
+    ctx: AudioContext,
+    destination: AudioNode,
+    now: number,
+    chord: readonly number[],
+  ): void {
+    const oscillator = ctx.createOscillator();
+    const envelope = ctx.createGain();
+    oscillator.type = 'triangle';
+    oscillator.frequency.value = chord[0]!;
+    envelope.gain.setValueAtTime(0.0001, now);
+    envelope.gain.exponentialRampToValueAtTime(0.075, now + 0.035);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, now + 0.28);
+    oscillator.connect(envelope).connect(destination);
+    oscillator.onended = () => this.ambientSources.delete(oscillator);
+    this.ambientSources.add(oscillator);
+    oscillator.start(now);
+    oscillator.stop(now + 0.3);
   }
 
   private blip(

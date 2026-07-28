@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ambientChord, busGain, normalizeVolume, SOUND_KINDS } from '../AudioBus.js';
+import {
+  AMBIENT_PHRASE_SECONDS,
+  AMBIENT_PULSE_SECONDS,
+  ambientChord,
+  busGain,
+  normalizeVolume,
+  SOUND_KINDS,
+} from '../AudioBus.js';
 
 describe('audio volume', () => {
   it('clamps values to the supported range', () => {
@@ -20,8 +27,16 @@ describe('audio volume', () => {
   });
 
   it('cycles through a stable ambient chord progression', () => {
-    expect(ambientChord(0)).toEqual([73.42, 110, 146.83]);
+    expect(ambientChord(0)).toEqual([146.83, 174.61, 220]);
+    expect(ambientChord(1)).toEqual([174.61, 220, 261.63]);
+    expect(ambientChord(3)).toEqual([196, 246.94, 293.66]);
     expect(ambientChord(4)).toEqual(ambientChord(0));
     expect(ambientChord(-1)).toEqual(ambientChord(3));
+  });
+
+  it('uses a shorter phrase with a restrained pulse', () => {
+    expect(AMBIENT_PHRASE_SECONDS).toBe(6);
+    expect(AMBIENT_PULSE_SECONDS).toBeGreaterThan(1);
+    expect(AMBIENT_PULSE_SECONDS).toBeLessThan(AMBIENT_PHRASE_SECONDS / 2);
   });
 });
