@@ -118,13 +118,16 @@ Commander achievements and Battle Reports are implemented:
 
 ### Support units
 
-1. Add an unarmed Medic trained at the barracks.
-2. Heal allied infantry only through a dedicated deterministic healing system; vehicles and
-   structures remain outside the medical loop.
-3. Add treatment animation, explicit/manual healing priority and the Field Medic and Leave
-   No One Behind achievements.
-4. Explore fast field-treatment actions with limited, readable choices: trauma kit for health,
-   stimulant for temporary combat readiness and sedative for fear/panic recovery.
+The first Medic slice is implemented:
+
+1. The barracks trains a low-health, unarmed Medic with dedicated HUD content.
+2. A deterministic healing system automatically prioritizes the most injured nearby allied
+   infantry; vehicles, structures, enemies and critically wounded units remain outside the loop.
+3. Treatment state survives save/load and drives a specific medical-bag, injector and pulse
+   animation.
+
+Still pending: explicit/manual treatment priority, Field Medic and Leave No One Behind
+achievements, and fast treatment actions for the later morale/condition system.
 
 ### Battlefield life and cover
 
@@ -159,9 +162,9 @@ Commander achievements and Battle Reports are implemented:
 
 ### Test organization
 
-All 50 test files now live in local `__tests__` directories beside their owning modules.
+All 51 test files now live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports. The current full baseline is 255 passing tests.
+only file locations and relative imports. The current full baseline is 260 passing tests.
 
 ### Campaign production
 
