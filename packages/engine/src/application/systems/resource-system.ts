@@ -28,6 +28,8 @@ const GATHER_TICKS = 8;
 const GATHER_RATE = 20;
 /** Centre distance that puts a harvester alongside the visible edge of an ore field. */
 const NODE_REACH_SQ = fp.fromInt(16); // 4 units
+/** Preferred distance for the first harvester approaching an unoccupied ore field. */
+const CLEAR_NODE_REACH_SQ = fp.fromFloat(2.75 * 2.75);
 /**
  * Drop-offs keep a wider interaction boundary so multiple harvesters can queue around
  * a large refinery without relying entirely on unit separation.
@@ -81,7 +83,16 @@ export function createResourceSystem(economy: PlayerEconomy): System {
               h.phase = 'idle';
               break;
             }
-            if (v2.distSq(pos, world.get(node, Position)!) <= NODE_REACH_SQ) {
+            const distance = v2.distSq(pos, world.get(node, Position)!);
+            const assignedHarvesters = world
+              .query(Harvest)
+              .filter(
+                (candidate) =>
+                  world.get(candidate, Harvest)!.node === node &&
+                  world.get(candidate, Harvest)!.phase !== 'paused',
+              ).length;
+            const reach = assignedHarvesters === 1 ? CLEAR_NODE_REACH_SQ : NODE_REACH_SQ;
+            if (distance <= reach) {
               h.phase = 'gathering';
               h.gatherLeft = GATHER_TICKS;
               move.target = null;

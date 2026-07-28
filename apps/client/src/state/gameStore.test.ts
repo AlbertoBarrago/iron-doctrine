@@ -7,6 +7,7 @@ import {
   tutorialProgress,
   preferredCommandTab,
   selectionCommands,
+  useGameStore,
 } from './gameStore.js';
 
 describe('contextual command tabs', () => {
@@ -72,6 +73,23 @@ describe('harvester presentation', () => {
     expect(harvesterStatus('toBase')).toBe('Returning to refinery');
     expect(harvesterStatus('depositing')).toBe('Depositing ore');
     expect(harvesterStatus('paused')).toBe('Awaiting orders');
+  });
+});
+
+describe('resource presentation', () => {
+  it('updates the selected ore field when its authoritative remainder changes', () => {
+    const selection = {
+      label: 'Ore field',
+      kind: 'resource' as const,
+      count: 1,
+      commands: [],
+      status: 'Resource field',
+    };
+
+    useGameStore.getState().setSelectedEntity({ ...selection, resourceAmount: 750 });
+    useGameStore.getState().setSelectedEntity({ ...selection, resourceAmount: 730 });
+
+    expect(useGameStore.getState().selectedEntity?.resourceAmount).toBe(730);
   });
 });
 

@@ -25,7 +25,7 @@ export interface SelectedEntitySummary {
   role?: string;
   description?: string;
   tacticalNote?: string;
-  kind: 'unit' | 'building' | 'group';
+  kind: 'unit' | 'building' | 'resource' | 'group';
   buildingType?: string;
   constructionProgress?: number;
   count: number;
@@ -33,6 +33,7 @@ export interface SelectedEntitySummary {
   maxHp?: number;
   status?: string;
   cargo?: { amount: number; capacity: number; phase: HarvesterPhase };
+  resourceAmount?: number;
   commands: SelectionCommand[];
 }
 
@@ -172,6 +173,7 @@ function sameSelectedEntity(
     left.cargo?.amount === right.cargo?.amount &&
     left.cargo?.capacity === right.cargo?.capacity &&
     left.cargo?.phase === right.cargo?.phase &&
+    left.resourceAmount === right.resourceAmount &&
     left.commands.join() === right.commands.join()
   );
 }

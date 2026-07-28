@@ -613,6 +613,12 @@ function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Eleme
           />
         </>
       ) : null}
+      {entity.resourceAmount !== undefined ? (
+        <div className="selection-card__meta selection-card__meta--cargo">
+          <span>ORE REMAINING</span>
+          <span>{entity.resourceAmount.toLocaleString()}</span>
+        </div>
+      ) : null}
       {entity.status ? (
         <div className="selection-card__status">
           <i />
@@ -642,6 +648,12 @@ function OrdersPanel({
   );
   return (
     <div className="quick-orders">
+      {entity.kind === 'resource' ? (
+        <WorkspaceEmpty
+          title="Ore field"
+          copy="Select a harvester and right-click this field to begin extraction."
+        />
+      ) : null}
       {entity.kind === 'building' && operationalCommands.length === 0 ? (
         <WorkspaceEmpty
           title={

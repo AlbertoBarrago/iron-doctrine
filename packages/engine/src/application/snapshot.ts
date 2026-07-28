@@ -56,6 +56,12 @@ export interface EntitySnapshot {
   attackTarget?: number;
   /** Present for harvesters so presentation can render their authoritative cargo. */
   cargo?: CargoSnapshot;
+  /** Present for finite ore fields so the UI can display the authoritative remainder. */
+  resource?: ResourceSnapshot;
+}
+
+export interface ResourceSnapshot {
+  amount: number;
 }
 
 export interface CargoSnapshot {
@@ -123,6 +129,7 @@ export function buildSnapshot(
     const attack = world.get(e, Attack);
     const carrier = world.get(e, ResourceCarrier);
     const harvest = world.get(e, Harvest);
+    const resource = world.get(e, ResourceNode);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
       : building
@@ -166,6 +173,7 @@ export function buildSnapshot(
             phase: harvest.phase,
           },
         }),
+      ...(resource && { resource: { amount: resource.amount } }),
     });
   }
   return { tick, entities, players };

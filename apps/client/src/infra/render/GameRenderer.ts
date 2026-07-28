@@ -1124,14 +1124,26 @@ export class GameRenderer {
     const minY = Math.min(box.y0, box.y1);
     const maxY = Math.max(box.y0, box.y1);
 
-    let best: { id: number; d: number } | null = null;
+    let best: { id: number; d: number; priority: number } | null = null;
     for (const ent of curr.entities) {
-      if ((ent.kind !== 'unit' && ent.kind !== 'building') || ent.owner !== 0) continue;
+      const isOwnedSelection = (ent.kind === 'unit' || ent.kind === 'building') && ent.owner === 0;
+      const isResourceSelection = isClick && ent.kind === 'resource';
+      if (!isOwnedSelection && !isResourceSelection) continue;
       const { sx, sy } = this.camera.worldToScreen(ent.x, ent.y);
       if (isClick) {
         const d = (sx - box.x0) ** 2 + (sy - box.y0) ** 2;
-        const rr = (ent.radius * this.camera.scale + 6) ** 2;
-        if (d <= rr && (!best || d < best.d)) best = { id: ent.id, d };
+        const visualRadius =
+          ent.kind === 'resource'
+            ? ent.radius * this.camera.scale * 2.8
+            : ent.radius * this.camera.scale;
+        const rr = (visualRadius + 6) ** 2;
+        const priority = ent.kind === 'resource' ? 1 : 0;
+        if (
+          d <= rr &&
+          (!best || priority < best.priority || (priority === best.priority && d < best.d))
+        ) {
+          best = { id: ent.id, d, priority };
+        }
       } else if (ent.kind === 'unit') {
         const radius = ent.radius * this.camera.scale;
         if (
@@ -1345,13 +1357,19 @@ export class GameRenderer {
       store.setSelectedEntity({
         label:
           profile?.label ??
+          (entity.resource ? 'Ore field' : undefined) ??
           (entity.unitType ?? entity.buildingType ?? entity.kind).replaceAll('_', ' '),
         ...(profile && {
           role: profile.role,
           description: profile.description,
           tacticalNote: profile.tacticalNote,
         }),
-        kind: entity.kind === 'building' ? 'building' : 'unit',
+        kind:
+          entity.kind === 'building'
+            ? 'building'
+            : entity.kind === 'resource'
+              ? 'resource'
+              : 'unit',
         ...(entity.buildingType && { buildingType: entity.buildingType }),
         ...(construction && {
           constructionProgress: construction.progressTicks / construction.buildTicks,
@@ -1367,13 +1385,16 @@ export class GameRenderer {
             phase: entity.cargo.phase,
           },
         }),
+        ...(entity.resource && { resourceAmount: entity.resource.amount }),
         status: construction
           ? `Under construction · ${Math.round((construction.progressTicks / construction.buildTicks) * 100)}%`
           : entity.production?.queue.length
             ? `Producing ${entity.production.queue[0]!.replaceAll('_', ' ')}`
             : entity.cargo
               ? harvesterStatus(entity.cargo.phase)
-              : 'Ready',
+              : entity.resource
+                ? 'Resource field'
+                : 'Ready',
       });
     }
     const building = this.selectedProductionBuilding(snapshot);

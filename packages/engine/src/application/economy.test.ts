@@ -48,7 +48,7 @@ describe('Harvester economy loop', () => {
     expect(sim.economy.credits(0)).toBeGreaterThanOrEqual(200); // one full carrier
   });
 
-  it('reaches the ore field before it starts extracting', () => {
+  it('moves the first harvester onto the edge of an unoccupied ore field', () => {
     const sim = makeSim();
     sim.enqueue({ type: 'spawnResource', amount: 500, at: at(8, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(4, 0) });
@@ -71,7 +71,7 @@ describe('Harvester economy loop', () => {
     );
 
     expect(sim.world.get(harvester, Harvest)!.phase).toBe('gathering');
-    expect(distance).toBeLessThanOrEqual(4);
+    expect(distance).toBeLessThanOrEqual(2.75);
   });
 
   it('keeps overlapping harvesters progressing through independent economy cycles', () => {
@@ -190,6 +190,16 @@ describe('Harvester economy loop', () => {
       capacity: 200,
       phase: 'toNode',
     });
+  });
+
+  it('exposes the remaining ore in snapshots', () => {
+    const sim = makeSim();
+    sim.enqueue({ type: 'spawnResource', amount: 750, at: at(5, 0) });
+    sim.step();
+
+    const resource = sim.snapshot().entities.find((entity) => entity.kind === 'resource');
+
+    expect(resource?.resource).toEqual({ amount: 750 });
   });
 
   it('aggregates power from buildings', () => {
