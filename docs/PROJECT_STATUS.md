@@ -121,9 +121,10 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 All five operations of the First Contact campaign arc are implemented:
 
 - Operation 01 — Base Foundations and Operation 02 — First Contact: playtested, validated.
-- Operation 03 — Iron Pass: browser-playtested. A dedicated runtime mission (`iron_pass`)
-  with an authored chokepoint map and a scripted armored ambush triggered when the player
-  crosses the pass.
+- Operation 03 — Iron Pass: browser-playtested again on 2026-07-28 and confirmed balanced,
+  free of progression or movement blockers and enjoyable through a complete run. A dedicated
+  runtime mission (`iron_pass`) uses an authored chokepoint map and a scripted armored ambush
+  triggered when the player crosses the pass. The remaining presentation gap is ambient music.
 - Operation 04 — Siege Line: browser-playtested, confirmed playable. A dedicated runtime
   mission (`siege_line`) with an authored defensible-corridor map and escalating scripted
   assault waves the player must hold against before counter-attacking the hostile command.
@@ -151,6 +152,8 @@ narrative for those are not yet defined.
 5. Add maps designed around scouting, expansion and defensible terrain.
 6. Run a browser playtest pass at common desktop resolutions.
 7. Browser-playtest explored fog readability, scout recognition and engineer idle motion together.
+8. Add a restrained ambient soundtrack for exploration and base-building, with a later adaptive
+   transition into combat intensity; music must remain independently mutable and volume-controlled.
 
 ## Session close procedure
 
