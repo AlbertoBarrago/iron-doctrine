@@ -69,7 +69,10 @@ export function createPathfindingSystem(grid: NavGrid): System {
         }
 
         const smoothed = smoothPath(grid, cells, clearance);
-        const waypoints: Vec2[] = smoothed.map((c) => grid.cellToWorld(c.cx, c.cy));
+        // A* includes the occupied start cell. Routing back through its centre can briefly
+        // reverse a unit that already passed that point before receiving a fresh order.
+        const routedCells = smoothed.length > 1 ? smoothed.slice(1) : smoothed;
+        const waypoints: Vec2[] = routedCells.map((c) => grid.cellToWorld(c.cx, c.cy));
         // Final waypoint is the exact requested target unless the goal was remapped to
         // approach a blocked cell (then we stop at the approach cell's centre).
         if (!remapped) {

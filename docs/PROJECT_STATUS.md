@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 240 automated tests;
+- 241 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -45,6 +45,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - AI production uses the same validated facility queues, costs and tech gates as players.
 - Completed units wait for a collision-free facility exit instead of spawning into obstacles.
 - Unit separation respects navigation bounds and blocked cells; pathfinding recovers displaced units.
+- Fresh movement paths skip the occupied start-cell centre, preventing a one-tick facing reversal
+  when vehicles receive another order in their current direction.
 - Moving tanks can crush hostile infantry; allies and hostile vehicles retain normal separation.
 - Resource nodes remain traversable presentation/economy entities and never stamp navigation obstacles.
 - Explicit group attacks preserve one target and assign armed units deterministic, multi-ring

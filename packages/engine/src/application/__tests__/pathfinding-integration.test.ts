@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from '../simulation.js';
 import { NavGrid } from '../pathfinding/nav-grid.js';
-import { FlowMovement, Position, Path } from '../../domain/components/index.js';
+import { Facing, FlowMovement, Position, Path } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 
@@ -60,6 +60,27 @@ describe('Pathfinding integration', () => {
     expect(sim.grid.inBounds(cell.cx, cell.cy)).toBe(true);
     expect(fp.toFloat(position.x)).toBeCloseTo(0, 1);
     expect(fp.toFloat(position.y)).toBeCloseTo(0, 1);
+  });
+
+  it('does not reverse facing when a same-direction order is issued past the cell centre', () => {
+    const sim = new Simulation({
+      seed: 1,
+      grid: new NavGrid(16, 16, fp.fromInt(1)),
+    });
+    const entity = spawn(sim, 0, 0);
+    sim.world.add(entity, Position, { x: fp.fromFloat(0.2), y: fp.fromFloat(0.8) });
+    sim.world.add(entity, Facing, { dir: { x: fp.FP.ZERO, y: fp.FP.ONE } });
+    const before = sim.world.get(entity, Position)!.y;
+
+    sim.enqueue({
+      type: 'move',
+      entities: [entity],
+      target: { x: fp.fromFloat(0.2), y: fp.fromInt(6) },
+    });
+    sim.step();
+
+    expect(sim.world.get(entity, Position)!.y).toBeGreaterThan(before);
+    expect(sim.world.get(entity, Facing)!.dir.y).toBeGreaterThan(fp.FP.ZERO);
   });
 
   it('assigns distinct reachable slots when a group moves at the right edge', () => {
