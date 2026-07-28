@@ -621,7 +621,12 @@ Replays are **inputs, not frames** — a seed plus the full ordered command log.
 - **Environment contract:** maps may carry independently versioned, presentation-only biome and
   seed metadata. The simulation ignores it; the renderer uses it to reproduce cosmetic terrain.
 - **Biome renderers:** each biome owns palette, ground variation, obstacles and decoration behind
-  the terrain painter boundary. The first implementation is the Mediterranean Iron Pass slice.
+  the terrain painter boundary. Every built-in battlefield carries an explicit biome seed and at
+  least one authored formation visible from its opening play area; the first art-direction target
+  remains the Mediterranean Iron Pass slice.
+- **RTS readability gate:** tactical formations must read as impassable at normal gameplay zoom.
+  Cosmetic remains use stronger silhouettes and contrast, stay sparse, and sit on authored blocked
+  terrain so they cannot imply false collision on traversable routes.
 - **Production gate:** procedural geometry establishes art direction without a new dependency.
   Texture atlases, meshes or filters are added only when a profiled visual target justifies them.
 - **Source assets** (original art) live outside `src` in `assets-src/` (Aseprite/SVG/audio). Never imported directly.

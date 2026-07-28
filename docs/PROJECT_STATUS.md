@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 245 automated tests;
+- 261 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -59,8 +59,10 @@ The validated source of truth is `main`. At this checkpoint the repository passe
   from authoritative simulation state.
 - Static terrain geometry is built once in chunked Pixi containers; camera movement updates its
   transform instead of rebuilding terrain every frame.
-- Iron Pass is the first Mediterranean visual slice; realism remains subordinate to RTS
-  readability and measurable frame-time budgets.
+- Iron Pass remains the first Mediterranean visual target, but every built-in battlefield now
+  carries authored rock formations and an explicit biome seed. At least one formation must be
+  discoverable from the opening play area; realism remains subordinate to RTS readability and
+  measurable frame-time budgets.
 - Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
 - Engineer tool motion remains presentation-only; the scout is an unarmed player reconnaissance unit.
 - Building operation and construction state drive ambient animation without entering the simulation.
@@ -135,10 +137,12 @@ The first static environment slice is implemented:
 
 1. Authored blocked cells render as irregular, layered rock formations while retaining their
    existing authoritative navigation behavior.
-2. Sparse bossoli, bones and wreck fragments are seeded from presentation-only environment
-   metadata and restricted to impassable cells, so traversable terrain remains readable.
-3. Iron Pass, Siege Line and Black Dawn have explicit biome seeds; connectivity regressions
-   verify that their two spawns remain joined through the intended corridors.
+2. High-contrast shell casings, bones and aircraft-like wreck fragments are seeded from
+   presentation-only environment metadata, scaled for normal gameplay zoom and restricted to
+   impassable cells so traversable terrain remains readable.
+3. Every built-in battlefield has an explicit biome seed and authored formations, including the
+   shared Operation 01/02 and default skirmish map. At least one formation enters the opening
+   vision area, while connectivity regressions verify that both spawns remain joined.
 4. No map-format migration or simulation state was introduced.
 
 Still pending: combat cover bonuses, authored interactive props, ambient animals, distant
