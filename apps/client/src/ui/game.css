@@ -1059,7 +1059,9 @@ kbd {
 .match-dialog {
   position: relative;
   display: flex;
-  width: 410px;
+  width: min(680px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   flex-direction: column;
   gap: 17px;
   padding: 12px 34px 34px;
@@ -1076,6 +1078,59 @@ kbd {
   margin: 0;
   color: #aaa68d;
   font: 13px var(--body);
+}
+.battle-statistics {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+.battle-statistics__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+.battle-statistics__grid .hud-stat {
+  padding: 7px;
+  background: #101510;
+  border: 1px inset #4d5546;
+}
+.battle-statistics__kills,
+.battle-statistics__analysis,
+.battle-statistics__unlocks {
+  padding: 8px;
+  background: #111611;
+  border-left: 2px solid #77734b;
+}
+.battle-statistics__kills > span,
+.battle-statistics__analysis > span,
+.battle-statistics__unlocks > span {
+  display: block;
+  color: #7f816c;
+  font: 800 8px var(--body);
+  letter-spacing: 0.1em;
+}
+.battle-statistics__kills p {
+  margin-top: 4px;
+  font-size: 10px;
+}
+.battle-statistics__analysis ul {
+  display: grid;
+  gap: 3px;
+  margin: 5px 0 0;
+  padding-left: 16px;
+  color: #aaa68d;
+  font: 10px var(--body);
+}
+.battle-statistics__unlocks {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border-left-color: var(--amber);
+}
+.battle-statistics__unlocks strong {
+  color: var(--amber-light);
+  font: 800 11px var(--body);
+  text-transform: uppercase;
 }
 
 /* Radar */
@@ -2779,6 +2834,43 @@ kbd {
 }
 .operations-map__legend .is-active::before {
   background: var(--campaign-brass);
+}
+.commander-decorations {
+  position: absolute;
+  z-index: 3;
+  right: 22px;
+  bottom: 18px;
+  padding: 7px 9px;
+  background: rgba(9, 13, 10, 0.78);
+}
+.commander-decorations > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #777967;
+  font: 800 7px var(--body);
+  letter-spacing: 0.1em;
+}
+.commander-decorations > div {
+  display: flex;
+  gap: 4px;
+}
+.commander-decorations abbr {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  color: #50534a;
+  text-decoration: none;
+  background: #151a15;
+  border: 1px solid #3f443b;
+  border-radius: 50%;
+  font: 800 7px var(--mono);
+}
+.commander-decorations abbr.is-unlocked {
+  color: #17180f;
+  background: var(--campaign-brass);
+  border-color: #dfc46b;
+  box-shadow: 0 0 8px rgba(194, 162, 74, 0.35);
 }
 .mission-dossier {
   position: relative;

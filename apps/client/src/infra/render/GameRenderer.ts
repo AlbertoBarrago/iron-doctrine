@@ -112,6 +112,8 @@ export class GameRenderer {
   async start(config: SkirmishConfig, seed = 123456789): Promise<void> {
     useGameStore.getState().resetTutorial();
     useGameStore.getState().setControlGroups([]);
+    useGameStore.getState().setMatchMetrics(null);
+    useGameStore.getState().setBattleReport(null);
     this.activeMap = config.map;
     this.mission = config.mission;
     const missionRules = MISSION_RULES[config.mission];
@@ -461,6 +463,9 @@ export class GameRenderer {
         const me = curr.players.find((p) => p.player === 0);
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
+        if (curr.match?.status === 'finished' && curr.metrics) {
+          store.setMatchMetrics(curr.metrics);
+        }
         store.setScenario(curr.scenario ?? null);
         const activationOrigin =
           MISSION_RULES[this.mission].scenario === 'recovery'

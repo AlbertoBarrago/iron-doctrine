@@ -7,6 +7,7 @@ import {
   type FirstContactSnapshot,
   type IronPassSnapshot,
   type MatchStateSnapshot,
+  type MatchMetricsSnapshot,
   type SiegeLineSnapshot,
 } from '@iron/engine';
 
@@ -61,6 +62,12 @@ export interface ForceSummary {
 export interface ControlGroupSummary {
   slot: number;
   count: number;
+}
+
+export interface BattleReport {
+  metrics: MatchMetricsSnapshot;
+  victory: boolean;
+  newlyUnlocked: string[];
 }
 
 export function summarizeForce(
@@ -156,6 +163,8 @@ interface GameUiState {
   selectedProduction: SelectedProduction | null;
   placingBuilding: string | null;
   match: MatchStateSnapshot | null;
+  matchMetrics: MatchMetricsSnapshot | null;
+  battleReport: BattleReport | null;
   scenario: ScenarioSnapshot | null;
   aiActivationSeconds: number;
   tutorialStep: TutorialStep;
@@ -171,6 +180,8 @@ interface GameUiState {
   setSelectedProduction: (production: SelectedProduction | null) => void;
   setPlacingBuilding: (building: string | null) => void;
   setMatch: (match: MatchStateSnapshot | null) => void;
+  setMatchMetrics: (metrics: MatchMetricsSnapshot | null) => void;
+  setBattleReport: (report: BattleReport | null) => void;
   setScenario: (scenario: ScenarioSnapshot | null) => void;
   setAiActivationSeconds: (seconds: number) => void;
   advanceTutorial: (milestone: TutorialMilestone) => void;
@@ -333,6 +344,8 @@ export const useGameStore = create<GameUiState>((set) => ({
   selectedProduction: null,
   placingBuilding: null,
   match: null,
+  matchMetrics: null,
+  battleReport: null,
   scenario: null,
   aiActivationSeconds: 0,
   tutorialStep: 'select',
@@ -377,6 +390,8 @@ export const useGameStore = create<GameUiState>((set) => ({
         ? state
         : { match },
     ),
+  setMatchMetrics: (matchMetrics) => set({ matchMetrics }),
+  setBattleReport: (battleReport) => set({ battleReport }),
   setScenario: (scenario) =>
     set((state) => (sameScenario(state.scenario, scenario) ? state : { scenario })),
   setAiActivationSeconds: (aiActivationSeconds) =>

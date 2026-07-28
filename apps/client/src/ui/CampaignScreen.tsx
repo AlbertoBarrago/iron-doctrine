@@ -13,10 +13,15 @@ import {
   normalizeCallsign,
   type CommanderProfiles,
 } from '../game/commanderProfile.js';
+import {
+  ACHIEVEMENTS,
+  type AchievementProgress,
+} from '../game/achievements.js';
 
 export function CampaignScreen({
   progress,
   commanders,
+  achievements,
   onBack,
   onDeploy,
   onCreateCommander,
@@ -24,6 +29,7 @@ export function CampaignScreen({
 }: {
   progress: CampaignProgress;
   commanders: CommanderProfiles;
+  achievements: AchievementProgress;
   onBack(): void;
   onDeploy(mission: CampaignMission): void;
   onCreateCommander(callsign: string): void;
@@ -102,6 +108,26 @@ export function CampaignScreen({
             <span className="is-active">Available</span>
             <span className="is-classified">Classified</span>
           </div>
+          <section className="commander-decorations" aria-label="Commander decorations">
+            <span>DECORATIONS</span>
+            <div>
+              {ACHIEVEMENTS.map((achievement) => {
+                const unlocked = achievements.unlocked.includes(achievement.id);
+                return (
+                  <abbr
+                    key={achievement.id}
+                    className={unlocked ? 'is-unlocked' : ''}
+                    title={`${achievement.title}: ${achievement.description}`}
+                  >
+                    {achievement.title
+                      .split(' ')
+                      .map((word) => word[0])
+                      .join('')}
+                  </abbr>
+                );
+              })}
+            </div>
+          </section>
         </section>
 
         <MissionBriefing

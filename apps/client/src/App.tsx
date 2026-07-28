@@ -25,6 +25,12 @@ import {
 import type { CampaignMissionId } from './game/campaign.js';
 import { useGameStore } from './state/gameStore.js';
 import type { MapDef } from '@iron/shared';
+import type { MatchMetricsSnapshot } from '@iron/engine';
+import {
+  evaluateAchievements,
+  loadAchievementProgress,
+  type AchievementId,
+} from './game/achievements.js';
 import './ui/game.css';
 
 type Mode = 'menu' | 'campaign' | 'game' | 'editor';
@@ -76,6 +82,11 @@ export function App(): JSX.Element {
           activeCallsign ? loadCampaignProgress(localStorage, activeCallsign) : { completed: [] }
         }
         commanders={commanders}
+        achievements={
+          activeCallsign
+            ? loadAchievementProgress(localStorage, activeCallsign)
+            : { version: 1, unlocked: [] }
+        }
         onCreateCommander={(callsign) => {
           createCommanderProfile(localStorage, callsign);
           setCampaignRevision((current) => current + 1);
@@ -118,6 +129,16 @@ export function App(): JSX.Element {
         if (activeCallsign) completeCampaignMission(localStorage, activeCallsign, mission);
         setCampaignRevision((current) => current + 1);
       }}
+      onBattleReport={(metrics, victory) => {
+        if (!activeCallsign) return [];
+        return evaluateAchievements(
+          localStorage,
+          activeCallsign,
+          metrics,
+          victory,
+          loadCampaignProgress(localStorage, activeCallsign).completed,
+        ).newlyUnlocked;
+      }}
       onExit={() => {
         setSkirmish(null);
         setMode(gameReturnMode);
@@ -134,10 +155,12 @@ export function App(): JSX.Element {
 function Game({
   config,
   onMissionComplete,
+  onBattleReport,
   onExit,
 }: {
   config: SkirmishConfig;
   onMissionComplete(mission: CampaignMissionId): void;
+  onBattleReport(metrics: MatchMetricsSnapshot, victory: boolean): AchievementId[];
   onExit(): void;
 }): JSX.Element {
   const [session, setSession] = useState(0);
@@ -158,8 +181,10 @@ function Game({
     musicVolume,
   });
   const completionReported = useRef(false);
+  const battleReportGenerated = useRef(false);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
+  const matchMetrics = useGameStore((state) => state.matchMetrics);
   const paused = setupOpen || manualPaused || quitConfirmationOpen;
 
   useEffect(() => {
@@ -184,6 +209,7 @@ function Game({
   useEffect(() => {
     void session;
     completionReported.current = false;
+    battleReportGenerated.current = false;
   }, [session]);
 
   useEffect(() => {
@@ -202,6 +228,23 @@ function Game({
     completionReported.current = true;
     onMissionComplete(completedMission);
   }, [config.mission, match, onMissionComplete, tutorialStep]);
+
+  useEffect(() => {
+    if (
+      battleReportGenerated.current ||
+      match?.status !== 'finished' ||
+      !matchMetrics
+    ) {
+      return;
+    }
+    battleReportGenerated.current = true;
+    const newlyUnlocked = onBattleReport(matchMetrics, match.winner === 0);
+    useGameStore.getState().setBattleReport({
+      metrics: matchMetrics,
+      victory: match.winner === 0,
+      newlyUnlocked,
+    });
+  }, [match, matchMetrics, onBattleReport]);
 
   useEffect(() => {
     rendererRef.current?.setPaused(paused);

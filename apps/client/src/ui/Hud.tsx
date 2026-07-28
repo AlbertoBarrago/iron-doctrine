@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
+import { SIM_HZ } from '@iron/shared';
 import {
   commandAvailability,
   commandSelectionContext,
@@ -13,10 +14,13 @@ import {
   type SelectedProduction,
   type SelectionCommand,
   type TutorialStep,
+  type BattleReport,
 } from '../state/gameStore.js';
 import { BUILDING_PROFILES, UNIT_PROFILES, usesContinuousPlacement } from '../game/gameContent.js';
 import { matchResultActions, type MatchResultAction } from '../game/matchResult.js';
 import type { MissionId } from '../game/skirmishConfig.js';
+import { ACHIEVEMENTS, type AchievementId } from '../game/achievements.js';
+import { analyzeBattle } from '../game/battleAnalysis.js';
 
 const BUILDABLE_STRUCTURES = [
   {
@@ -131,6 +135,7 @@ export function Hud(props: HudProps): JSX.Element {
   const placingBuilding = useGameStore((state) => state.placingBuilding);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
+  const battleReport = useGameStore((state) => state.battleReport);
   const scenario = useGameStore((state) => state.scenario);
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
   const tutorial = TUTORIAL[tutorialStep];
@@ -469,6 +474,7 @@ export function Hud(props: HudProps): JSX.Element {
                   ? 'Both command structures were destroyed.'
                   : 'Your command structure has been destroyed.'}
             </p>
+            {battleReport ? <BattleStatistics report={battleReport} /> : null}
             <div className="match-dialog__actions">
               <button
                 type="button"
@@ -489,6 +495,64 @@ export function Hud(props: HudProps): JSX.Element {
         </div>
       ) : null}
     </>
+  );
+}
+
+function BattleStatistics({ report }: { report: BattleReport }): JSX.Element {
+  const { metrics } = report;
+  const seconds = Math.floor(metrics.durationTicks / SIM_HZ);
+  const duration = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  const destroyed = Object.entries(metrics.destroyedByType).sort(
+    ([left], [right]) => left.localeCompare(right),
+  );
+  const analysis = analyzeBattle(metrics, report.victory);
+  return (
+    <section className="battle-statistics" aria-label="Detailed battle statistics">
+      <div className="battle-statistics__grid">
+        <Stat label="Duration" value={duration} />
+        <Stat label="Units destroyed" value={String(metrics.unitsDestroyed)} />
+        <Stat label="Structures" value={String(metrics.structuresDestroyed)} />
+        <Stat label="Units lost" value={String(metrics.unitsLost)} warning={metrics.unitsLost > 0} />
+        <Stat label="Damage dealt" value={String(metrics.damageDealt)} />
+        <Stat label="Damage taken" value={String(metrics.damageTaken)} />
+        <Stat label="Ore delivered" value={String(metrics.oreDelivered)} accent />
+        <Stat label="Map explored" value={`${Math.round(metrics.exploredPercent)}%`} />
+      </div>
+      {destroyed.length > 0 ? (
+        <div className="battle-statistics__kills">
+          <span>ELIMINATION BREAKDOWN</span>
+          <p>
+            {destroyed
+              .map(
+                ([type, count]) =>
+                  `${UNIT_PROFILES[type]?.label ?? BUILDING_PROFILES[type]?.label ?? humanize(type)} ×${count}`,
+              )
+              .join(' · ')}
+          </p>
+        </div>
+      ) : null}
+      {analysis.length > 0 ? (
+        <div className="battle-statistics__analysis">
+          <span>TACTICAL ANALYSIS</span>
+          <ul>
+            {analysis.map((observation) => (
+              <li key={observation}>{observation}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {report.newlyUnlocked.length > 0 ? (
+        <div className="battle-statistics__unlocks">
+          <span>NEW DECORATIONS</span>
+          {report.newlyUnlocked.map((id) => {
+            const achievement = ACHIEVEMENTS.find(
+              (candidate) => candidate.id === (id as AchievementId),
+            );
+            return achievement ? <strong key={id}>{achievement.title}</strong> : null;
+          })}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
