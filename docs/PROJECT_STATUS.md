@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 241 automated tests;
+- 245 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -97,9 +97,12 @@ send only armed units into combat while unarmed support stops. Automated regress
 
 ### Campaign persistence
 
-1. Add a local commander profile identified by an exact three-letter callsign.
-2. Scope campaign completion and unlocks to that profile in versioned browser `localStorage`.
-3. Migrate the current global campaign progress without losing completed missions.
+Commander persistence is implemented:
+
+1. Each local profile has an exact three-character alphanumeric callsign.
+2. Campaign completion and unlocks are isolated per profile in versioned browser `localStorage`.
+3. The first profile automatically imports legacy global campaign progress; later profiles start clean.
+4. The operations header allows profile switching and creation without mixing progression.
 
 ### Commander progression
 
