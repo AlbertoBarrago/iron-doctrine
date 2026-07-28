@@ -2503,12 +2503,29 @@ kbd {
   gap: 4px;
 }
 .commander-control select {
+  appearance: none;
   min-width: 72px;
-  padding: 6px 8px;
+  padding: 6px 26px 6px 8px;
   color: var(--campaign-brass);
   background: #101510;
   border: 1px solid #5a604f;
   font: 800 14px var(--mono);
+}
+.commander-control__select {
+  position: relative;
+  display: inline-flex;
+}
+.commander-control__select::after {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  width: 6px;
+  height: 6px;
+  content: '';
+  border-right: 2px solid var(--campaign-brass);
+  border-bottom: 2px solid var(--campaign-brass);
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
 }
 .campaign-header .commander-control button {
   width: 30px;

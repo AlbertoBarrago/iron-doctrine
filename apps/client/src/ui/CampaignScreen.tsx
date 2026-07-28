@@ -139,17 +139,19 @@ function CommanderControl({
       <span>COMMANDER</span>
       {commanders.profiles.length > 0 ? (
         <div>
-          <select
-            aria-label="Active commander"
-            value={commanders.activeCallsign ?? ''}
-            onChange={(event) => onSelect(event.target.value)}
-          >
-            {commanders.profiles.map((profile) => (
-              <option key={profile.callsign} value={profile.callsign}>
-                {profile.callsign}
-              </option>
-            ))}
-          </select>
+          <span className="commander-control__select">
+            <select
+              aria-label="Active commander"
+              value={commanders.activeCallsign ?? ''}
+              onChange={(event) => onSelect(event.target.value)}
+            >
+              {commanders.profiles.map((profile) => (
+                <option key={profile.callsign} value={profile.callsign}>
+                  {profile.callsign}
+                </option>
+              ))}
+            </select>
+          </span>
           <button type="button" onClick={onCreate} aria-label="Create commander">
             +
           </button>
