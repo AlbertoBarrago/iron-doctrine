@@ -109,6 +109,30 @@ The validated source of truth is `main`. At this checkpoint the repository passe
    structures remain outside the medical loop.
 3. Add treatment animation, explicit/manual healing priority and the Field Medic and Leave
    No One Behind achievements.
+4. Explore fast field-treatment actions with limited, readable choices: trauma kit for health,
+   stimulant for temporary combat readiness and sedative for fear/panic recovery.
+
+### Battlefield life and cover
+
+1. Add authored rock formations as navigation blockers and approach-shaping terrain; introduce
+   combat cover bonuses only after the placement and pathing rules are proven readable.
+2. Scatter deterministic war remains and environmental props such as wrecked aircraft, skulls
+   and abandoned equipment without polluting authoritative simulation state.
+3. Add presentation-only ambient life and flyovers — small animals crossing or fleeing the
+   battlefield and distant military aircraft — with restrained frequency and no unit collision.
+4. Keep interactive/tactical props in map data while purely cosmetic decoration remains seeded
+   by environment metadata.
+
+### Infantry condition and morale
+
+1. Model a small deterministic condition set for individual infantry: steady, shaken, panicked
+   and sick/injured.
+2. Derive transitions from explicit combat pressure, damage and isolation rather than
+   uncontrolled per-frame randomness.
+3. Make each state immediately readable through posture, movement, status text and concise
+   effects; humorous battlefield copy must not obscure the actual mechanic.
+4. Let Medics restore health and stabilize recoverable fear/sickness states through quick,
+   explicit treatment actions; no resurrection in the first version.
 
 ### Test organization
 
