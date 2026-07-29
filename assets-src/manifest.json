@@ -7,6 +7,36 @@
   },
   "assets": [
     {
+      "id": "unit.rifleman",
+      "source": "units/infantry/rifleman.png",
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "directions": [
+        "e",
+        "ese",
+        "se",
+        "sse",
+        "s",
+        "ssw",
+        "sw",
+        "wsw",
+        "w",
+        "wnw",
+        "nw",
+        "nnw",
+        "n",
+        "nne",
+        "ne",
+        "ene"
+      ],
+      "states": {
+        "idle": 1,
+        "move": 2,
+        "fire": 2
+      },
+      "runtime": true
+    },
+    {
       "id": "unit.tank",
       "source": "vehicles/tank/tank.png",
       "frameWidth": 192,
