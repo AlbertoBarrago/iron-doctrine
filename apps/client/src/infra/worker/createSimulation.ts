@@ -16,6 +16,7 @@ export function createSimulationFromInit(config: InitConfig): Simulation {
   return new Simulation({
     seed: config.seed,
     ...(grid ? { grid } : {}),
+    ...(config.map ? { coverCells: config.map.blocked } : {}),
     ...(config.aiPlayers ? { aiPlayers: config.aiPlayers } : {}),
     ...(config.startingCredits ? { startingCredits: config.startingCredits } : {}),
     ...(config.startingTech ? { startingTech: config.startingTech } : {}),

@@ -3,6 +3,7 @@ import { Simulation } from '../simulation.js';
 import { Position, Health, Attack, Movement, Projectile } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
+import { NavGrid } from '../pathfinding/nav-grid.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
 
@@ -16,6 +17,12 @@ function spawn(sim: Simulation, unit: string, player: number, x: number, y: numb
 }
 
 describe('Combat', () => {
+  function coverSimulation(): Simulation {
+    const grid = new NavGrid(32, 32, fp.fromInt(1));
+    grid.setBlocked(15, 16, true);
+    return new Simulation({ seed: 1, grid, coverCells: [[15, 16]] });
+  }
+
   it('a rifleman auto-acquires and kills an adjacent enemy (hitscan)', () => {
     const sim = new Simulation({ seed: 1 });
     const rifleman = spawn(sim, 'rifleman', 0, 0, 0); // damage 8, range 6, instant
@@ -74,6 +81,42 @@ describe('Combat', () => {
     const alive = sim.world.isAlive(enemy);
     if (alive) expect(sim.world.get(enemy, Health)!.hp).toBeLessThan(startHp);
     expect(sim.snapshot(0).metrics?.damageDealt).toBeGreaterThan(0);
+  });
+
+  it('reduces hitscan damage when authored rock lies between infantry and the shooter', () => {
+    const sim = coverSimulation();
+    spawn(sim, 'rifleman', 0, -3, 0);
+    const target = spawn(sim, 'engineer', 1, 0, 0);
+
+    expect(sim.world.get(target, Health)!.hp).toBe(54);
+    expect(sim.snapshot(0).metrics?.damageDealt).toBe(6);
+  });
+
+  it('does not grant cover when the rock is behind the infantry target', () => {
+    const sim = coverSimulation();
+    spawn(sim, 'rifleman', 0, 3, 0);
+    const target = spawn(sim, 'engineer', 1, 0, 0);
+
+    expect(sim.world.get(target, Health)!.hp).toBe(52);
+  });
+
+  it('does not grant infantry cover reduction to vehicles', () => {
+    const sim = coverSimulation();
+    spawn(sim, 'rifleman', 0, -3, 0);
+    const target = spawn(sim, 'tank', 1, 0, 0);
+
+    expect(sim.world.get(target, Health)!.hp).toBe(392);
+  });
+
+  it('reduces projectile damage when authored rock protects infantry at impact', () => {
+    const sim = coverSimulation();
+    spawn(sim, 'tank', 0, -5, 0);
+    const target = spawn(sim, 'engineer', 1, 0, 0);
+
+    for (let tick = 0; tick < 20 && sim.world.get(target, Health)!.hp === 60; tick++) sim.step();
+
+    expect(sim.world.get(target, Health)!.hp).toBe(38);
+    expect(sim.snapshot(0).metrics?.damageDealt).toBe(22);
   });
 
   it('explicit attack command sets the target', () => {

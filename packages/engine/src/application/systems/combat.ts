@@ -27,12 +27,17 @@ import { indexOf } from '../ecs/entity.js';
 import { asEntityId, type EntityId } from '@iron/shared';
 import { engagementPosition } from '../../domain/movement/engagement-formation.js';
 import type { MatchMetrics } from '../match/match-metrics.js';
+import type { BattlefieldCover } from '../combat/battlefield-cover.js';
 
 /**
  * Combat with power-gated defensive structures: a building weapon (turret) cannot fire
  * while its owner is in an energy deficit — the classic "low power disables defenses".
  */
-export function createCombatSystem(economy: PlayerEconomy, metrics?: MatchMetrics): System {
+export function createCombatSystem(
+  economy: PlayerEconomy,
+  metrics?: MatchMetrics,
+  cover?: BattlefieldCover,
+): System {
   return {
     name: 'CombatSystem',
     update(world: World): void {
@@ -80,7 +85,7 @@ export function createCombatSystem(economy: PlayerEconomy, metrics?: MatchMetric
             if (move) move.target = null;
           }
           if (weapon.cooldownLeft === 0) {
-            fire(world, e, target, weapon, pos, metrics);
+            fire(world, e, target, weapon, pos, metrics, cover);
             weapon.cooldownLeft = weapon.cooldownTicks;
           }
         } else if (attack.chase) {
@@ -144,20 +149,23 @@ function fire(
   weapon: { damage: number; projectileSpeed: fp.Fixed },
   from: v2.Vec2,
   metrics?: MatchMetrics,
+  cover?: BattlefieldCover,
 ): void {
   const targetPos = world.get(target, Position)!;
   if (weapon.projectileSpeed <= 0) {
     // Instant hit.
     const health = world.get(target, Health);
     if (health) {
-      const damage = Math.min(health.hp, weapon.damage);
+      const appliedDamage =
+        cover?.damageAgainst(world, target, from, weapon.damage) ?? weapon.damage;
+      const damage = Math.min(health.hp, appliedDamage);
       metrics?.recordDamage(
         world.get(shooter, Owner)!.player,
         world.get(target, Owner)!.player,
         target,
         damage,
       );
-      health.hp -= weapon.damage;
+      health.hp -= appliedDamage;
     }
     return;
   }

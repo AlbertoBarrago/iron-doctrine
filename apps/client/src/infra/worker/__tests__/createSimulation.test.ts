@@ -5,6 +5,25 @@ import { createSimulationFromInit } from '../createSimulation.js';
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
 
 describe('Worker simulation boundary', () => {
+  it('keeps authored blocked cells as the cover mask', () => {
+    const sim = createSimulationFromInit({
+      seed: 1,
+      map: {
+        format: 'iron-doctrine.map',
+        version: 1,
+        name: 'Cover boundary',
+        width: 16,
+        height: 16,
+        cellSize: 1,
+        blocked: [[4, 5]],
+        resources: [],
+        spawns: [],
+      },
+    });
+
+    expect(sim.cover.serialize()).toEqual([[4, 5]]);
+  });
+
   it('forwards the Iron Pass ambush configuration', () => {
     const sim = createSimulationFromInit({
       seed: 1,

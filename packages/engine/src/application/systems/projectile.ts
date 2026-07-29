@@ -11,45 +11,48 @@ import * as fp from '../../domain/math/fixed.js';
 import * as v2 from '../../domain/math/vec2.js';
 import { asEntityId } from '@iron/shared';
 import type { MatchMetrics } from '../match/match-metrics.js';
+import type { BattlefieldCover } from '../combat/battlefield-cover.js';
 
 const IMPACT_EPS_SQ = fp.fromFloat(0.04);
 
-export function createProjectileSystem(metrics?: MatchMetrics): System {
+export function createProjectileSystem(metrics?: MatchMetrics, cover?: BattlefieldCover): System {
   return {
     name: 'ProjectileSystem',
     update(world: World, ctx: TickContext): void {
-    for (const p of world.query(Projectile, Position)) {
-      const proj = world.get(p, Projectile)!;
-      const pos = world.get(p, Position)!;
+      for (const p of world.query(Projectile, Position)) {
+        const proj = world.get(p, Projectile)!;
+        const pos = world.get(p, Position)!;
 
-      const toTarget = v2.sub(proj.toPos, pos);
-      const distSq = v2.lenSq(toTarget);
-      const step = fp.mul(proj.speed, ctx.dt);
-      const stepSq = fp.mul(step, step);
+        const toTarget = v2.sub(proj.toPos, pos);
+        const distSq = v2.lenSq(toTarget);
+        const step = fp.mul(proj.speed, ctx.dt);
+        const stepSq = fp.mul(step, step);
 
-      if (distSq <= IMPACT_EPS_SQ || distSq <= stepSq) {
-        // Impact: damage the target if it is still alive and near the impact point.
-        const target = asEntityId(proj.target);
-        if (world.isAlive(target)) {
-          const health = world.get(target, Health);
-          const owner = world.get(target, Owner);
-          if (health && owner) {
-            metrics?.recordDamage(
-              proj.owner,
-              owner.player,
-              target,
-              Math.min(health.hp, proj.damage),
-            );
-            health.hp -= proj.damage;
+        if (distSq <= IMPACT_EPS_SQ || distSq <= stepSq) {
+          // Impact: damage the target if it is still alive and near the impact point.
+          const target = asEntityId(proj.target);
+          if (world.isAlive(target)) {
+            const health = world.get(target, Health);
+            const owner = world.get(target, Owner);
+            if (health && owner) {
+              const appliedDamage =
+                cover?.damageAgainst(world, target, pos, proj.damage) ?? proj.damage;
+              metrics?.recordDamage(
+                proj.owner,
+                owner.player,
+                target,
+                Math.min(health.hp, appliedDamage),
+              );
+              health.hp -= appliedDamage;
+            }
           }
+          world.destroyEntity(p);
+          continue;
         }
-        world.destroyEntity(p);
-        continue;
-      }
 
-      const dir = v2.normalize(toTarget);
-      world.add(p, Position, v2.add(pos, v2.scale(dir, step)));
-    }
+        const dir = v2.normalize(toTarget);
+        world.add(p, Position, v2.add(pos, v2.scale(dir, step)));
+      }
     },
   };
 }

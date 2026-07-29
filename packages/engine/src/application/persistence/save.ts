@@ -34,6 +34,7 @@ export interface SaveState {
   seed: number;
   aiPlayers: AIPlayerConfig[];
   grid: { width: number; height: number; cellSize: number; blocked: number[]; cost: number[] };
+  coverCells?: Array<[number, number]>;
   entityManager: EntityManagerState;
   components: ComponentBlock[];
   economy: Array<[number, PlayerResources]>;
@@ -88,6 +89,7 @@ export function saveSimulation(
       cellSize: fp.toFloat(sim.grid.cellSize),
       ...sim.grid.serialize(),
     },
+    coverCells: sim.cover.serialize(),
     entityManager: sim.world.entities.serialize(),
     components,
     economy: sim.economy.serialize(),
@@ -136,6 +138,7 @@ export function loadSimulation(save: SaveState): Simulation {
   const sim = new Simulation({
     seed: save.seed,
     grid,
+    ...(save.coverCells ? { coverCells: save.coverCells } : {}),
     aiPlayers: save.aiPlayers,
     ...(save.match && { matchPlayers: save.match.players }),
     ...(save.firstContact && { firstContact: save.firstContact.config }),

@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from '../simulation.js';
 import { NavGrid } from '../pathfinding/nav-grid.js';
-import { saveSimulation, loadSimulation, serializeSave, deserializeSave } from '../persistence/save.js';
+import {
+  saveSimulation,
+  loadSimulation,
+  serializeSave,
+  deserializeSave,
+} from '../persistence/save.js';
 import { ReplayRecorder, runReplay } from '../persistence/replay.js';
 import type { Command } from '../commands/command.js';
 import { UnitType } from '../../domain/components/index.js';
@@ -60,10 +65,25 @@ describe('Save / Load', () => {
     expect(loaded.grid.isBlocked(cell.cx, cell.cy)).toBe(true);
   });
 
+  it('preserves authored battlefield cover separately from navigation blockers', () => {
+    const grid = new NavGrid(64, 64, fp.fromInt(1));
+    grid.setBlocked(20, 20, true);
+    const sim = new Simulation({ seed: 12345, grid, coverCells: [[20, 20]] });
+    sim.enqueue({ type: 'spawnBuilding', building: 'power_plant', player: 0, at: at(0, 0) });
+    sim.step();
+
+    const loaded = loadSimulation(saveSimulation(sim, 12345));
+
+    expect(loaded.cover.serialize()).toEqual([[20, 20]]);
+    expect(loaded.grid.isBlocked(32, 32)).toBe(true);
+  });
+
   it('preserves match telemetry and pending kill attribution', () => {
     const sim = makeMatch();
     sim.step();
-    const target = sim.world.query(UnitType).find((entity) => sim.world.get(entity, UnitType)?.kind === 'tank')!;
+    const target = sim.world
+      .query(UnitType)
+      .find((entity) => sim.world.get(entity, UnitType)?.kind === 'tank')!;
     sim.metrics.recordDamage(0, 1, target, 40);
     sim.metrics.recordOreDelivered(0, 600);
     sim.metrics.recordExplored(0, 72);

@@ -51,11 +51,14 @@ import {
   BlackDawnState,
   type BlackDawnConfig,
 } from './scenario/black-dawn.js';
+import { BattlefieldCover } from './combat/battlefield-cover.js';
 
 export interface SimulationConfig {
   seed: number;
   /** Navigation grid for the map. Defaults to a 128×128 open, world-centred grid. */
   grid?: NavGrid;
+  /** Authored blocked map cells that provide directional infantry cover. */
+  coverCells?: readonly (readonly [number, number])[];
   /** Maps players to vision-sharing teams. Identity (team = player) by default. */
   teamOf?: TeamResolver;
   /** AI-controlled players and their difficulty. */
@@ -90,6 +93,7 @@ interface Deps {
   siegeLine: SiegeLineState | null;
   blackDawn: BlackDawnState | null;
   metrics: MatchMetrics;
+  cover: BattlefieldCover;
 }
 
 /** Default ordered pipeline for the current milestone. */
@@ -117,8 +121,8 @@ const defaultSystems = (d: Deps): System[] => [
   MovementSystem,
   createUnitSeparationSystem(d.grid, undefined, d.teamOf),
   createVehicleCrushSystem(d.teamOf, d.metrics),
-  createCombatSystem(d.economy, d.metrics),
-  createProjectileSystem(d.metrics),
+  createCombatSystem(d.economy, d.metrics, d.cover),
+  createProjectileSystem(d.metrics, d.cover),
   HealingSystem,
   createHealthSystem(d.grid, d.metrics),
   ...(d.match
@@ -147,6 +151,7 @@ export class Simulation {
   readonly siegeLine: SiegeLineState | null;
   readonly blackDawn: BlackDawnState | null;
   readonly metrics = new MatchMetrics();
+  readonly cover: BattlefieldCover;
   private readonly scheduler = new Scheduler();
   private readonly dt = fp.fromFloat(1 / SIM_HZ);
   private currentTick = 0;
@@ -154,6 +159,7 @@ export class Simulation {
   constructor(config: SimulationConfig) {
     this.rng = new Random(config.seed);
     this.grid = config.grid ?? new NavGrid(128, 128, fp.fromInt(1));
+    this.cover = new BattlefieldCover(this.grid, config.coverCells);
     this.fog = new FogOfWar(this.grid);
     this.teamOf = config.teamOf ?? ((player) => player);
     this.match = config.matchPlayers?.length
@@ -187,6 +193,7 @@ export class Simulation {
       siegeLine: this.siegeLine,
       blackDawn: this.blackDawn,
       metrics: this.metrics,
+      cover: this.cover,
     });
     for (const s of systems) this.scheduler.add(s);
   }
@@ -213,10 +220,7 @@ export class Simulation {
     for (const team of this.fog.teams()) {
       const cells = this.fog.copy(team);
       const explored = cells.reduce((count, cell) => count + (cell === HIDDEN ? 0 : 1), 0);
-      this.metrics.recordExplored(
-        team,
-        cells.length === 0 ? 0 : (explored / cells.length) * 100,
-      );
+      this.metrics.recordExplored(team, cells.length === 0 ? 0 : (explored / cells.length) * 100);
     }
     if (this.firstContact?.phase === 'failed' && this.match) {
       const winner = this.match.players.find(
