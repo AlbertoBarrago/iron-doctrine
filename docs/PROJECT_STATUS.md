@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 273 automated tests;
+- 276 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -199,6 +199,12 @@ only file locations and relative imports. The current full baseline is 269 passi
 ### Campaign production
 
 All five operations of the First Contact campaign arc are implemented:
+
+- The browser Worker boundary now forwards every scenario configuration into the authoritative
+  simulation. A client-side regression exercises the actual initialization adapter and proves
+  that Iron Pass reaches its ambush, Siege Line dispatches its waves and Black Dawn enters its
+  last stand. Previously these three optional configurations were sent by the renderer but
+  silently omitted by the Worker protocol and initialization path.
 
 - Operation 01 — Base Foundations and Operation 02 — First Contact: playtested, validated.
 - Operation 03 — Iron Pass: browser-playtested again on 2026-07-28 and confirmed balanced,
