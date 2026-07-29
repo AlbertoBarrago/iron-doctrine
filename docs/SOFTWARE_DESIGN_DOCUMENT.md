@@ -625,8 +625,8 @@ Replays are **inputs, not frames** — a seed plus the full ordered command log.
   least one authored formation visible from its opening play area; the first art-direction target
   remains the Mediterranean Iron Pass slice.
 - **RTS readability gate:** tactical formations must read as impassable at normal gameplay zoom.
-  Cosmetic remains use stronger silhouettes and contrast, stay sparse, and sit on authored blocked
-  terrain so they cannot imply false collision on traversable routes.
+  Small cosmetic remains may sit sparsely on traversable ground when their silhouette cannot imply
+  collision; large wrecks and obstacle-like decoration stay on authored blocked terrain.
 - **Production gate:** procedural geometry establishes art direction without a new dependency.
   Texture atlases, meshes or filters are added only when a profiled visual target justifies them.
 - **Source assets** (original art) live outside `src` in `assets-src/` (Aseprite/SVG/audio). Never imported directly.
@@ -716,7 +716,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 24  | Content vertical slice        | two original factions, balanced roster, production-quality visual/audio assets and one representative map                                                                                                 | planned                                                |
 | 25  | Release hardening             | performance budgets, end-to-end match tests, accessibility pass and reproducible production deployment                                                                                                    | planned                                                |
 | 26  | Adaptive audio & game feel    | retuned procedural ambient music with separate controls; later add combat intensity, staged construction animation (rubble/scaffolding → completed building), and general responsiveness               | in progress (ambient score retuned)                    |
-| 27  | Commander achievements        | versioned commander profiles, isolated progress, six authoritative trophies, persistent decorations and detailed Battle Report with tactical analysis                                                     | ✅ done                                                |
+| 27  | Commander achievements        | versioned commander profiles, isolated progress, six authoritative trophies, persistent decorations and Battle Reports for conventional matches plus tutorial-complete operations                          | ✅ done                                                |
 | 28  | Battlefield medicine          | unarmed barracks Medic, deterministic infantry-only auto-assist and treatment animation; explicit treatment priority, telemetry and achievements remain                                                     | in progress (automatic treatment done)                 |
 | 29  | Test layout consolidation     | module tests in local `__tests__` directories, with cross-system engine harnesses grouped under `application/__tests__`                                                                                     | ✅ done                                                |
 | 30  | Battlefield life and cover    | blocked terrain rendered as seeded rock formations with sparse presentation-only war remains; cover bonuses, ambient life, aircraft and profile easter eggs remain                                         | in progress (static environment done)                  |

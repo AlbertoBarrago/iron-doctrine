@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 261 automated tests;
+- 264 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -117,6 +117,9 @@ Commander achievements and Battle Reports are implemented:
 3. The Battle Report includes a concise tactical analysis of tempo, damage economy,
    reconnaissance and attrition, plus newly earned decorations.
 4. Collected decorations remain isolated by commander and are visible on the campaign map.
+5. Base Foundations uses its tutorial completion as a reportable victory, so its authoritative
+   exploration/economy telemetry and earned decorations appear in the Operation Complete dialog
+   even though the mission has no conventional `MatchState`.
 
 ### Support units
 
@@ -148,6 +151,11 @@ The first static environment slice is implemented:
 Still pending: combat cover bonuses, authored interactive props, ambient animals, distant
 aircraft and the rare commander-profile easter eggs.
 
+Latest playtest feedback: concentrating every remain on rock formations looks artificial.
+The next environment pass should scatter shell casings, bones and small debris across traversable
+ground at low density, while reserving large wrecks and obstacle-like silhouettes for blocked
+terrain so collision remains immediately readable.
+
 ### Cosmetic easter eggs
 
 1. Add a rare, harmless chicken that runs erratically across the battlefield and ends in an
@@ -172,7 +180,7 @@ aircraft and the rare commander-profile easter eggs.
 
 All 51 test files now live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports. The current full baseline is 261 passing tests.
+only file locations and relative imports. The current full baseline is 264 passing tests.
 
 ### Campaign production
 
