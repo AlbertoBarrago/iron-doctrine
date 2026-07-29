@@ -9,6 +9,7 @@ import type {
   Snapshot,
 } from '@iron/engine';
 import type { MapDef } from '@iron/shared';
+import type { PresentationEventEnvelope } from './PresentationEvents.js';
 
 export interface InitConfig {
   seed: number;
@@ -29,4 +30,10 @@ export type ToWorker =
   | { t: 'pause' }
   | { t: 'command'; cmd: Command };
 
-export type FromWorker = { t: 'ready' } | { t: 'snapshot'; snapshot: Snapshot };
+export type FromWorker =
+  | { t: 'ready' }
+  | {
+      t: 'snapshot';
+      snapshot: Snapshot;
+      events: PresentationEventEnvelope[];
+    };

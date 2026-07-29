@@ -6,14 +6,20 @@
 /// <reference lib="webworker" />
 import type { Simulation } from '@iron/engine';
 import { SIM_DT_MS, MAX_CATCHUP_TICKS } from '@iron/shared';
-import type { ToWorker, FromWorker } from './infra/worker/protocol.js';
 import { createSimulationFromInit } from './infra/worker/createSimulation.js';
+import {
+  derivePresentationEvents,
+  type PresentationEventEnvelope,
+} from './infra/worker/PresentationEvents.js';
+import type { FromWorker, ToWorker } from './infra/worker/protocol.js';
 
 let sim: Simulation | null = null;
 let running = false;
 let last = 0;
 let accumulator = 0;
 let rafHandle: ReturnType<typeof setTimeout> | null = null;
+let lastSnapshot: ReturnType<Simulation['snapshot']> | null = null;
+let nextPresentationSequence = 0;
 
 const post = (msg: FromWorker): void => self.postMessage(msg);
 
@@ -25,13 +31,25 @@ function loop(now: number): void {
   accumulator += delta;
 
   let steps = 0;
+  const events: PresentationEventEnvelope[] = [];
   while (accumulator >= SIM_DT_MS && steps < MAX_CATCHUP_TICKS) {
     sim.step();
+    const snapshot = sim.snapshot();
+    if (lastSnapshot) {
+      const derived = derivePresentationEvents(
+        lastSnapshot,
+        snapshot,
+        nextPresentationSequence,
+      );
+      events.push(...derived.events);
+      nextPresentationSequence = derived.nextSequence;
+    }
+    lastSnapshot = snapshot;
     accumulator -= SIM_DT_MS;
     steps++;
     if (sim.match?.isFinished) running = false;
   }
-  if (steps > 0) post({ t: 'snapshot', snapshot: sim.snapshot() });
+  if (steps > 0 && lastSnapshot) post({ t: 'snapshot', snapshot: lastSnapshot, events });
 
   if (running) rafHandle = setTimeout(() => loop(performance.now()), SIM_DT_MS / 2);
 }
@@ -41,8 +59,10 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
   switch (msg.t) {
     case 'init': {
       sim = createSimulationFromInit(msg.config);
+      lastSnapshot = sim.snapshot();
+      nextPresentationSequence = 0;
       post({ t: 'ready' });
-      post({ t: 'snapshot', snapshot: sim.snapshot() });
+      post({ t: 'snapshot', snapshot: lastSnapshot, events: [] });
       break;
     }
     case 'start':

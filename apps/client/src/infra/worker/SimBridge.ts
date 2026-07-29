@@ -3,7 +3,11 @@
  * commands, and surfaces the latest two snapshots so the renderer can interpolate.
  */
 import type { Command, Snapshot } from '@iron/engine';
-import type { ToWorker, FromWorker, InitConfig } from './protocol.js';
+import {
+  PresentationEventBuffer,
+  type PresentationEventEnvelope,
+} from './PresentationEvents.js';
+import type { FromWorker, InitConfig, ToWorker } from './protocol.js';
 
 export type SnapshotListener = (prev: Snapshot, curr: Snapshot, receivedAt: number) => void;
 
@@ -13,6 +17,7 @@ export class SimBridge {
   private curr: Snapshot | null = null;
   private lastSnapshotAt = 0;
   private listener: SnapshotListener | null = null;
+  private readonly presentationEvents = new PresentationEventBuffer();
 
   constructor() {
     this.worker = new Worker(new URL('../../sim.worker.ts', import.meta.url), {
@@ -23,6 +28,7 @@ export class SimBridge {
 
   private onMessage(msg: FromWorker): void {
     if (msg.t === 'snapshot') {
+      this.presentationEvents.append(msg.events);
       this.prev = this.curr ?? msg.snapshot;
       this.curr = msg.snapshot;
       this.lastSnapshotAt = performance.now();
@@ -37,6 +43,10 @@ export class SimBridge {
   }
 
   init(config: InitConfig): void {
+    this.presentationEvents.reset();
+    this.prev = null;
+    this.curr = null;
+    this.lastSnapshotAt = 0;
     this.send({ t: 'init', config });
   }
 
@@ -58,6 +68,10 @@ export class SimBridge {
 
   get latest(): { prev: Snapshot | null; curr: Snapshot | null; at: number } {
     return { prev: this.prev, curr: this.curr, at: this.lastSnapshotAt };
+  }
+
+  drainPresentationEvents(): PresentationEventEnvelope[] {
+    return this.presentationEvents.drain();
   }
 
   dispose(): void {
