@@ -150,6 +150,24 @@ can produce a consistent radio language.
 Generated concepts may guide source production but are never copied directly into runtime atlases.
 All shipped imagery, animation and audio must remain original and reviewable.
 
+### Battle Tank authoring
+
+The first vehicle source is `assets-src/vehicles/tank/tank.blend`. Rebuild its checked-in 16-facing
+source sheet with Blender 5.2 LTS:
+
+```sh
+blender --background --python scripts/blender/render-battle-tank.py -- \
+  --blend assets-src/vehicles/tank/tank.blend \
+  --frames-dir /tmp/iron-doctrine-tank-frames
+node scripts/blender/compose-battle-tank.mjs \
+  /tmp/iron-doctrine-tank-frames assets-src/vehicles/tank/tank.png
+pnpm assets:build
+```
+
+The render script owns camera, lighting, palette and direction order. Editing the model is expected;
+manually repainting individual direction frames is not, because it would break cross-frame
+consistency and reproducibility.
+
 ## Iron Pass acceptance gate
 
 The vertical slice passes only when:
