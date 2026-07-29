@@ -227,6 +227,10 @@ iron-doctrine/
 
 Rendering, audio, and input are **not** systems inside the sim tick — they live on the main thread and consume snapshots.
 
+**Economy contract:** harvesters extract finite ore, carry it to the owning Construction Yard,
+and convert the delivered amount into credits. The Construction Yard is the sole drop-off;
+there is no separate refinery building.
+
 **Determinism rules for systems:** iterate entities in stable EntityId order; no wall-clock; all randomness via injected `Random` port seeded per match; fixed-point arithmetic for anything that affects state.
 
 ---

@@ -1,6 +1,6 @@
 # Iron Doctrine — Project Status
 
-Last updated: 2026-07-28
+Last updated: 2026-07-29
 
 This document is the operational source of truth for completed work, known issues and
 the next development slice. The README remains the public presentation of the game.
@@ -14,7 +14,7 @@ First Contact is a playable vertical slice:
 - harvest ore, construct a base and produce units;
 - read harvester load, extraction and deposit state directly on the battlefield;
 - read the remaining capacity of selectable, grounded ore fields;
-- run multiple harvesters through shared ore and refinery approaches without deadlocking;
+- run multiple harvesters through shared ore and construction-yard approaches without deadlocking;
 - dispatch a fast, fragile scout buggy with extended vision ahead of the main force;
 - drive tanks through ore fields and over hostile infantry without vehicle deadlocks;
 - identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
@@ -37,6 +37,7 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 ## Decisions in force
 
 - Simulation state remains deterministic and authoritative inside the engine.
+- The Construction Yard is the sole ore drop-off; the refinery was removed to keep the economy loop explicit.
 - Render snapshots are the only simulation-to-client presentation boundary.
 - The battlefield excludes the command sidebar from its camera viewport.
 - Hidden map cells are fully black; explored terrain is remembered but attenuated.
