@@ -33,6 +33,19 @@ describe('Defensive turret', () => {
     expect(harmed).toBe(true);
   });
 
+  it('faces its current target', () => {
+    const grid = new NavGrid(64, 64, fp.fromInt(1));
+    const sim = new Simulation({ seed: 1, grid });
+    sim.enqueue({ type: 'spawnBuilding', building: 'power_plant', player: 0, at: at(-6, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'turret', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnUnit', unit: 'rifleman', player: 1, at: at(0, 6) });
+    sim.step();
+    sim.step();
+
+    const turret = sim.snapshot().entities.find((entity) => entity.buildingType === 'turret');
+    expect(turret?.angle).toBeCloseTo(Math.PI / 2, 4);
+  });
+
   it('is DISABLED when the owner is in power deficit', () => {
     const grid = new NavGrid(64, 64, fp.fromInt(1));
     const sim = new Simulation({ seed: 1, grid });

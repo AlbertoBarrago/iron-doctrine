@@ -46,7 +46,7 @@ export function drawBuilding(
       drawFactory(graphics, x, y, size, factionColor, alpha, presentation.animationTime);
       break;
     case 'turret':
-      drawTurret(graphics, x, y, size, factionColor, alpha);
+      drawTurret(graphics, x, y, size, factionColor, alpha, entity.angle);
       break;
     default:
       graphics
@@ -285,7 +285,10 @@ function drawTurret(
   size: number,
   color: number,
   alpha: number,
+  angle: number,
 ): void {
+  const barrelX = x + Math.cos(angle) * size * 1.06;
+  const barrelY = y + Math.sin(angle) * size * 1.06;
   graphics
     .circle(x, y, size * 0.7)
     .fill({ color: shadeColor(color, 0.55), alpha })
@@ -296,7 +299,7 @@ function drawTurret(
     .stroke({ width: 2, color: shadeColor(color, 1.15), alpha });
   graphics
     .moveTo(x, y)
-    .lineTo(x + size * 1.06, y)
+    .lineTo(barrelX, barrelY)
     .stroke({ width: Math.max(3, size * 0.18), color: 0x111713, alpha });
 }
 

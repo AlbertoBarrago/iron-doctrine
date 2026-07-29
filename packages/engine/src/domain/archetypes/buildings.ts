@@ -18,6 +18,7 @@ import {
   Weapon,
   Attack,
   Construction,
+  Facing,
 } from '../components/index.js';
 import type { WeaponStats } from './units.js';
 import * as fp from '../math/fixed.js';
@@ -136,6 +137,7 @@ export function activateBuilding(world: World, entity: EntityId, stats: Building
     });
   }
   if (stats.weapon) {
+    world.add(entity, Facing, { dir: { x: fp.FP.ONE, y: fp.FP.ZERO } });
     world.add(entity, Weapon, {
       damage: stats.weapon.damage,
       range: fp.fromInt(stats.weapon.range),
