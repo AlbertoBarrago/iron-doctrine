@@ -169,6 +169,21 @@ manually repainting individual direction frames is not, because it would break c
 consistency and reproducibility. The practical Blender introduction and asset acceptance workflow
 live in [BLENDER_BEGINNER_GUIDE.md](BLENDER_BEGINNER_GUIDE.md).
 
+### Authored movement rules
+
+Lessons from the first vehicle movement pass apply to every production sprite family:
+
+- align authoring axes with runtime screen directions and validate the projection numerically;
+- keep the ground-contact subassembly registered across every locomotion frame;
+- animate internal mass relative to that contact instead of rotating or translating the whole root;
+- select locomotion from presentation data without adding cosmetic state to the simulation;
+- keep facing selection independent from animation-step selection;
+- review direction changes, straight-line movement and minimum zoom in the running game;
+- prefer two stable readable poses over extra frames that introduce silhouette drift.
+
+For vehicles, tracks and wheels define ground contact while the chassis carries suspension motion.
+For infantry, planted feet define ground contact while pelvis, torso and equipment carry weight.
+
 ## Iron Pass acceptance gate
 
 The vertical slice passes only when:

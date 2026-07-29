@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 import bpy
+from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
 
@@ -115,6 +116,9 @@ def build_tank():
 
     root = bpy.data.objects.new("Battle Tank - Iron Pass", None)
     bpy.context.collection.objects.link(root)
+    chassis = bpy.data.objects.new("Suspended chassis", None)
+    bpy.context.collection.objects.link(chassis)
+    parent_to(chassis, root)
 
     main_gun = cylinder(
         "Main gun",
@@ -134,13 +138,11 @@ def build_tank():
         vertices=12,
         rotation=(0, math.pi / 2, 0),
     )
-    parts = [
+    chassis_parts = [
         box("Lower hull", (0, 0, 0.62), (3.9, 2.25, 0.55), olive_dark, 0.16),
         box("Sloped hull", (0.12, 0, 1.05), (3.45, 1.88, 0.62), olive, 0.16),
         box("Glacis", (1.56, 0, 1.08), (0.82, 1.72, 0.52), olive_light, 0.1, (0, -0.27, 0)),
         box("Engine deck", (-1.35, 0, 1.14), (0.82, 1.7, 0.2), olive_light, 0.05),
-        box("Left track", (0, 1.16, 0.48), (4.15, 0.46, 0.62), rubber, 0.2),
-        box("Right track", (0, -1.16, 0.48), (4.15, 0.46, 0.62), rubber, 0.2),
         cylinder("Turret", (0.18, 0, 1.61), 0.9, 0.48, olive, vertices=10),
         box("Turret mantlet", (0.91, 0, 1.62), (0.45, 0.78, 0.44), olive_dark, 0.12),
         main_gun,
@@ -149,6 +151,10 @@ def build_tank():
         box("Faction plate", (-0.42, -0.91, 1.17), (0.6, 0.055, 0.24), red, 0.02),
         box("Unit stripe", (0.82, 0.94, 1.18), (0.18, 0.055, 0.44), brass, 0.02),
         cylinder("Commander's optic", (0.22, -0.48, 1.92), 0.1, 0.16, glass, vertices=8),
+    ]
+    grounded_parts = [
+        box("Left track", (0, 1.16, 0.48), (4.15, 0.46, 0.62), rubber, 0.2),
+        box("Right track", (0, -1.16, 0.48), (4.15, 0.46, 0.62), rubber, 0.2),
     ]
 
     for side in (-1, 1):
@@ -162,7 +168,7 @@ def build_tank():
                 vertices=12,
                 rotation=(math.pi / 2, 0, 0),
             )
-            parts.append(wheel)
+            grounded_parts.append(wheel)
 
     antenna = cylinder(
         "Radio antenna",
@@ -173,11 +179,14 @@ def build_tank():
         vertices=8,
         rotation=(0.08, 0.08, 0),
     )
-    parts.append(antenna)
-    for obj in parts:
+    chassis_parts.append(antenna)
+    for obj in chassis_parts:
+        parent_to(obj, chassis)
+    for obj in grounded_parts:
         parent_to(obj, root)
     return {
         "root": root,
+        "chassis": chassis,
         "main_gun": main_gun,
         "muzzle_brake": muzzle_brake,
     }
@@ -188,18 +197,17 @@ def pose_tank(rig, state: str, step: int) -> None:
     root.location = (0, 0, 0)
     root.rotation_euler.x = 0
     root.rotation_euler.y = 0
+    rig["chassis"].location = (0, 0, 0)
     rig["main_gun"].location.x = 2.05
     rig["muzzle_brake"].location.x = 3.28
 
     if state == "move":
         phase = -1 if step == 0 else 1
-        root.location.z = phase * 0.025
-        root.rotation_euler.y = phase * 0.012
+        rig["chassis"].location.z = phase * 0.025
     elif state == "recoil":
         recoil = 0.34 if step == 0 else 0.14
         rig["main_gun"].location.x -= recoil
         rig["muzzle_brake"].location.x -= recoil
-        root.rotation_euler.y = -recoil * 0.025
 
 
 def look_at(obj, target=(0, 0, 0.8)):
@@ -238,7 +246,7 @@ def configure_scene():
     fill.data.color = (0.54, 0.65, 0.72)
     fill.data.size = 5
 
-    bpy.ops.object.camera_add(location=(7.4, -9.2, 8.6))
+    bpy.ops.object.camera_add(location=(0, -11.8, 8.6))
     camera = bpy.context.object
     camera.name = "RTS orthographic camera"
     camera.data.type = "ORTHO"
@@ -246,6 +254,18 @@ def configure_scene():
     camera.data.lens = 50
     look_at(camera)
     scene.camera = camera
+    bpy.context.view_layer.update()
+    validate_camera_alignment(scene, camera)
+
+
+def validate_camera_alignment(scene, camera) -> None:
+    origin = world_to_camera_view(scene, camera, Vector((0, 0, 0.8)))
+    east = world_to_camera_view(scene, camera, Vector((1, 0, 0.8)))
+    screen_angle = math.atan2(-(east.y - origin.y), east.x - origin.x)
+    if not math.isclose(screen_angle, 0, abs_tol=1e-6):
+        raise RuntimeError(
+            f"Camera projects model east at {math.degrees(screen_angle):.3f} degrees"
+        )
 
 
 def main():

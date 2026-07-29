@@ -84,6 +84,7 @@ The model faces positive X before the root object is rotated into the 16 gamepla
 Important objects in the Outliner include:
 
 - `Battle Tank - Iron Pass`: root transform for direction and suspension poses;
+- `Suspended chassis`: upper vehicle group displaced by the movement poses;
 - `Lower hull`, `Sloped hull`, `Glacis`: main silhouette;
 - `Left track`, `Right track` and road wheels: running gear;
 - `Turret`, `Turret mantlet`: weapon platform;
@@ -93,6 +94,10 @@ Important objects in the Outliner include:
 
 The camera is orthographic. Objects therefore keep the same apparent size with distance, matching an
 RTS view and preventing perspective changes between facings.
+
+Its azimuth is aligned with the model axes: model positive X projects to screen east. The render
+script validates this contract before exporting, because even a small camera orbit would make a
+vehicle appear to move sideways relative to its runtime heading.
 
 Materials use a restrained military-industrial palette. At 192 × 192 pixels, value separation and
 silhouette matter more than fine surface detail. Always judge an edit at gameplay size, not only in a
@@ -115,7 +120,8 @@ simulation determinism.
 
 The pose values live in `pose_tank()`:
 
-- movement changes the root Z position and Y rotation by a small amount;
+- movement displaces only `Suspended chassis` vertically by a small amount;
+- tracks and road wheels remain fixed to the root so ground contact never moves;
 - recoil translates the gun and muzzle brake backward along the tank's local X axis;
 - every pose resets all animated transforms before applying its own offsets.
 

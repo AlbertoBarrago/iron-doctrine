@@ -112,12 +112,20 @@ The first production vehicle slice is implemented:
 - a short crossfade and angular hysteresis keep steering transitions fluid without changing simulation;
 - a missing atlas falls back to the existing procedural painter instead of blocking a match.
 
+Production-art refinement proceeds family by family in this order:
+
+1. finish Battle Tank movement, firing and gameplay-scale acceptance;
+2. replace infantry roles with authored soldier sprites;
+3. replace the representative Iron Pass terrain;
+4. replace the representative industrial structures.
+
 The current tank export covers idle, a restrained two-frame suspension cycle while moving and a
-two-frame barrel recoil triggered by authoritative weapon timing. All 80 poses are authored from the
-same source model and selected only at the presentation boundary. Damage and destruction remain part
-of the production-art gate. The first runtime playtest accepted the model and overall visual
-direction; normal/minimum zoom and performance review remain required before the tank slice is
-accepted as final.
+two-frame barrel recoil triggered by authoritative weapon timing. The suspension isolates the upper
+chassis while tracks and road wheels retain stable ground contact, avoiding apparent lateral drift.
+All 80 poses are authored from the same source model and selected only at the presentation boundary.
+Damage and destruction remain part of the production-art gate. The first runtime playtest accepted
+the model and overall visual direction; normal/minimum zoom and performance review remain required
+before the tank slice is accepted as final.
 
 Public 1v1 work resumes after this visual gate and the core game loop are accepted as a coherent
 game.
