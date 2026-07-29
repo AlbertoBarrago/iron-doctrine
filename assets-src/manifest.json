@@ -31,7 +31,7 @@
       ],
       "states": {
         "idle": 1,
-        "move": 4,
+        "move": 8,
         "fire": 2
       },
       "runtime": true
