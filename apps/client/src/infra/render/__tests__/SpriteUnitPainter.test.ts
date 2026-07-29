@@ -23,6 +23,7 @@ describe('tank sprite direction', () => {
     expect(tankFrame(Math.PI / 8, 'move', 1)).toBe('unit.tank.move.ese.1');
     expect(tankFrame(Math.PI / 8, 'recoil', 0)).toBe('unit.tank.recoil.ese.0');
     expect(riflemanFrame(Math.PI / 8)).toBe('unit.rifleman.idle.ese.0');
+    expect(riflemanFrame(Math.PI / 8, 'move', 3)).toBe('unit.rifleman.move.ese.3');
     expect(riflemanFrame(Math.PI / 8, 'fire', 1)).toBe('unit.rifleman.fire.ese.1');
   });
 

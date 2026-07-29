@@ -32,7 +32,8 @@ const DIRECTION_HYSTERESIS = 0.08;
 const DIRECTION_BLEND_SECONDS = 0.09;
 const TANK_MOVEMENT_FRAME_SECONDS = 0.12;
 const TANK_ACTION_FRAME_SECONDS = 0.07;
-const RIFLEMAN_MOVEMENT_FRAME_SECONDS = 0.16;
+const RIFLEMAN_MOVEMENT_FRAME_SECONDS = 0.11;
+const RIFLEMAN_MOVEMENT_FRAMES = 4;
 const RIFLEMAN_ACTION_FRAME_SECONDS = 0.065;
 const ACTION_FRAMES = 2;
 
@@ -156,7 +157,9 @@ export class SpriteUnitPainter {
         step = 1;
       } else if (presentation.moving) {
         visualState = 'move';
-        step = Math.floor((animationTime + entity.id * 0.031) / movementFrameSeconds) % 2;
+        const movementFrames = unitType === 'tank' ? 2 : RIFLEMAN_MOVEMENT_FRAMES;
+        step =
+          Math.floor((animationTime + entity.id * 0.031) / movementFrameSeconds) % movementFrames;
       }
     }
 
