@@ -31,7 +31,6 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     forces: ['Construction Yard', 'Harvester'],
     authorized: [
       'Power Plant',
-      'Refinery',
       'Barracks',
       'Rifleman',
       'Concrete Wall',
@@ -71,7 +70,6 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     forces: ['Construction Yard', 'Harvester'],
     authorized: [
       'Power Plant',
-      'Refinery',
       'Barracks',
       'Factory',
       'Rifleman',
@@ -100,7 +98,6 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     forces: ['Construction Yard', 'Harvester'],
     authorized: [
       'Power Plant',
-      'Refinery',
       'Barracks',
       'Factory',
       'Rifleman',
@@ -129,7 +126,6 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     forces: ['Construction Yard', 'Harvester'],
     authorized: [
       'Power Plant',
-      'Refinery',
       'Barracks',
       'Factory',
       'Rifleman',

@@ -562,7 +562,7 @@ export class GameRenderer {
       if (
         entity.kind !== 'building' ||
         entity.construction ||
-        !['power_plant', 'refinery', 'factory'].includes(entity.buildingType ?? '') ||
+        !['power_plant', 'factory'].includes(entity.buildingType ?? '') ||
         (curr.tick + entity.id * 7) % 12 !== 0
       ) {
         continue;
@@ -990,11 +990,10 @@ export class GameRenderer {
     this.audio.play('build');
     const milestone = {
       power_plant: 'power',
-      refinery: 'refinery',
       barracks: 'barracks',
       concrete_wall: 'defense',
       turret: 'defense',
-    }[building] as 'power' | 'refinery' | 'barracks' | 'defense' | undefined;
+    }[building] as 'power' | 'barracks' | 'defense' | undefined;
     if (milestone) useGameStore.getState().advanceTutorial(milestone);
     if (!usesContinuousPlacement(building)) this.cancelBuildingPlacement();
   }

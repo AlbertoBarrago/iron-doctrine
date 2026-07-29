@@ -32,10 +32,6 @@ const BUILDABLE_STRUCTURES = [
     unlocks: '+100 power',
   },
   {
-    id: 'refinery',
-    unlocks: 'Unlocks income',
-  },
-  {
     id: 'barracks',
     unlocks: 'Riflemen · Engineers · Medics',
   },
@@ -60,28 +56,23 @@ const TUTORIAL: Record<TutorialStep, { number: string; title: string; instructio
     title: 'Establish the power grid',
     instruction: 'Build a Power Plant beside the construction yard.',
   },
-  refinery: {
-    number: '03',
-    title: 'Build a refinery',
-    instruction: 'Deploy it close to one of your home ore fields.',
-  },
   gather: {
-    number: '04',
+    number: '03',
     title: 'Fund the war effort',
     instruction: 'Select the harvester and right-click an ore field.',
   },
   barracks: {
-    number: '05',
+    number: '04',
     title: 'Establish a barracks',
     instruction: 'Build infantry production inside your base perimeter.',
   },
   produce: {
-    number: '06',
+    number: '05',
     title: 'Train the first squad',
     instruction: 'Select the barracks and queue a Rifleman.',
   },
   defense: {
-    number: '07',
+    number: '06',
     title: 'Secure the perimeter',
     instruction: 'Build concrete walls or a defense turret around the base.',
   },
@@ -799,9 +790,7 @@ function OrdersPanel({
           copy={
             entity.constructionProgress !== undefined
               ? `Operational systems unlock at 100% · ${Math.round(entity.constructionProgress * 100)}% complete.`
-              : entity.buildingType === 'refinery'
-                ? 'Harvesters automatically deliver ore here. This facility has no manual production queue.'
-                : 'This structure operates automatically and has no direct orders.'
+              : 'This structure operates automatically and has no direct orders.'
           }
         />
       ) : null}
@@ -1094,7 +1083,6 @@ const buildingSymbol = (building: string): string =>
   ({
     concrete_wall: '╬',
     power_plant: 'ϟ',
-    refinery: '◆',
     barracks: '▥',
     factory: '▣',
     turret: '⌖',

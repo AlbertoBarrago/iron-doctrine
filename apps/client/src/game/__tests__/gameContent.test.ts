@@ -20,7 +20,6 @@ describe('battlefield profiles', () => {
       'concrete_wall',
       'construction_yard',
       'power_plant',
-      'refinery',
       'barracks',
       'factory',
       'turret',
@@ -29,7 +28,7 @@ describe('battlefield profiles', () => {
 
   it('resolves unit and building profiles without mixing categories', () => {
     expect(profileFor('tank')?.role).toBe('Armored assault');
-    expect(profileFor(undefined, 'refinery')?.role).toBe('Resource processing');
+    expect(profileFor(undefined, 'construction_yard')?.role).toBe('Base command');
   });
 
   it('keeps wall placement active without affecting regular structures', () => {

@@ -45,7 +45,7 @@ export const UNIT_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
   harvester: {
     label: 'Harvester',
     role: 'Field economy',
-    description: 'Collects ore and returns it to a refinery or construction yard.',
+    description: 'Collects ore and returns it to the construction yard.',
     tacticalNote: 'Your income depends on it. Avoid frontline routes.',
   },
 };
@@ -60,20 +60,14 @@ export const BUILDING_PROFILES: Readonly<Record<string, BattlefieldProfile>> = {
   construction_yard: {
     label: 'Construction yard',
     role: 'Base command',
-    description: 'Deploys new structures and anchors your operational base.',
-    tacticalNote: 'Losing every construction yard ends the battle.',
+    description: 'Deploys new structures, receives ore and anchors your operational base.',
+    tacticalNote: 'Losing every construction yard ends the battle and stops ore deliveries.',
   },
   power_plant: {
     label: 'Power plant',
     role: 'Power generation',
     description: 'Supplies the grid required by production and defensive systems.',
     tacticalNote: 'Low power disables automated defenses.',
-  },
-  refinery: {
-    label: 'Refinery',
-    role: 'Resource processing',
-    description: 'Receives ore deliveries and converts them into credits.',
-    tacticalNote: 'Place it close to ore fields to shorten harvester routes.',
   },
   barracks: {
     label: 'Barracks',

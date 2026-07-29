@@ -39,9 +39,6 @@ export function drawBuilding(
     case 'power_plant':
       drawPowerPlant(graphics, x, y, size, factionColor, alpha, presentation.animationTime);
       break;
-    case 'refinery':
-      drawRefinery(graphics, x, y, size, factionColor, alpha, presentation.animationTime);
-      break;
     case 'barracks':
       drawBarracks(graphics, x, y, size, factionColor, alpha);
       break;
@@ -199,43 +196,6 @@ function drawPowerPlant(
       .lineTo(x + size * dx, y + size * 0.46)
       .stroke({ width: Math.max(2, size * 0.08), color: MATERIAL.copper, alpha });
   }
-}
-
-function drawRefinery(
-  graphics: Graphics,
-  x: number,
-  y: number,
-  size: number,
-  color: number,
-  alpha: number,
-  animationTime: number,
-): void {
-  graphics
-    .rect(x - size * 0.78, y - size * 0.66, size * 1.12, size * 1.32)
-    .fill({ color: shadeColor(color, 0.66), alpha })
-    .stroke({ width: 2, color: 0x080b09 });
-  graphics
-    .circle(x + size * 0.46, y - size * 0.18, size * 0.38)
-    .fill({ color: 0x3d463f, alpha })
-    .stroke({ width: 2, color: 0x0a0d0b });
-  graphics
-    .rect(x + size * 0.18, y + size * 0.18, size * 0.58, size * 0.35)
-    .fill({ color: 0x171d19, alpha });
-  graphics
-    .rect(x - size * 0.72, y - size * 0.22, size * 1.14, size * 0.26)
-    .fill({ color: MATERIAL.armorDark, alpha })
-    .stroke({ width: 1, color: MATERIAL.copper, alpha });
-  const beltOffset = (animationTime * size * 0.55) % (size * 0.28);
-  for (let offset = -0.62; offset < 0.38; offset += 0.28) {
-    graphics
-      .rect(x + size * offset + beltOffset, y - size * 0.19, size * 0.08, size * 0.2)
-      .fill({ color: MATERIAL.amber, alpha: alpha * 0.75 });
-  }
-  graphics
-    .moveTo(x + size * 0.32, y - size * 0.46)
-    .lineTo(x + size * 0.68, y - size * 0.46)
-    .lineTo(x + size * 0.68, y + size * 0.1)
-    .stroke({ width: Math.max(2, size * 0.09), color: MATERIAL.copper, alpha });
 }
 
 function drawBarracks(

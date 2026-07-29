@@ -71,7 +71,7 @@ describe('harvester presentation', () => {
     expect(harvesterStatus('idle')).toBe('Searching for ore');
     expect(harvesterStatus('toNode')).toBe('Moving to ore field');
     expect(harvesterStatus('gathering')).toBe('Harvesting ore');
-    expect(harvesterStatus('toBase')).toBe('Returning to refinery');
+    expect(harvesterStatus('toBase')).toBe('Returning to construction yard');
     expect(harvesterStatus('depositing')).toBe('Depositing ore');
     expect(harvesterStatus('paused')).toBe('Awaiting orders');
   });
@@ -127,7 +127,7 @@ describe('force summary', () => {
 describe('tutorial progression', () => {
   it('follows the base construction learning sequence', () => {
     expect(tutorialProgress([], 'select').step).toBe('power');
-    expect(tutorialProgress(['select', 'power'], 'refinery').step).toBe('gather');
+    expect(tutorialProgress(['select'], 'power').step).toBe('gather');
   });
 
   it('remembers milestones completed out of order', () => {
@@ -135,13 +135,12 @@ describe('tutorial progression', () => {
     expect(earlyBarracks.step).toBe('select');
     const selected = tutorialProgress(earlyBarracks.completed, 'select');
     const powered = tutorialProgress(selected.completed, 'power');
-    const refined = tutorialProgress(powered.completed, 'refinery');
-    const gathered = tutorialProgress(refined.completed, 'gather');
+    const gathered = tutorialProgress(powered.completed, 'gather');
     expect(gathered.step).toBe('produce');
   });
 
   it('completes after production and base defense', () => {
-    const completed = ['select', 'power', 'refinery', 'gather', 'barracks', 'produce'] as const;
+    const completed = ['select', 'power', 'gather', 'barracks', 'produce'] as const;
     expect(tutorialProgress(completed, 'defense').step).toBe('complete');
   });
 });
@@ -177,7 +176,7 @@ describe('selection commands', () => {
     ).toEqual(['build', 'demolish']);
     expect(
       selectionCommands([
-        entity({ kind: 'building', unitType: undefined, buildingType: 'refinery' }),
+        entity({ kind: 'building', unitType: undefined, buildingType: 'power_plant' }),
         entity({ unitType: 'engineer' }),
       ]),
     ).toContain('recycle');

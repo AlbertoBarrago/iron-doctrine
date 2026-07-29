@@ -15,7 +15,7 @@ type ScenarioSnapshot =
   FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot | BlackDawnSnapshot;
 
 export type TutorialMilestone =
-  'select' | 'power' | 'refinery' | 'gather' | 'barracks' | 'produce' | 'defense';
+  'select' | 'power' | 'gather' | 'barracks' | 'produce' | 'defense';
 export type TutorialStep = TutorialMilestone | 'complete';
 export type SelectionCommand =
   'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally' | 'demolish' | 'recycle';
@@ -142,7 +142,7 @@ export function harvesterStatus(phase: HarvesterPhase): string {
     case 'gathering':
       return 'Harvesting ore';
     case 'toBase':
-      return 'Returning to refinery';
+      return 'Returning to construction yard';
     case 'depositing':
       return 'Depositing ore';
     case 'paused':
@@ -191,7 +191,6 @@ interface GameUiState {
 const TUTORIAL_STEPS: TutorialMilestone[] = [
   'select',
   'power',
-  'refinery',
   'gather',
   'barracks',
   'produce',
