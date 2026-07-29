@@ -1071,9 +1071,10 @@ export class GameRenderer {
       this.handleControlGroupKey(e);
     });
     window.addEventListener('keyup', (e) => this.keys.delete(e.key.toLowerCase()));
-    window.addEventListener('resize', () =>
-      this.camera.resize(this.container.clientWidth, this.container.clientHeight),
-    );
+    window.addEventListener('resize', () => {
+      this.camera.resize(this.container.clientWidth, this.container.clientHeight);
+      this.clampCamera();
+    });
   }
 
   private onPointerDown(e: PointerEvent): void {

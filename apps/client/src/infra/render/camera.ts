@@ -5,6 +5,8 @@
  */
 export const PIXELS_PER_UNIT = 32;
 export const EDGE_PAN_MARGIN = 36;
+const MIN_ZOOM = 0.3;
+const MAX_ZOOM = 3;
 
 export function edgePanDirection(
   pointer: { x: number; y: number } | null,
@@ -45,6 +47,11 @@ export class Camera {
   }
 
   clampToWorld(widthUnits: number, heightUnits: number): void {
+    const minimumWorldZoom = Math.max(
+      this.viewW / (widthUnits * PIXELS_PER_UNIT),
+      this.viewH / (heightUnits * PIXELS_PER_UNIT),
+    );
+    this.zoom = Math.max(this.zoom, Math.min(MAX_ZOOM, minimumWorldZoom));
     const halfViewW = this.viewW / 2 / this.scale;
     const halfViewH = this.viewH / 2 / this.scale;
     const halfWorldW = widthUnits / 2;
@@ -56,7 +63,7 @@ export class Camera {
   }
 
   zoomBy(factor: number): void {
-    this.zoom = Math.min(3, Math.max(0.3, this.zoom * factor));
+    this.zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, this.zoom * factor));
   }
 
   zoomAtScreenPoint(factor: number, sx: number, sy: number): void {

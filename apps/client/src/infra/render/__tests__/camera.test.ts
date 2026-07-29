@@ -24,6 +24,27 @@ describe('mouse camera navigation', () => {
     expect(camera.y).toBe(-15);
   });
 
+  it('stops zooming out before a wide viewport exposes the world exterior', () => {
+    const camera = new Camera(1920, 1080);
+    camera.zoomBy(0.01);
+    camera.clampToWorld(96, 96);
+
+    expect(camera.zoom).toBeCloseTo(0.625);
+    expect(camera.screenToWorld(0, 0).wx).toBeGreaterThanOrEqual(-48);
+    expect(camera.screenToWorld(1920, 1080).wx).toBeLessThanOrEqual(48);
+  });
+
+  it('recomputes the zoom floor after a viewport resize', () => {
+    const camera = new Camera(800, 600);
+    camera.zoomBy(0.01);
+    camera.resize(1200, 1800);
+    camera.clampToWorld(96, 96);
+
+    expect(camera.zoom).toBeCloseTo(0.5859375);
+    expect(camera.screenToWorld(0, 0).wy).toBeGreaterThanOrEqual(-48);
+    expect(camera.screenToWorld(1200, 1800).wy).toBeLessThanOrEqual(48);
+  });
+
   it('keeps the world point under the cursor stable while zooming', () => {
     const camera = new Camera(800, 600);
     const before = camera.screenToWorld(640, 180);
