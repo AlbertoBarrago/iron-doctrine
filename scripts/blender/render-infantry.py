@@ -39,7 +39,7 @@ DIRECTIONS = (
 
 STATE_STEPS = {
     "idle": 1,
-    "move": 2,
+    "move": 4,
     "fire": 2,
 }
 
@@ -110,6 +110,14 @@ def cylinder_between(name, start, end, radius, value, vertices=10):
     return obj
 
 
+def orient_between(obj, start, end) -> None:
+    start_vector = Vector(start)
+    end_vector = Vector(end)
+    direction = end_vector - start_vector
+    obj.location = (start_vector + end_vector) / 2
+    obj.rotation_euler = direction.to_track_quat("Z", "Y").to_euler()
+
+
 def sphere(name, location, scale, value):
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=1, location=location)
     obj = bpy.context.object
@@ -139,11 +147,20 @@ def build_rifleman():
     parent_to(upper, root)
     parent_to(weapon_rig, upper)
 
-    left_foot = box("Left planted boot", (-0.14, -0.15, 0.08), (0.34, 0.17, 0.15), boots)
-    right_foot = box("Right planted boot", (-0.14, 0.15, 0.08), (0.34, 0.17, 0.15), boots)
-    left_leg = box("Left leg", (-0.02, -0.14, 0.45), (0.16, 0.18, 0.64), uniform)
-    right_leg = box("Right leg", (-0.02, 0.14, 0.45), (0.16, 0.18, 0.64), uniform)
-    for obj in (left_foot, right_foot, left_leg, right_leg):
+    left_foot = box("Left boot", (-0.08, -0.18, 0.08), (0.36, 0.2, 0.15), boots)
+    right_foot = box("Right boot", (-0.08, 0.18, 0.08), (0.36, 0.2, 0.15), boots)
+    left_thigh = box("Left thigh", (-0.02, -0.14, 0.65), (0.2, 0.2, 0.36), uniform)
+    right_thigh = box("Right thigh", (-0.02, 0.14, 0.65), (0.2, 0.2, 0.36), uniform)
+    left_shin = box("Left shin", (-0.02, -0.16, 0.33), (0.18, 0.18, 0.36), uniform)
+    right_shin = box("Right shin", (-0.02, 0.16, 0.33), (0.18, 0.18, 0.36), uniform)
+    for obj in (
+        left_foot,
+        right_foot,
+        left_thigh,
+        right_thigh,
+        left_shin,
+        right_shin,
+    ):
         parent_to(obj, root)
 
     upper_parts = [
@@ -193,26 +210,47 @@ def build_rifleman():
         "weapon_rig": weapon_rig,
         "left_foot": left_foot,
         "right_foot": right_foot,
-        "left_leg": left_leg,
-        "right_leg": right_leg,
+        "left_thigh": left_thigh,
+        "right_thigh": right_thigh,
+        "left_shin": left_shin,
+        "right_shin": right_shin,
     }
+
+
+def pose_leg(rig, side: str, foot_x: float, lift: float, knee_bias: float) -> None:
+    side_sign = -1 if side == "left" else 1
+    hip = Vector((-0.02, side_sign * 0.13, 0.82))
+    ankle = Vector((foot_x, side_sign * 0.18, 0.18 + lift))
+    knee = (hip + ankle) / 2
+    knee.x += knee_bias
+
+    foot = rig[f"{side}_foot"]
+    foot.location = (foot_x + 0.06, side_sign * 0.18, 0.08 + lift)
+    foot.rotation_euler = (0, -0.16 if lift else 0, 0)
+    orient_between(rig[f"{side}_thigh"], hip, knee)
+    orient_between(rig[f"{side}_shin"], knee, ankle)
 
 
 def pose_rifleman(rig, state: str, step: int) -> None:
     rig["upper"].location = (0, 0, 0)
+    rig["upper"].rotation_euler = (0, 0, 0)
     rig["weapon_rig"].location = (0, 0, 0)
-    rig["left_foot"].location.x = -0.14
-    rig["right_foot"].location.x = -0.14
-    rig["left_leg"].rotation_euler.y = 0
-    rig["right_leg"].rotation_euler.y = 0
+    pose_leg(rig, "left", -0.08, 0, 0.06)
+    pose_leg(rig, "right", -0.08, 0, 0.06)
 
     if state == "move":
-        phase = -1 if step == 0 else 1
-        rig["left_foot"].location.x += phase * 0.17
-        rig["right_foot"].location.x -= phase * 0.17
-        rig["left_leg"].rotation_euler.y = -phase * 0.16
-        rig["right_leg"].rotation_euler.y = phase * 0.16
-        rig["upper"].location.z = 0.015
+        gait = (
+            ((0.16, 0, 0.07), (-0.25, 0, 0.04), 0.0, -0.015, 0.025),
+            ((-0.04, 0, 0.06), (0.02, 0.11, 0.1), 0.025, 0.025, -0.015),
+            ((-0.25, 0, 0.04), (0.16, 0, 0.07), 0.0, 0.015, -0.025),
+            ((0.02, 0.11, 0.1), (-0.04, 0, 0.06), 0.025, -0.025, 0.015),
+        )
+        left, right, body_lift, body_sway, body_pitch = gait[step]
+        pose_leg(rig, "left", *left)
+        pose_leg(rig, "right", *right)
+        rig["upper"].location = (-body_pitch * 0.35, body_sway, body_lift)
+        rig["upper"].rotation_euler.y = body_pitch
+        rig["weapon_rig"].location.x = -body_pitch * 0.45
     elif state == "fire":
         recoil = 0.12 if step == 0 else 0.045
         rig["weapon_rig"].location.x = -recoil

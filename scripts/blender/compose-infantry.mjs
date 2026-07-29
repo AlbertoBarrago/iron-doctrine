@@ -10,7 +10,7 @@ if (!framesDir || !output) {
 
 const stateSteps = {
   idle: 1,
-  move: 2,
+  move: 4,
   fire: 2,
 };
 const directionCount = 16;
