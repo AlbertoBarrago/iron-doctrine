@@ -204,6 +204,8 @@ function drawAnimal(graphics: Graphics, camera: Camera, animal: AmbientAnimal): 
   const bob = Math.sin(animal.phase * Math.PI * 10) * size * 0.22;
   const direction = animal.heading;
   graphics
+    .ellipse(sx + size * 0.12, sy + size * 0.48, size * 1.18, size * 0.38)
+    .fill({ color: 0x131611, alpha: 0.2 })
     .ellipse(sx, sy + bob, size * 1.15, size * 0.58)
     .fill({ color: 0x332c20, alpha: 0.88 })
     .circle(sx + direction * size * 0.92, sy - size * 0.2 + bob, size * 0.42)
@@ -239,6 +241,8 @@ function drawChicken(graphics: Graphics, camera: Camera, chicken: AmbientChicken
   const bob = Math.sin(chicken.phase * Math.PI * 28) * size * 0.25;
   const wing = Math.sin(chicken.phase * Math.PI * 34) * size * 0.38;
   graphics
+    .ellipse(sx + size * 0.12, sy + size * 0.72, size * 1.08, size * 0.32)
+    .fill({ color: 0x131611, alpha: 0.24 })
     .ellipse(sx, sy + bob, size * 1.05, size * 0.72)
     .fill({ color: 0xe5ddd0, alpha: 0.96 })
     .ellipse(sx - direction * size * 0.12, sy + bob + wing * 0.25, size * 0.62, size * 0.38)
