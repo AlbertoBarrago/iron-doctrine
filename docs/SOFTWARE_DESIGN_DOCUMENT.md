@@ -731,6 +731,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 33  | Army control HUD              | nine local control groups with assign/recall/focus shortcuts, clickable group chips and owned-force composition with selected counts                                                                       | ✅ done                                                |
 | 34  | Unit radio acknowledgements   | rate-limited Italian role responses for core orders through accessible subtitles, isolated from simulation state; synthetic speech disabled pending original recordings                                    | ✅ done (recorded voices pending)                      |
 | 35  | Military Diorama visual pass  | shared procedural material ramps, directional edge lighting, layered vehicle and structure surfaces, volumetric pooled smoke and dust                                                                      | ✅ done (browser playtest pending)                     |
+| 36  | Battlefield Cohesion          | seeded macro-ground variation, soil-integrated rocks and ore fields, grounded war remains and ambient-life shadows without simulation coupling                                                              | ✅ done (browser playtest pending)                     |
 
 ---
 

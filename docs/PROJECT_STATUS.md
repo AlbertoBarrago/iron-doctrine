@@ -64,6 +64,10 @@ The validated source of truth is `main`. At this checkpoint the repository passe
   working surfaces without changing entity footprints or authoritative state.
 - Smoke and dust use distinct expanding shapes while impacts retain sharp ballistic streaks;
   all effects remain bounded, pooled and presentation-only.
+- The Battlefield Cohesion pass overlays broad seeded ground variation beneath local terrain
+  detail, reducing visible tile repetition without rebuilding geometry during camera movement.
+- Rock formations, resource fields and war remains now disturb and shadow the surrounding soil,
+  while scattered casings use varied placement instead of reading as aligned overlay props.
 - Map environment metadata is presentation-only, backwards-compatible and versioned independently
   from authoritative simulation state.
 - Static terrain geometry is built once in chunked Pixi containers; camera movement updates its
@@ -213,7 +217,7 @@ Medic interactions would add disproportionate complexity to the current tactical
 All test files live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
 only file locations and relative imports. The current full baseline is 54 test files and
-289 passing tests.
+290 passing tests.
 
 ### Campaign production
 
