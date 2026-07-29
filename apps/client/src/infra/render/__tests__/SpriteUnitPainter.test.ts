@@ -19,6 +19,8 @@ describe('tank sprite direction', () => {
 
   it('resolves the generated atlas frame id', () => {
     expect(tankFrame(Math.PI / 8)).toBe('unit.tank.idle.ese.0');
+    expect(tankFrame(Math.PI / 8, 'move', 1)).toBe('unit.tank.move.ese.1');
+    expect(tankFrame(Math.PI / 8, 'recoil', 0)).toBe('unit.tank.recoil.ese.0');
   });
 
   it('holds the current facing around a direction boundary', () => {
@@ -38,6 +40,25 @@ describe('tank sprite direction', () => {
 
     painter.draw({ ...tank, angle: Math.PI / 8 } as never, 100, 80, 12, 1.2);
     expect(painter.container.children[0]?.children).toHaveLength(1);
+  });
+
+  it('selects authored movement and recoil frames from presentation state', () => {
+    const requested: string[] = [];
+    const painter = new SpriteUnitPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return Texture.EMPTY;
+      },
+    } as never);
+    const tank = { id: 7, unitType: 'tank', angle: 0 };
+
+    painter.draw(tank as never, 100, 80, 12, 1, { moving: true });
+    painter.draw(tank as never, 100, 80, 12, 1.01, { firing: true });
+    painter.draw(tank as never, 100, 80, 12, 1.09, { firing: false });
+
+    expect(requested).toContain('unit.tank.move.e.0');
+    expect(requested).toContain('unit.tank.recoil.e.0');
+    expect(requested).toContain('unit.tank.recoil.e.1');
   });
 
   it('leaves tanks to the procedural fallback while the atlas is unavailable', () => {

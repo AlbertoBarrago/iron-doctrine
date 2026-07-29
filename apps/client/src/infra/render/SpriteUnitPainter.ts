@@ -23,18 +23,30 @@ const TANK_DIRECTIONS = [
 ] as const;
 
 type TankDirection = (typeof TANK_DIRECTIONS)[number];
+type TankVisualState = 'idle' | 'move' | 'recoil';
 
 const TURN = Math.PI * 2;
 const DIRECTION_STEP = TURN / TANK_DIRECTIONS.length;
 const DIRECTION_HYSTERESIS = 0.08;
 const DIRECTION_BLEND_SECONDS = 0.09;
+const MOVEMENT_FRAME_SECONDS = 0.12;
+const RECOIL_FRAME_SECONDS = 0.07;
+const RECOIL_FRAMES = 2;
 
 interface TankSpriteState {
   root: Container;
   current: Sprite;
   outgoing: Sprite | null;
   direction: TankDirection;
+  frameId: ProductionFrameId;
   transitionStartedAt: number;
+  recoilStartedAt: number | null;
+  firing: boolean;
+}
+
+interface TankPresentation {
+  moving?: boolean;
+  firing?: boolean;
 }
 
 export function tankDirection(angle: number): TankDirection {
@@ -51,12 +63,20 @@ export function stableTankDirection(angle: number, current: TankDirection): Tank
   return tankDirection(angle);
 }
 
-export function tankFrame(angle: number): ProductionFrameId {
-  return `unit.tank.idle.${tankDirection(angle)}.0`;
+export function tankFrame(
+  angle: number,
+  state: TankVisualState = 'idle',
+  step = 0,
+): ProductionFrameId {
+  return `unit.tank.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
 }
 
-function tankFrameForDirection(direction: TankDirection): ProductionFrameId {
-  return `unit.tank.idle.${direction}.0`;
+function tankFrameForDirection(
+  direction: TankDirection,
+  state: TankVisualState,
+  step: number,
+): ProductionFrameId {
+  return `unit.tank.${state}.${direction}.${step}` as ProductionFrameId;
 }
 
 export class SpriteUnitPainter {
@@ -71,12 +91,14 @@ export class SpriteUnitPainter {
     y: number,
     radius: number,
     animationTime = performance.now() / 1000,
+    presentation: TankPresentation = {},
   ): boolean {
     if (entity.unitType !== 'tank') return false;
     let state = this.tanks.get(entity.id);
     if (!state) {
       const direction = tankDirection(entity.angle);
-      const texture = this.assets.texture(tankFrameForDirection(direction));
+      const frameId = tankFrameForDirection(direction, 'idle', 0);
+      const texture = this.assets.texture(frameId);
       if (!texture) return false;
       const root = new Container();
       const current = this.createSprite(texture);
@@ -86,15 +108,38 @@ export class SpriteUnitPainter {
         current,
         outgoing: null,
         direction,
+        frameId,
         transitionStartedAt: animationTime,
+        recoilStartedAt: null,
+        firing: false,
       };
       this.tanks.set(entity.id, state);
       this.container.addChild(root);
     }
 
+    if (presentation.firing && !state.firing) state.recoilStartedAt = animationTime;
+    state.firing = presentation.firing ?? false;
+
+    let visualState: TankVisualState = 'idle';
+    let step = 0;
+    if (state.recoilStartedAt !== null) {
+      const elapsed = animationTime - state.recoilStartedAt;
+      if (elapsed < RECOIL_FRAME_SECONDS * RECOIL_FRAMES) {
+        visualState = 'recoil';
+        step = Math.min(RECOIL_FRAMES - 1, Math.floor(elapsed / RECOIL_FRAME_SECONDS));
+      } else {
+        state.recoilStartedAt = null;
+      }
+    }
+    if (visualState === 'idle' && presentation.moving) {
+      visualState = 'move';
+      step = Math.floor((animationTime + entity.id * 0.031) / MOVEMENT_FRAME_SECONDS) % 2;
+    }
+
     const nextDirection = stableTankDirection(entity.angle, state.direction);
+    const nextFrameId = tankFrameForDirection(nextDirection, visualState, step);
     if (nextDirection !== state.direction) {
-      const texture = this.assets.texture(tankFrameForDirection(nextDirection));
+      const texture = this.assets.texture(nextFrameId);
       if (texture) {
         state.outgoing?.destroy();
         state.outgoing = state.current;
@@ -102,7 +147,14 @@ export class SpriteUnitPainter {
         state.current.alpha = 0;
         state.root.addChild(state.current);
         state.direction = nextDirection;
+        state.frameId = nextFrameId;
         state.transitionStartedAt = animationTime;
+      }
+    } else if (nextFrameId !== state.frameId) {
+      const texture = this.assets.texture(nextFrameId);
+      if (texture) {
+        state.current.texture = texture;
+        state.frameId = nextFrameId;
       }
     }
 

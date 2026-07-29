@@ -702,16 +702,20 @@ export class GameRenderer {
         continue;
       }
 
-      const spriteRendered = this.spriteUnits.draw(e, sx, sy, r, animationTime);
+      const moving = Math.hypot(e.x - p.x, e.y - p.y) > 0.001;
+      const firing =
+        e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0);
+      const spriteRendered = this.spriteUnits.draw(e, sx, sy, r, animationTime, {
+        moving,
+        firing,
+      });
       if (spriteRendered) {
         drawGroundShadow(this.unitUnderlay, sx, sy, r, 1);
       } else {
         drawUnit(this.units, e, sx, sy, r, color, {
           animationTime,
-          moving: Math.hypot(e.x - p.x, e.y - p.y) > 0.001,
-          firing:
-            e.weaponCooldownLeft !== undefined &&
-            e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0),
+          moving,
+          firing,
         });
       }
       if (this.selected.has(e.id)) {
