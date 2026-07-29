@@ -23,8 +23,9 @@ const SPRITE_DIRECTIONS = [
 ] as const;
 
 type SpriteDirection = (typeof SPRITE_DIRECTIONS)[number];
-type SpriteUnitType = 'tank' | 'rifleman' | 'scout';
-type SpriteVisualState = 'idle' | 'move' | 'recoil' | 'fire';
+type SpriteUnitType = 'tank' | 'rifleman' | 'scout' | 'harvester';
+type SpriteVisualState =
+  'idle' | 'idle-loaded' | 'move' | 'move-loaded' | 'gather' | 'deposit' | 'recoil' | 'fire';
 
 const TURN = Math.PI * 2;
 const DIRECTION_STEP = TURN / SPRITE_DIRECTIONS.length;
@@ -67,6 +68,12 @@ const UNIT_CONFIG: Record<SpriteUnitType, SpriteUnitConfig> = {
     movementFrameSeconds: 0.08,
     movementFrames: 4,
     sizeScale: 3.7,
+  },
+  harvester: {
+    anchorY: 0.5,
+    movementFrameSeconds: 0.1,
+    movementFrames: 4,
+    sizeScale: 4,
   },
 };
 
@@ -126,6 +133,14 @@ export function scoutFrame(
   return `unit.scout.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
 }
 
+export function harvesterFrame(
+  angle: number,
+  state: 'idle' | 'idle-loaded' | 'move' | 'move-loaded' | 'gather' | 'deposit' = 'idle',
+  step = 0,
+): ProductionFrameId {
+  return `unit.harvester.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
+}
+
 function frameForDirection(
   unitType: SpriteUnitType,
   direction: SpriteDirection,
@@ -152,7 +167,8 @@ export class SpriteUnitPainter {
     if (
       entity.unitType !== 'tank' &&
       entity.unitType !== 'rifleman' &&
-      entity.unitType !== 'scout'
+      entity.unitType !== 'scout' &&
+      entity.unitType !== 'harvester'
     ) {
       return false;
     }
@@ -188,7 +204,24 @@ export class SpriteUnitPainter {
 
     let visualState: SpriteVisualState = 'idle';
     let step = 0;
-    if (config.action && state.actionStartedAt !== null) {
+    if (unitType === 'harvester' && entity.cargo) {
+      const cargoRatio =
+        entity.cargo.capacity > 0 ? entity.cargo.amount / entity.cargo.capacity : 0;
+      if (entity.cargo.phase === 'gathering') {
+        visualState = 'gather';
+        step = Math.min(3, Math.floor(cargoRatio * 4));
+      } else if (entity.cargo.phase === 'depositing') {
+        visualState = 'deposit';
+        step = cargoRatio > 2 / 3 ? 0 : cargoRatio > 1 / 3 ? 1 : 2;
+      } else if (presentation.moving) {
+        visualState = entity.cargo.amount > 0 ? 'move-loaded' : 'move';
+        step =
+          Math.floor((animationTime + entity.id * 0.031) / config.movementFrameSeconds) %
+          config.movementFrames;
+      } else if (entity.cargo.amount > 0) {
+        visualState = 'idle-loaded';
+      }
+    } else if (config.action && state.actionStartedAt !== null) {
       const elapsed = animationTime - state.actionStartedAt;
       if (elapsed < config.action.frameSeconds * config.action.frames) {
         visualState = config.action.state;
@@ -197,7 +230,7 @@ export class SpriteUnitPainter {
         state.actionStartedAt = null;
       }
     }
-    if (visualState === 'idle') {
+    if (visualState === 'idle' && unitType !== 'harvester') {
       if (config.engagedFrame && presentation.engaged) {
         visualState = config.engagedFrame.state;
         step = config.engagedFrame.step;

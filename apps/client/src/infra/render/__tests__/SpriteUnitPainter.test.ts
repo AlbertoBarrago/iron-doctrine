@@ -2,6 +2,7 @@ import { type Sprite, Texture } from 'pixi.js';
 import { describe, expect, it } from 'vitest';
 import {
   SpriteUnitPainter,
+  harvesterFrame,
   riflemanFrame,
   scoutFrame,
   stableTankDirection,
@@ -28,6 +29,8 @@ describe('tank sprite direction', () => {
     expect(riflemanFrame(Math.PI / 8, 'fire', 1)).toBe('unit.rifleman.fire.ese.1');
     expect(scoutFrame(Math.PI / 8)).toBe('unit.scout.idle.ese.0');
     expect(scoutFrame(Math.PI / 8, 'move', 3)).toBe('unit.scout.move.ese.3');
+    expect(harvesterFrame(Math.PI / 8, 'idle-loaded')).toBe('unit.harvester.idle-loaded.ese.0');
+    expect(harvesterFrame(Math.PI / 8, 'deposit', 2)).toBe('unit.harvester.deposit.ese.2');
   });
 
   it('holds the current facing around a direction boundary', () => {
@@ -154,12 +157,60 @@ describe('tank sprite direction', () => {
     }
   });
 
+  it('derives Harvester load and action poses from authoritative cargo', () => {
+    const requested: string[] = [];
+    const painter = new SpriteUnitPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return Texture.EMPTY;
+      },
+    } as never);
+    const harvester = {
+      id: 17,
+      unitType: 'harvester',
+      angle: 0,
+      cargo: { amount: 0, capacity: 100, phase: 'idle' },
+    };
+
+    painter.draw(harvester as never, 100, 80, 16, 1);
+    painter.draw(
+      { ...harvester, cargo: { ...harvester.cargo, amount: 50, phase: 'toBase' } } as never,
+      100,
+      80,
+      16,
+      1.1,
+      { moving: true },
+    );
+    painter.draw(
+      { ...harvester, cargo: { ...harvester.cargo, amount: 75, phase: 'gathering' } } as never,
+      100,
+      80,
+      16,
+      1.2,
+    );
+    painter.draw(
+      { ...harvester, cargo: { ...harvester.cargo, amount: 20, phase: 'depositing' } } as never,
+      100,
+      80,
+      16,
+      1.3,
+    );
+
+    expect(requested).toContain('unit.harvester.idle.e.0');
+    expect(requested.some((frame) => frame.startsWith('unit.harvester.move-loaded.e.'))).toBe(true);
+    expect(requested).toContain('unit.harvester.gather.e.3');
+    expect(requested).toContain('unit.harvester.deposit.e.2');
+  });
+
   it('leaves supported units to the procedural fallback while the atlas is unavailable', () => {
     const painter = new SpriteUnitPainter({
       texture: () => null,
     } as never);
     expect(painter.draw({ id: 7, unitType: 'tank', angle: 0 } as never, 100, 80, 12)).toBe(false);
     expect(painter.draw({ id: 13, unitType: 'scout', angle: 0 } as never, 100, 80, 8)).toBe(false);
+    expect(painter.draw({ id: 17, unitType: 'harvester', angle: 0 } as never, 100, 80, 16)).toBe(
+      false,
+    );
     expect(painter.container.children).toHaveLength(0);
   });
 });
