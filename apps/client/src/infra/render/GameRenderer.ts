@@ -702,7 +702,7 @@ export class GameRenderer {
         continue;
       }
 
-      const spriteRendered = this.spriteUnits.draw(e, sx, sy, r);
+      const spriteRendered = this.spriteUnits.draw(e, sx, sy, r, animationTime);
       if (spriteRendered) {
         drawGroundShadow(this.unitUnderlay, sx, sy, r, 1);
       } else {

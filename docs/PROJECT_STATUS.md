@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 297 automated tests;
+- 299 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -109,11 +109,13 @@ The first production vehicle slice is implemented:
 - Blender renders one consistent low-poly model into 16 deterministic gameplay facings;
 - the asset compiler packs those frames into the typed production atlas;
 - the Pixi renderer selects the closest authored facing without rotating or blurring the hull;
+- a short crossfade and angular hysteresis keep steering transitions fluid without changing simulation;
 - a missing atlas falls back to the existing procedural painter instead of blocking a match.
 
 The current tank export covers the idle presentation only. Movement, recoil, damage and destruction
-remain part of the production-art gate and must be authored from the same source model. Runtime
-browser review at normal/minimum zoom remains required before the tank slice is accepted as final.
+remain part of the production-art gate and must be authored from the same source model. The first
+runtime playtest accepted the model and overall visual direction; normal/minimum zoom and performance
+review remain required before the tank slice is accepted as final.
 
 Public 1v1 work resumes after this visual gate and the core game loop are accepted as a coherent
 game.
