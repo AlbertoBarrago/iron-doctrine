@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   createCommanderProfile,
+  consumeChickenEasterEgg,
   loadCommanderProfiles,
   normalizeCallsign,
+  recordCompletedMatch,
   selectCommanderProfile,
 } from '../commanderProfile.js';
 import { loadCampaignProgress, type CampaignStorage } from '../campaignProgress.js';
@@ -31,7 +33,10 @@ describe('commander profiles', () => {
     expect(loadCommanderProfiles(storage)).toEqual({
       version: 1,
       activeCallsign: 'FOX',
-      profiles: [{ callsign: 'FOX' }, { callsign: 'OWL' }],
+      profiles: [
+        { callsign: 'FOX', completedMatches: 0, chickenEventsSeen: 0 },
+        { callsign: 'OWL', completedMatches: 0, chickenEventsSeen: 0 },
+      ],
     });
     expect(selectCommanderProfile(storage, 'OWL').activeCallsign).toBe('OWL');
   });
@@ -62,7 +67,36 @@ describe('commander profiles', () => {
     expect(loadCommanderProfiles(storage)).toEqual({
       version: 1,
       activeCallsign: 'FOX',
-      profiles: [{ callsign: 'FOX' }],
+      profiles: [{ callsign: 'FOX', completedMatches: 0, chickenEventsSeen: 0 }],
     });
+  });
+
+  it('persists completed matches per commander', () => {
+    const storage = memoryStorage();
+    createCommanderProfile(storage, 'FOX');
+    createCommanderProfile(storage, 'OWL');
+
+    recordCompletedMatch(storage, 'FOX');
+    recordCompletedMatch(storage, 'FOX');
+
+    expect(loadCommanderProfiles(storage).profiles).toEqual([
+      { callsign: 'FOX', completedMatches: 2, chickenEventsSeen: 0 },
+      { callsign: 'OWL', completedMatches: 0, chickenEventsSeen: 0 },
+    ]);
+  });
+
+  it('reserves one chicken event after every seven completed matches', () => {
+    const storage = memoryStorage();
+    createCommanderProfile(storage, 'FOX');
+    for (let match = 0; match < 6; match++) recordCompletedMatch(storage, 'FOX');
+    expect(consumeChickenEasterEgg(storage, 'FOX')).toBe(false);
+
+    recordCompletedMatch(storage, 'FOX');
+    expect(consumeChickenEasterEgg(storage, 'FOX')).toBe(true);
+    expect(consumeChickenEasterEgg(storage, 'FOX')).toBe(false);
+
+    for (let match = 0; match < 7; match++) recordCompletedMatch(storage, 'FOX');
+    expect(consumeChickenEasterEgg(storage, 'FOX')).toBe(true);
+    expect(consumeChickenEasterEgg(storage, 'FOX')).toBe(false);
   });
 });
