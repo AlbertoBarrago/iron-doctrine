@@ -99,8 +99,7 @@ export class GameRenderer {
   private activeMap: MapDef | null = null;
   private mission: SkirmishConfig['mission'] = 'skirmish';
   private aiActivationTick = 0;
-  /** Entities seen last frame, to detect deaths for explosion FX. */
-  private readonly prevIds = new Map<number, { x: number; y: number; kind: string }>();
+  private readonly recentWeaponFire = new Map<number, number>();
 
   private readonly selected = new Set<number>();
   private readonly controlGroups = new ControlGroups();
@@ -507,20 +506,19 @@ export class GameRenderer {
     this.spriteBuildings.beginFrame();
     this.spriteUnits.beginFrame();
     this.particles.update(this.presentationClock.delta / 1000);
+    this.consumePresentationEvents();
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
       this.ambientLife.draw(this.camera, (curr.tick + alpha) / SIM_HZ);
       const isNewTick = curr.tick !== this.lastUiTick;
       if (isNewTick) {
-        this.detectCombatEffects(prev, curr);
-        this.detectHarvestEffects(prev, curr);
+        this.detectHarvestEffects(curr);
         this.detectAmbientEffects(curr);
       }
       this.drawEntities(prev, curr, alpha);
       this.drawScenarioSite(curr);
       if (isNewTick) {
         this.lastUiTick = curr.tick;
-        this.detectDeaths(curr);
         const store = useGameStore.getState();
         store.setEntityCount(
           curr.entities.filter((e) => e.kind === 'unit' || e.kind === 'building').length,
@@ -559,50 +557,13 @@ export class GameRenderer {
     this.drawSelectionBox();
   }
 
-  private detectCombatEffects(prev: Snapshot, curr: Snapshot): void {
-    const previous = new Map(prev.entities.map((entity) => [entity.id, entity]));
-    const current = new Map(curr.entities.map((entity) => [entity.id, entity]));
-    for (const entity of curr.entities) {
-      const before = previous.get(entity.id);
-      if (
-        entity.weaponCooldownLeft === undefined ||
-        entity.weaponCooldownLeft <= (before?.weaponCooldownLeft ?? 0) ||
-        entity.attackTarget === undefined
-      ) {
-        continue;
-      }
-      const muzzleX = entity.x + Math.cos(entity.angle) * entity.radius;
-      const muzzleY = entity.y + Math.sin(entity.angle) * entity.radius;
-      this.particles.muzzleFlash(
-        muzzleX,
-        muzzleY,
-        entity.angle,
-        entity.unitType === 'rifleman' ? 0.65 : 1,
-      );
-      if (entity.unitType === 'rifleman') {
-        const target = current.get(entity.attackTarget);
-        if (target) this.particles.tracer(muzzleX, muzzleY, target.x, target.y);
-        this.audio.play('rifle');
-      } else {
-        this.audio.play('cannon');
-      }
-    }
-  }
-
-  private detectHarvestEffects(prev: Snapshot, curr: Snapshot): void {
-    const previous = new Map(prev.entities.map((entity) => [entity.id, entity]));
+  private detectHarvestEffects(curr: Snapshot): void {
     for (const entity of curr.entities) {
       if (!entity.cargo) continue;
       if (entity.cargo.phase === 'gathering') {
         const scoopX = entity.x + Math.cos(entity.angle) * entity.radius * 1.35;
         const scoopY = entity.y + Math.sin(entity.angle) * entity.radius * 1.35;
         this.particles.oreDust(scoopX, scoopY, entity.angle, entity.radius);
-      }
-      if (
-        entity.cargo.phase === 'depositing' &&
-        previous.get(entity.id)?.cargo?.phase !== 'depositing'
-      ) {
-        this.particles.oreDeposit(entity.x, entity.y, entity.radius);
       }
     }
   }
@@ -625,22 +586,50 @@ export class GameRenderer {
     }
   }
 
-  /** Emit explosion FX + sound for entities that vanished since the last snapshot. */
-  private detectDeaths(curr: Snapshot): void {
-    const live = new Set<number>();
-    for (const e of curr.entities) live.add(e.id);
-    for (const [id, info] of this.prevIds) {
-      if (!live.has(id) && (info.kind === 'unit' || info.kind === 'building')) {
-        this.particles.explosion(info.x, info.y, info.kind === 'building' ? 2 : 1);
-        this.audio.play('explosion');
-        this.selected.delete(id);
-      } else if (!live.has(id) && info.kind === 'projectile') {
-        this.particles.impact(info.x, info.y, 1.2);
-        this.audio.play('impact');
+  private consumePresentationEvents(): void {
+    for (const { event } of this.bridge.drainPresentationEvents()) {
+      switch (event.kind) {
+        case 'weaponFired': {
+          const muzzleX = event.x + Math.cos(event.angle) * event.radius;
+          const muzzleY = event.y + Math.sin(event.angle) * event.radius;
+          this.recentWeaponFire.set(event.entityId, this.presentationClock.time / 1000);
+          this.particles.muzzleFlash(
+            muzzleX,
+            muzzleY,
+            event.angle,
+            event.unitType === 'rifleman' ? 0.65 : 1,
+          );
+          if (event.unitType === 'rifleman') {
+            if (event.targetX !== undefined && event.targetY !== undefined) {
+              this.particles.tracer(muzzleX, muzzleY, event.targetX, event.targetY);
+            }
+            this.audio.play('rifle');
+          } else {
+            this.audio.play('cannon');
+          }
+          break;
+        }
+        case 'entityDamaged':
+          break;
+        case 'entityDestroyed':
+          if (event.entityKind === 'projectile') {
+            this.particles.impact(event.x, event.y, 1.2);
+            this.audio.play('impact');
+          } else {
+            this.particles.explosion(
+              event.x,
+              event.y,
+              event.entityKind === 'building' ? 2 : 1,
+            );
+            this.audio.play('explosion');
+            this.selected.delete(event.entityId);
+          }
+          break;
+        case 'oreDeposited':
+          this.particles.oreDeposit(event.x, event.y, event.radius);
+          break;
       }
     }
-    this.prevIds.clear();
-    for (const e of curr.entities) this.prevIds.set(e.id, { x: e.x, y: e.y, kind: e.kind });
   }
 
   private drawEntities(prev: Snapshot, curr: Snapshot, alpha: number): void {
@@ -681,7 +670,18 @@ export class GameRenderer {
 
       if (e.kind === 'resource') {
         const rr = Math.max(7, e.radius * this.camera.scale * 2.8);
-        drawResourceField(this.units, sx, sy, rr, e.id);
+        const amount = e.resource?.amount ?? 0;
+        drawResourceField(
+          this.units,
+          sx,
+          sy,
+          rr,
+          e.id,
+          amount,
+          e.resource?.maxAmount ?? amount,
+          animationTime,
+          amount < (p.resource?.amount ?? amount),
+        );
         continue;
       }
 
@@ -735,8 +735,13 @@ export class GameRenderer {
       }
 
       const moving = Math.hypot(e.x - p.x, e.y - p.y) > 0.001;
-      const firing =
+      const snapshotFiring =
         e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0);
+      const firedAt = this.recentWeaponFire.get(e.id);
+      const firing = snapshotFiring || (firedAt !== undefined && animationTime - firedAt < 0.18);
+      if (firedAt !== undefined && animationTime - firedAt >= 0.18) {
+        this.recentWeaponFire.delete(e.id);
+      }
       const engaged = e.unitType === 'rifleman' && e.attackTarget !== undefined && !moving;
       if (this.selected.has(e.id)) {
         const vehicle =
@@ -747,6 +752,8 @@ export class GameRenderer {
         moving,
         firing,
         engaged,
+        spawned: !prevById.has(e.id),
+        previousHp: p.hp,
         tint: spriteFactionTint(color),
       });
       if (spriteRendered) {
