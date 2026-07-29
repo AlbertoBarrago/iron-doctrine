@@ -521,8 +521,8 @@ export class GameRenderer {
         this.detectAmbientEffects(curr);
         this.detectPersistentDamageEffects(curr);
       }
-      this.drawEntities(prev, curr, alpha);
       this.drawScenarioSite(curr);
+      this.drawEntities(prev, curr, alpha);
       if (isNewTick) {
         this.lastUiTick = curr.tick;
         const store = useGameStore.getState();
@@ -823,19 +823,21 @@ export class GameRenderer {
     if (!scenario || !('recoveryAt' in scenario) || scenario.phase === 'operational') return;
     const { sx, sy } = this.camera.worldToScreen(scenario.recoveryAt.x, scenario.recoveryAt.y);
     const size = Math.max(16, this.camera.scale * 1.5);
-    this.units
+    this.unitUnderlay
       .rect(sx - size, sy - size, size * 2, size * 2)
       .fill({ color: 0x303733 })
       .stroke({ width: 2, color: scenario.phase === 'recovering' ? 0x78d46a : 0x687068 });
-    this.units
+    this.unitUnderlay
       .moveTo(sx - size * 0.55, sy - size * 0.55)
       .lineTo(sx + size * 0.55, sy + size * 0.55)
       .moveTo(sx + size * 0.55, sy - size * 0.55)
       .lineTo(sx - size * 0.55, sy + size * 0.55)
       .stroke({ width: 3, color: 0x111713 });
     if (scenario.phase === 'recovering') {
-      this.units.rect(sx - size, sy + size + 5, size * 2, 4).fill({ color: 0x101512 });
-      this.units
+      this.unitUnderlay
+        .rect(sx - size, sy + size + 5, size * 2, 4)
+        .fill({ color: 0x101512 });
+      this.unitUnderlay
         .rect(sx - size, sy + size + 5, size * 2 * scenario.progress, 4)
         .fill({ color: 0x78d46a });
     }
