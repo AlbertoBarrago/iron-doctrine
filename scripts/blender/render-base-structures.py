@@ -2,9 +2,10 @@
 
 Frame contract:
   - one fixed RTS camera; structures do not have directional frames;
-  - two presentation-only states per structure: idle, operational;
-  - operational changes only local machinery, doors and service lamps;
-  - output order is stable: 00-idle.png, 01-operational.png.
+  - construction is cumulative and remains registered to the foundation;
+  - complete is a one-shot commissioning sequence;
+  - functional loops animate only plausible local machinery, doors and lamps;
+  - output order is defined by STRUCTURE_STATES and must not be changed casually.
 
 Run with:
   blender --background --python scripts/blender/render-base-structures.py -- \
@@ -25,7 +26,33 @@ from mathutils import Vector
 
 
 STRUCTURES = ("construction_yard", "power_plant", "barracks", "factory")
-STATES = ("idle", "operational")
+STRUCTURE_STATES = {
+    "construction_yard": (
+        ("construction", 4),
+        ("complete", 4),
+        ("idle", 1),
+        ("service", 4),
+    ),
+    "power_plant": (
+        ("construction", 4),
+        ("complete", 4),
+        ("generate", 6),
+    ),
+    "barracks": (
+        ("construction", 4),
+        ("complete", 4),
+        ("idle", 1),
+        ("produce", 6),
+        ("exit", 4),
+    ),
+    "factory": (
+        ("construction", 4),
+        ("complete", 4),
+        ("idle", 1),
+        ("produce", 8),
+        ("exit", 6),
+    ),
+}
 FRAME_SIZE = 320
 
 
@@ -407,25 +434,149 @@ BUILDERS = {
 }
 
 
-def pose(rig, state: str) -> None:
-    operational = state == "operational"
-    rig["lamp"].active_material_index = 1 if operational else 0
+def assign_build_stages() -> None:
+    stage_zero = ("foundation", "anchor bolt", "apron", "service pad", "service trench")
+    stage_one = (
+        "bunker",
+        "hall",
+        "block",
+        "annex",
+        "lower frame",
+        "equipment lockers",
+        "bus housing",
+    )
+    stage_two = (
+        "roof",
+        "tower",
+        "stack",
+        "exhaust",
+        "recess",
+        "shutter",
+        "personnel door",
+        "crane rail",
+    )
 
-    moving = rig["moving"]
-    if moving is not None:
-        if rig["movement"] == "rotate_z":
-            moving.rotation_euler.z = -0.20 if operational else 0.0
-        elif rig["movement"] == "translate_x":
-            moving.location.x = 0.55 if operational else -0.55
+    for obj in bpy.context.scene.objects:
+        name = obj.name.lower()
+        if any(token in name for token in stage_zero):
+            obj["build_stage"] = 0
+        elif any(token in name for token in stage_one):
+            obj["build_stage"] = 1
+        elif any(token in name for token in stage_two):
+            obj["build_stage"] = 2
+        else:
+            obj["build_stage"] = 3
 
-    fan = rig["fan"]
-    if fan is not None:
-        fan.rotation_euler.y = math.pi / 4 if operational else 0.0
 
+def remember_rest_pose(rig) -> None:
+    rig["rest"] = {
+        obj.name: {
+            "location": obj.location.copy(),
+            "rotation": obj.rotation_euler.copy(),
+            "scale": obj.scale.copy(),
+        }
+        for obj in bpy.context.scene.objects
+    }
+
+
+def restore_rest_pose(rig) -> None:
+    for obj in bpy.context.scene.objects:
+        rest = rig["rest"].get(obj.name)
+        if rest is None:
+            continue
+        obj.location = rest["location"]
+        obj.rotation_euler = rest["rotation"]
+        obj.scale = rest["scale"]
+        obj.hide_render = False
+
+
+def set_lamp(rig, enabled: bool) -> None:
+    rig["lamp"].active_material_index = 1 if enabled else 0
+
+
+def set_door_open(rig, amount: float) -> None:
     door = rig["door"]
-    if door is not None:
-        door.scale.z = 0.22 if operational else 1.0
-        door.location.z = 2.18 if operational else (1.56 if "vehicle" in door.name.lower() else 0.96)
+    if door is None:
+        return
+
+    amount = max(0.0, min(1.0, amount))
+    rest = rig["rest"][door.name]
+    if "vehicle" in door.name.lower():
+        # A roll-up shutter contracts toward its fixed upper rail.
+        remaining = 1.0 - amount * 0.82
+        closed_half_height = door.dimensions.z / 2
+        door.scale.z = rest["scale"].z * remaining
+        door.location.z = rest["location"].z + closed_half_height * (1.0 - remaining)
+    else:
+        # The personnel door slides behind the adjacent wall without floating.
+        door.location.x = rest["location"].x + amount * 0.96
+
+
+def construction_pose(rig, step: int) -> None:
+    for obj in bpy.context.scene.objects:
+        obj.hide_render = int(obj.get("build_stage", 3)) > step
+    set_lamp(rig, False)
+
+
+def complete_pose(rig, step: int) -> None:
+    set_lamp(rig, step >= 2)
+    moving = rig["moving"]
+    if moving is not None and rig["movement"] == "rotate_z":
+        moving.rotation_euler.z = (0.16, 0.09, 0.035, 0.0)[step]
+    elif moving is not None and rig["movement"] == "translate_x":
+        moving.location.x += (-0.28, -0.14, -0.05, 0.0)[step]
+    if rig["fan"] is not None:
+        rig["fan"].rotation_euler.y = (0.0, 0.22, 0.55, 0.92)[step]
+    if rig["door"] is not None and "personnel" in rig["door"].name.lower():
+        set_door_open(rig, (0.22, 0.12, 0.04, 0.0)[step])
+
+
+def loop_pose(structure: str, rig, state: str, step: int, count: int) -> None:
+    phase = step / count
+    radians = phase * math.tau
+
+    if structure == "construction_yard" and state == "service":
+        rig["moving"].rotation_euler.z = -0.28 + math.sin(radians) * 0.34
+        set_lamp(rig, step in (0, 1, 3))
+        return
+
+    if structure == "power_plant" and state == "generate":
+        rig["fan"].rotation_euler.y = radians
+        set_lamp(rig, True)
+        return
+
+    if structure == "barracks" and state == "produce":
+        set_lamp(rig, step in (0, 1, 3, 5))
+        return
+
+    if structure == "factory" and state == "produce":
+        rig["moving"].location.x += math.sin(radians) * 1.15
+        set_lamp(rig, step % 2 == 0)
+        return
+
+    if state == "exit":
+        if count == 4:
+            opening = (0.0, 0.58, 1.0, 0.46)[step]
+        else:
+            opening = (0.0, 0.48, 0.92, 1.0, 0.62, 0.22)[step]
+        set_door_open(rig, opening)
+        set_lamp(rig, opening > 0.25)
+        return
+
+    set_lamp(rig, False)
+
+
+def pose(structure: str, rig, state: str, step: int, count: int) -> None:
+    restore_rest_pose(rig)
+    if state == "construction":
+        construction_pose(rig, step)
+    elif state == "complete":
+        complete_pose(rig, step)
+    elif state == "idle":
+        set_lamp(rig, False)
+    else:
+        loop_pose(structure, rig, state, step, count)
+    bpy.context.view_layer.update()
 
 
 def look_at(obj, target=(0, 0, 0.9)):
@@ -508,16 +659,22 @@ def main():
         clear_scene()
         values = materials()
         rig = BUILDERS[structure](values)
+        assign_build_stages()
+        remember_rest_pose(rig)
         configure_scene()
-        pose(rig, "idle")
+        pose(structure, rig, "idle", 0, 1)
         bpy.ops.wm.save_as_mainfile(filepath=str(assets_dir / f"{structure}.blend"))
 
         output_dir = frames_root / structure
         output_dir.mkdir(parents=True, exist_ok=True)
-        for index, state in enumerate(STATES):
-            pose(rig, state)
-            bpy.context.scene.render.filepath = str(output_dir / f"{index:02d}-{state}.png")
-            bpy.ops.render.render(write_still=True)
+        frame_index = 0
+        for state, count in STRUCTURE_STATES[structure]:
+            for step in range(count):
+                pose(structure, rig, state, step, count)
+                filename = f"{frame_index:02d}-{state}-{step}.png"
+                bpy.context.scene.render.filepath = str(output_dir / filename)
+                bpy.ops.render.render(write_still=True)
+                frame_index += 1
 
 
 if __name__ == "__main__":

@@ -96,6 +96,16 @@ describe('production asset compiler', () => {
     expect(() => describeFrames(asset, 128, 96)).toThrow('expected 6 source frames, found 4');
   });
 
+  it('allows only an explicitly declared partial final source row', () => {
+    const paddedAsset = { ...asset, sourceColumns: 4 };
+
+    expect(describeFrames(paddedAsset, 256, 96)).toHaveLength(6);
+    expect(() => describeFrames(paddedAsset, 192, 96)).toThrow(
+      'expected 4 source columns, found 3',
+    );
+    expect(() => describeFrames(asset, 256, 96)).toThrow('expected 6 source frames, found 8');
+  });
+
   it('preserves declared state order so frame names match source-sheet order', () => {
     const manifest = validateManifest({
       version: 1,

@@ -10,14 +10,48 @@ if (!framesRoot || !outputRoot) {
   );
 }
 
-// Stable runtime-source contract: two non-directional 320px frames, idle then operational.
-const structures = ['construction_yard', 'power_plant', 'barracks', 'factory'];
-const frameNames = ['00-idle.png', '01-operational.png'];
+// Stable runtime-source contract. State order must match the Blender renderer and manifest.
+const structures = {
+  construction_yard: [
+    ['construction', 4],
+    ['complete', 4],
+    ['idle', 1],
+    ['service', 4],
+  ],
+  power_plant: [
+    ['construction', 4],
+    ['complete', 4],
+    ['generate', 6],
+  ],
+  barracks: [
+    ['construction', 4],
+    ['complete', 4],
+    ['idle', 1],
+    ['produce', 6],
+    ['exit', 4],
+  ],
+  factory: [
+    ['construction', 4],
+    ['complete', 4],
+    ['idle', 1],
+    ['produce', 8],
+    ['exit', 6],
+  ],
+};
 const frameSize = 320;
+const columns = 8;
 
 await mkdir(outputRoot, { recursive: true });
-for (const structure of structures) {
+for (const [structure, states] of Object.entries(structures)) {
   const sourceDir = path.join(framesRoot, structure);
+  const frameNames = [];
+  let frameIndex = 0;
+  for (const [state, count] of states) {
+    for (let step = 0; step < count; step += 1) {
+      frameNames.push(`${String(frameIndex).padStart(2, '0')}-${state}-${step}.png`);
+      frameIndex += 1;
+    }
+  }
   const discovered = (await readdir(sourceDir)).filter((name) => name.endsWith('.png')).sort();
   if (
     discovered.length !== frameNames.length ||
@@ -28,10 +62,11 @@ for (const structure of structures) {
     );
   }
 
+  const rows = Math.ceil(frameNames.length / columns);
   await sharp({
     create: {
-      width: frameSize * frameNames.length,
-      height: frameSize,
+      width: frameSize * columns,
+      height: frameSize * rows,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
@@ -39,8 +74,8 @@ for (const structure of structures) {
     .composite(
       frameNames.map((name, index) => ({
         input: path.join(sourceDir, name),
-        left: index * frameSize,
-        top: 0,
+        left: (index % columns) * frameSize,
+        top: Math.floor(index / columns) * frameSize,
       })),
     )
     .png()

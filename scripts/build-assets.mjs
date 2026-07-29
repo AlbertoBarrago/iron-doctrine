@@ -67,6 +67,9 @@ export function validateManifest(value) {
       source: safeSource(candidate.source, `${field}.source`),
       frameWidth: positiveInteger(candidate.frameWidth, `${field}.frameWidth`),
       frameHeight: positiveInteger(candidate.frameHeight, `${field}.frameHeight`),
+      ...(candidate.sourceColumns !== undefined && {
+        sourceColumns: positiveInteger(candidate.sourceColumns, `${field}.sourceColumns`),
+      }),
       directions,
       states,
       runtime: candidate.runtime !== false,
@@ -87,11 +90,19 @@ export function describeFrames(asset, imageWidth, imageHeight) {
     );
   }
   const columns = imageWidth / asset.frameWidth;
+  if (asset.sourceColumns !== undefined && columns !== asset.sourceColumns) {
+    throw new Error(
+      `${asset.id}: expected ${asset.sourceColumns} source columns, found ${columns}`,
+    );
+  }
   const available = columns * (imageHeight / asset.frameHeight);
   const required =
     asset.directions.length *
     Object.values(asset.states).reduce((total, frameCount) => total + frameCount, 0);
-  if (available !== required) {
+  const trailingPadding = available - required;
+  const validPaddedGrid =
+    asset.sourceColumns !== undefined && trailingPadding >= 0 && trailingPadding < columns;
+  if (available !== required && !validPaddedGrid) {
     throw new Error(`${asset.id}: expected ${required} source frames, found ${available}`);
   }
 

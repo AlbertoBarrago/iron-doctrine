@@ -27,10 +27,13 @@
       "source": "structures/base/construction_yard.png",
       "frameWidth": 320,
       "frameHeight": 320,
+      "sourceColumns": 8,
       "directions": ["south"],
       "states": {
+        "construction": 4,
+        "complete": 4,
         "idle": 1,
-        "operational": 1
+        "service": 4
       },
       "runtime": true
     },
@@ -40,10 +43,12 @@
       "source": "structures/base/power_plant.png",
       "frameWidth": 320,
       "frameHeight": 320,
+      "sourceColumns": 8,
       "directions": ["south"],
       "states": {
-        "idle": 1,
-        "operational": 1
+        "construction": 4,
+        "complete": 4,
+        "generate": 6
       },
       "runtime": true
     },
@@ -53,10 +58,14 @@
       "source": "structures/base/barracks.png",
       "frameWidth": 320,
       "frameHeight": 320,
+      "sourceColumns": 8,
       "directions": ["south"],
       "states": {
+        "construction": 4,
+        "complete": 4,
         "idle": 1,
-        "operational": 1
+        "produce": 6,
+        "exit": 4
       },
       "runtime": true
     },
@@ -66,10 +75,14 @@
       "source": "structures/base/factory.png",
       "frameWidth": 320,
       "frameHeight": 320,
+      "sourceColumns": 8,
       "directions": ["south"],
       "states": {
+        "construction": 4,
+        "complete": 4,
         "idle": 1,
-        "operational": 1
+        "produce": 8,
+        "exit": 6
       },
       "runtime": true
     },

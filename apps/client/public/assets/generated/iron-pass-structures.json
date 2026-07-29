@@ -1,63 +1,490 @@
 {
   "frames": {
-    "building.barracks.idle.south.0": {
+    "building.barracks.construction.south.0": {
       "frame": { "x": 2, "y": 2, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.barracks.operational.south.0": {
+    "building.barracks.construction.south.1": {
       "frame": { "x": 324, "y": 2, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.construction-yard.idle.south.0": {
+    "building.barracks.construction.south.2": {
       "frame": { "x": 646, "y": 2, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.construction-yard.operational.south.0": {
+    "building.barracks.construction.south.3": {
       "frame": { "x": 968, "y": 2, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.factory.idle.south.0": {
+    "building.barracks.complete.south.0": {
       "frame": { "x": 1290, "y": 2, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.factory.operational.south.0": {
+    "building.barracks.complete.south.1": {
       "frame": { "x": 1612, "y": 2, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.power-plant.idle.south.0": {
+    "building.barracks.complete.south.2": {
       "frame": { "x": 2, "y": 324, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
-    "building.power-plant.operational.south.0": {
+    "building.barracks.complete.south.3": {
       "frame": { "x": 324, "y": 324, "w": 320, "h": 320 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
       "sourceSize": { "w": 320, "h": 320 }
     },
+    "building.barracks.idle.south.0": {
+      "frame": { "x": 646, "y": 324, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.produce.south.0": {
+      "frame": { "x": 968, "y": 324, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.produce.south.1": {
+      "frame": { "x": 1290, "y": 324, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.produce.south.2": {
+      "frame": { "x": 1612, "y": 324, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.produce.south.3": {
+      "frame": { "x": 2, "y": 646, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.produce.south.4": {
+      "frame": { "x": 324, "y": 646, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.produce.south.5": {
+      "frame": { "x": 646, "y": 646, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.exit.south.0": {
+      "frame": { "x": 968, "y": 646, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.exit.south.1": {
+      "frame": { "x": 1290, "y": 646, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.exit.south.2": {
+      "frame": { "x": 1612, "y": 646, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.exit.south.3": {
+      "frame": { "x": 2, "y": 968, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.construction.south.0": {
+      "frame": { "x": 324, "y": 968, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.construction.south.1": {
+      "frame": { "x": 646, "y": 968, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.construction.south.2": {
+      "frame": { "x": 968, "y": 968, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.construction.south.3": {
+      "frame": { "x": 1290, "y": 968, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.complete.south.0": {
+      "frame": { "x": 1612, "y": 968, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.complete.south.1": {
+      "frame": { "x": 2, "y": 1290, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.complete.south.2": {
+      "frame": { "x": 324, "y": 1290, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.complete.south.3": {
+      "frame": { "x": 646, "y": 1290, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.idle.south.0": {
+      "frame": { "x": 968, "y": 1290, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.service.south.0": {
+      "frame": { "x": 1290, "y": 1290, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.service.south.1": {
+      "frame": { "x": 1612, "y": 1290, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.service.south.2": {
+      "frame": { "x": 2, "y": 1612, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.service.south.3": {
+      "frame": { "x": 324, "y": 1612, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.construction.south.0": {
+      "frame": { "x": 646, "y": 1612, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.construction.south.1": {
+      "frame": { "x": 968, "y": 1612, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.construction.south.2": {
+      "frame": { "x": 1290, "y": 1612, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.construction.south.3": {
+      "frame": { "x": 1612, "y": 1612, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.complete.south.0": {
+      "frame": { "x": 2, "y": 1934, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.complete.south.1": {
+      "frame": { "x": 324, "y": 1934, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.complete.south.2": {
+      "frame": { "x": 646, "y": 1934, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.complete.south.3": {
+      "frame": { "x": 968, "y": 1934, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.idle.south.0": {
+      "frame": { "x": 1290, "y": 1934, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.0": {
+      "frame": { "x": 1612, "y": 1934, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.1": {
+      "frame": { "x": 2, "y": 2256, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.2": {
+      "frame": { "x": 324, "y": 2256, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.3": {
+      "frame": { "x": 646, "y": 2256, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.4": {
+      "frame": { "x": 968, "y": 2256, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.5": {
+      "frame": { "x": 1290, "y": 2256, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.6": {
+      "frame": { "x": 1612, "y": 2256, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.produce.south.7": {
+      "frame": { "x": 2, "y": 2578, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.exit.south.0": {
+      "frame": { "x": 324, "y": 2578, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.exit.south.1": {
+      "frame": { "x": 646, "y": 2578, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.exit.south.2": {
+      "frame": { "x": 968, "y": 2578, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.exit.south.3": {
+      "frame": { "x": 1290, "y": 2578, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.exit.south.4": {
+      "frame": { "x": 1612, "y": 2578, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.exit.south.5": {
+      "frame": { "x": 2, "y": 2900, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.construction.south.0": {
+      "frame": { "x": 324, "y": 2900, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.construction.south.1": {
+      "frame": { "x": 646, "y": 2900, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.construction.south.2": {
+      "frame": { "x": 968, "y": 2900, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.construction.south.3": {
+      "frame": { "x": 1290, "y": 2900, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.complete.south.0": {
+      "frame": { "x": 1612, "y": 2900, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.complete.south.1": {
+      "frame": { "x": 2, "y": 3222, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.complete.south.2": {
+      "frame": { "x": 324, "y": 3222, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.complete.south.3": {
+      "frame": { "x": 646, "y": 3222, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.generate.south.0": {
+      "frame": { "x": 968, "y": 3222, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.generate.south.1": {
+      "frame": { "x": 1290, "y": 3222, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.generate.south.2": {
+      "frame": { "x": 1612, "y": 3222, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.generate.south.3": {
+      "frame": { "x": 2, "y": 3544, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.generate.south.4": {
+      "frame": { "x": 324, "y": 3544, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.generate.south.5": {
+      "frame": { "x": 646, "y": 3544, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
     "technical.registration.idle.south.0": {
-      "frame": { "x": 646, "y": 324, "w": 64, "h": 64 },
+      "frame": { "x": 968, "y": 3544, "w": 64, "h": 64 },
       "rotated": false,
       "trimmed": false,
       "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
@@ -65,16 +492,103 @@
     }
   },
   "animations": {
+    "building.barracks.construction.south": [
+      "building.barracks.construction.south.0",
+      "building.barracks.construction.south.1",
+      "building.barracks.construction.south.2",
+      "building.barracks.construction.south.3"
+    ],
+    "building.barracks.complete.south": [
+      "building.barracks.complete.south.0",
+      "building.barracks.complete.south.1",
+      "building.barracks.complete.south.2",
+      "building.barracks.complete.south.3"
+    ],
     "building.barracks.idle.south": ["building.barracks.idle.south.0"],
-    "building.barracks.operational.south": ["building.barracks.operational.south.0"],
+    "building.barracks.produce.south": [
+      "building.barracks.produce.south.0",
+      "building.barracks.produce.south.1",
+      "building.barracks.produce.south.2",
+      "building.barracks.produce.south.3",
+      "building.barracks.produce.south.4",
+      "building.barracks.produce.south.5"
+    ],
+    "building.barracks.exit.south": [
+      "building.barracks.exit.south.0",
+      "building.barracks.exit.south.1",
+      "building.barracks.exit.south.2",
+      "building.barracks.exit.south.3"
+    ],
+    "building.construction-yard.construction.south": [
+      "building.construction-yard.construction.south.0",
+      "building.construction-yard.construction.south.1",
+      "building.construction-yard.construction.south.2",
+      "building.construction-yard.construction.south.3"
+    ],
+    "building.construction-yard.complete.south": [
+      "building.construction-yard.complete.south.0",
+      "building.construction-yard.complete.south.1",
+      "building.construction-yard.complete.south.2",
+      "building.construction-yard.complete.south.3"
+    ],
     "building.construction-yard.idle.south": ["building.construction-yard.idle.south.0"],
-    "building.construction-yard.operational.south": [
-      "building.construction-yard.operational.south.0"
+    "building.construction-yard.service.south": [
+      "building.construction-yard.service.south.0",
+      "building.construction-yard.service.south.1",
+      "building.construction-yard.service.south.2",
+      "building.construction-yard.service.south.3"
+    ],
+    "building.factory.construction.south": [
+      "building.factory.construction.south.0",
+      "building.factory.construction.south.1",
+      "building.factory.construction.south.2",
+      "building.factory.construction.south.3"
+    ],
+    "building.factory.complete.south": [
+      "building.factory.complete.south.0",
+      "building.factory.complete.south.1",
+      "building.factory.complete.south.2",
+      "building.factory.complete.south.3"
     ],
     "building.factory.idle.south": ["building.factory.idle.south.0"],
-    "building.factory.operational.south": ["building.factory.operational.south.0"],
-    "building.power-plant.idle.south": ["building.power-plant.idle.south.0"],
-    "building.power-plant.operational.south": ["building.power-plant.operational.south.0"],
+    "building.factory.produce.south": [
+      "building.factory.produce.south.0",
+      "building.factory.produce.south.1",
+      "building.factory.produce.south.2",
+      "building.factory.produce.south.3",
+      "building.factory.produce.south.4",
+      "building.factory.produce.south.5",
+      "building.factory.produce.south.6",
+      "building.factory.produce.south.7"
+    ],
+    "building.factory.exit.south": [
+      "building.factory.exit.south.0",
+      "building.factory.exit.south.1",
+      "building.factory.exit.south.2",
+      "building.factory.exit.south.3",
+      "building.factory.exit.south.4",
+      "building.factory.exit.south.5"
+    ],
+    "building.power-plant.construction.south": [
+      "building.power-plant.construction.south.0",
+      "building.power-plant.construction.south.1",
+      "building.power-plant.construction.south.2",
+      "building.power-plant.construction.south.3"
+    ],
+    "building.power-plant.complete.south": [
+      "building.power-plant.complete.south.0",
+      "building.power-plant.complete.south.1",
+      "building.power-plant.complete.south.2",
+      "building.power-plant.complete.south.3"
+    ],
+    "building.power-plant.generate.south": [
+      "building.power-plant.generate.south.0",
+      "building.power-plant.generate.south.1",
+      "building.power-plant.generate.south.2",
+      "building.power-plant.generate.south.3",
+      "building.power-plant.generate.south.4",
+      "building.power-plant.generate.south.5"
+    ],
     "technical.registration.idle.south": ["technical.registration.idle.south.0"]
   },
   "meta": {
@@ -82,7 +596,7 @@
     "version": "1",
     "image": "iron-pass-structures.webp",
     "format": "RGBA8888",
-    "size": { "w": 1934, "h": 646 },
+    "size": { "w": 1934, "h": 3866 },
     "scale": "1"
   }
 }
