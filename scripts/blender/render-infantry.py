@@ -235,8 +235,8 @@ def pose_rifleman(rig, state: str, step: int) -> None:
     rig["upper"].location = (0, 0, 0)
     rig["upper"].rotation_euler = (0, 0, 0)
     rig["weapon_rig"].location = (0, 0, 0)
-    pose_leg(rig, "left", -0.08, 0, 0.06)
-    pose_leg(rig, "right", -0.08, 0, 0.06)
+    pose_leg(rig, "left", -0.02, 0, 0)
+    pose_leg(rig, "right", -0.02, 0, 0)
 
     if state == "move":
         gait = (

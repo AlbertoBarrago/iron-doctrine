@@ -140,8 +140,8 @@ Its four movement frames alternate contact and passing poses. Each leg has separ
 geometry; the passing foot lifts while the other remains grounded, and the upper body provides a
 small counterweight. This is the infantry version of keeping tank tracks grounded: locomotion
 changes the pose around a stable world contact instead of translating the sprite. Fire briefly
-moves the weapon backward; the runtime effect layer remains responsible for muzzle flash and
-projectiles.
+moves the weapon backward from a symmetrical, vertical ready stance; the runtime effect layer
+remains responsible for muzzle flash and projectiles.
 
 ## Production build
 
