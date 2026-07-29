@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 266 automated tests;
+- 269 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -150,8 +150,15 @@ The first static environment slice is implemented:
    vision area, while connectivity regressions verify that both spawns remain joined.
 4. No map-format migration or simulation state was introduced.
 
-Still pending: combat cover bonuses, authored interactive props, ambient animals, distant
-aircraft and the rare commander-profile easter eggs.
+Presentation-only ambient life is now implemented:
+
+- small groups of animals make short, seeded runs across the battlefield;
+- rare military flyovers cross the map as restrained silhouettes and ground shadows;
+- both schedules derive from map environment metadata and simulation time, pause with the match,
+  render behind units and below fog, and never enter collision, input, save or replay state.
+
+Still pending: combat cover bonuses, authored interactive props and the rare commander-profile
+easter eggs.
 
 The latest environment readability pass scatters shell casings and bones across traversable ground
 at low deterministic density, excluding resource and spawn cells. Large wrecks and obstacle-like
@@ -179,9 +186,9 @@ silhouettes remain reserved for blocked terrain so collision stays immediately r
 
 ### Test organization
 
-All 51 test files now live in local `__tests__` directories beside their owning modules.
+All 52 test files now live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports. The current full baseline is 266 passing tests.
+only file locations and relative imports. The current full baseline is 269 passing tests.
 
 ### Campaign production
 
