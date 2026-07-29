@@ -1,4 +1,4 @@
-import { Texture } from 'pixi.js';
+import { type Sprite, Texture } from 'pixi.js';
 import { describe, expect, it } from 'vitest';
 import {
   SpriteUnitPainter,
@@ -46,6 +46,20 @@ describe('tank sprite direction', () => {
     expect(painter.container.children[0]?.children).toHaveLength(1);
   });
 
+  it('registers infantry on its feet while tanks retain their centered anchor', () => {
+    const painter = new SpriteUnitPainter({
+      texture: () => Texture.EMPTY,
+    } as never);
+
+    painter.draw({ id: 7, unitType: 'tank', angle: 0 } as never, 100, 80, 12, 1);
+    painter.draw({ id: 11, unitType: 'rifleman', angle: 0 } as never, 120, 80, 8, 1);
+
+    const tank = painter.container.children[0]?.children[0] as Sprite;
+    const rifleman = painter.container.children[1]?.children[0] as Sprite;
+    expect(tank.anchor.y).toBe(0.5);
+    expect(rifleman.anchor.y).toBe(0.79);
+  });
+
   it('selects authored movement and recoil frames from presentation state', () => {
     const requested: string[] = [];
     const painter = new SpriteUnitPainter({
@@ -84,6 +98,25 @@ describe('tank sprite direction', () => {
     expect(requested).toContain('unit.rifleman.fire.e.0');
     expect(requested).toContain('unit.rifleman.fire.e.1');
     expect(requested.at(-1)).toBe('unit.rifleman.fire.e.1');
+  });
+
+  it('plays all four Rifleman gait poses at the authored cadence', () => {
+    const requested: string[] = [];
+    const painter = new SpriteUnitPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return Texture.EMPTY;
+      },
+    } as never);
+    const rifleman = { id: 11, unitType: 'rifleman', angle: 0 };
+
+    for (const animationTime of [0, 0.08, 0.16, 0.23]) {
+      painter.draw(rifleman as never, 100, 80, 8, animationTime, { moving: true });
+    }
+
+    for (let step = 0; step < 4; step++) {
+      expect(requested).toContain(`unit.rifleman.move.e.${step}`);
+    }
   });
 
   it('leaves tanks to the procedural fallback while the atlas is unavailable', () => {

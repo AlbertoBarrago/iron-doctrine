@@ -32,8 +32,9 @@ const DIRECTION_HYSTERESIS = 0.08;
 const DIRECTION_BLEND_SECONDS = 0.09;
 const TANK_MOVEMENT_FRAME_SECONDS = 0.12;
 const TANK_ACTION_FRAME_SECONDS = 0.07;
-const RIFLEMAN_MOVEMENT_FRAME_SECONDS = 0.11;
+const RIFLEMAN_MOVEMENT_FRAME_SECONDS = 0.075;
 const RIFLEMAN_MOVEMENT_FRAMES = 4;
+const RIFLEMAN_ANCHOR_Y = 0.79;
 const RIFLEMAN_ACTION_FRAME_SECONDS = 0.065;
 const ACTION_FRAMES = 2;
 
@@ -116,7 +117,7 @@ export class SpriteUnitPainter {
       const texture = this.assets.texture(frameId);
       if (!texture) return false;
       const root = new Container();
-      const current = this.createSprite(texture);
+      const current = this.createSprite(texture, unitType);
       root.addChild(current);
       state = {
         root,
@@ -170,7 +171,7 @@ export class SpriteUnitPainter {
       if (texture) {
         state.outgoing?.destroy();
         state.outgoing = state.current;
-        state.current = this.createSprite(texture);
+        state.current = this.createSprite(texture, unitType);
         state.current.alpha = 0;
         state.root.addChild(state.current);
         state.direction = nextDirection;
@@ -221,9 +222,9 @@ export class SpriteUnitPainter {
     }
   }
 
-  private createSprite(texture: Sprite['texture']): Sprite {
+  private createSprite(texture: Sprite['texture'], unitType: SpriteUnitType): Sprite {
     const sprite = new Sprite(texture);
-    sprite.anchor.set(0.5);
+    sprite.anchor.set(0.5, unitType === 'rifleman' ? RIFLEMAN_ANCHOR_Y : 0.5);
     return sprite;
   }
 }
