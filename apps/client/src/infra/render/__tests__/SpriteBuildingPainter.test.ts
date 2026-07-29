@@ -4,15 +4,15 @@ import { buildingFrame, SpriteBuildingPainter } from '../SpriteBuildingPainter.j
 
 describe('production building sprites', () => {
   it('resolves source frames for every authored structure', () => {
-    expect(buildingFrame('construction_yard')).toBe(
-      'building.construction-yard.operational.south.0',
+    expect(buildingFrame('construction_yard')).toBe('building.construction-yard.idle.south.0');
+    expect(buildingFrame('power_plant', 'generate', 5)).toBe(
+      'building.power-plant.generate.south.5',
     );
-    expect(buildingFrame('power_plant', 'idle')).toBe('building.power-plant.idle.south.0');
-    expect(buildingFrame('barracks')).toBe('building.barracks.operational.south.0');
-    expect(buildingFrame('factory')).toBe('building.factory.operational.south.0');
+    expect(buildingFrame('barracks', 'produce', 3)).toBe('building.barracks.produce.south.3');
+    expect(buildingFrame('factory', 'exit', 5)).toBe('building.factory.exit.south.5');
   });
 
-  it('changes from idle to operational when construction completes', () => {
+  it('changes from construction to the one-shot completion state', () => {
     const requested: string[] = [];
     const painter = new SpriteBuildingPainter({
       texture: (frameId: string) => {
@@ -22,12 +22,67 @@ describe('production building sprites', () => {
     } as never);
     const factory = { id: 21, buildingType: 'factory' };
 
-    painter.draw(factory as never, 100, 80, 24, { constructionProgress: 0.5 });
-    painter.draw(factory as never, 100, 80, 24, { constructionProgress: 1 });
+    painter.draw(factory as never, 100, 80, 24, {
+      constructionProgress: 0.5,
+      presentationTime: 0,
+    });
+    painter.draw(factory as never, 100, 80, 24, {
+      constructionProgress: 1,
+      presentationTime: 1,
+    });
 
     expect(requested).toEqual([
-      'building.factory.idle.south.0',
-      'building.factory.operational.south.0',
+      'building.factory.construction.south.2',
+      'building.factory.complete.south.0',
+    ]);
+  });
+
+  it('falls back to idle instead of preserving an unavailable action frame', () => {
+    const requested: string[] = [];
+    const painter = new SpriteBuildingPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return frameId === 'building.barracks.idle.south.0' ? Texture.EMPTY : null;
+      },
+    } as never);
+    const barracks = { id: 22, buildingType: 'barracks', production: { queue: ['rifleman'] } };
+
+    expect(
+      painter.draw(barracks as never, 100, 80, 24, {
+        constructionProgress: 1,
+        presentationTime: 0,
+      }),
+    ).toBe(true);
+    expect(requested).toEqual([
+      'building.barracks.produce.south.0',
+      'building.barracks.idle.south.0',
+    ]);
+  });
+
+  it('uses the first generate frame as the power plant operational fallback', () => {
+    const requested: string[] = [];
+    const painter = new SpriteBuildingPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return frameId === 'building.power-plant.generate.south.0' ? Texture.EMPTY : null;
+      },
+    } as never);
+    const powerPlant = { id: 23, buildingType: 'power_plant' };
+
+    painter.draw(powerPlant as never, 100, 80, 24, {
+      constructionProgress: 1,
+      presentationTime: 0,
+    });
+    requested.length = 0;
+    expect(
+      painter.draw(powerPlant as never, 100, 80, 24, {
+        constructionProgress: 1,
+        presentationTime: 0.25,
+      }),
+    ).toBe(true);
+    expect(requested).toEqual([
+      'building.power-plant.generate.south.2',
+      'building.power-plant.generate.south.0',
     ]);
   });
 
