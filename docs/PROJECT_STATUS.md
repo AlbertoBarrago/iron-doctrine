@@ -86,6 +86,17 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 
 ## Next development slice
 
+### Production art gate
+
+New gameplay scope is frozen while Iron Pass becomes the representative production-art vertical
+slice. `docs/ART_DIRECTION.md` and `assets-src/concepts/iron-pass-target.png` define the approved
+direction and acceptance gate. The current procedural painters remain temporary fallbacks; they
+are replaced family by family through an original sprite/atlas pipeline rather than receiving
+further isolated cosmetic detail.
+
+Public 1v1 work resumes after this visual gate and the core game loop are accepted as a coherent
+game.
+
 ### Gameplay correctness
 
 Grouped explicit attack orders now assign up to 16 distinct positions per engagement ring,

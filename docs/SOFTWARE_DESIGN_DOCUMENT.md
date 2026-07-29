@@ -634,7 +634,9 @@ Replays are **inputs, not frames** — a seed plus the full ordered command log.
   Small cosmetic remains may sit sparsely on traversable ground when their silhouette cannot imply
   collision; large wrecks and obstacle-like decoration stay on authored blocked terrain.
 - **Production gate:** procedural geometry establishes art direction without a new dependency.
-  Texture atlases, meshes or filters are added only when a profiled visual target justifies them.
+  The approved Iron Pass target in `docs/ART_DIRECTION.md` now justifies a staged migration to
+  original texture atlases. Procedural painters remain fallbacks until each asset family passes
+  normal/minimum-zoom readability and render-budget checks.
 - **Source assets** (original art) live outside `src` in `assets-src/` (Aseprite/SVG/audio). Never imported directly.
 - **Build step** (Vite plugin + script): pack sprites → texture atlas (`.json` + `.webp`/`.png`), transcode audio → `.webm`/`.m4a`, generate typed manifests (`assets.gen.ts`) so references are compile-checked.
 - **Content JSON** (`content/`) validated at build against JSON Schema (Zod/Ajv). Invalid unit/building stats fail the build.
@@ -732,6 +734,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 34  | Unit radio acknowledgements   | rate-limited Italian role responses for core orders through accessible subtitles, isolated from simulation state; synthetic speech disabled pending original recordings                                    | ✅ done (recorded voices pending)                      |
 | 35  | Military Diorama visual pass  | shared procedural material ramps, directional edge lighting, layered vehicle and structure surfaces, volumetric pooled smoke and dust                                                                      | ✅ done (browser playtest pending)                     |
 | 36  | Battlefield Cohesion          | seeded macro-ground variation, soil-integrated rocks and ore fields, grounded war remains and ambient-life shadows without simulation coupling                                                              | ✅ done (browser playtest pending)                     |
+| 37  | Iron Pass production art gate | approved art bible and gameplay concept, then original sprite/atlas migration for one representative base, roster, environment and firefight before new gameplay or public 1v1 scope                           | in progress (direction approved)                      |
 
 ---
 
