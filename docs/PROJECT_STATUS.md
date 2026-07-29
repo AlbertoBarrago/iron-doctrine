@@ -134,8 +134,10 @@ The first Medic slice is implemented:
 3. Treatment state survives save/load and drives a specific medical-bag, injector and pulse
    animation.
 
-Still pending: explicit/manual treatment priority, Field Medic and Leave No One Behind
-achievements, and fast treatment actions for the later morale/condition system.
+The current Medic scope closes at automatic treatment. Manual treatment priority,
+condition-specific actions and related achievements are intentionally outside the active
+backlog: they add control and state complexity without enough tactical value for the current
+campaign.
 
 ### Battlefield life and cover
 
@@ -182,22 +184,27 @@ The first commander-profile easter egg is implemented:
 
 Further easter-egg ideas can extend the same profile-scoped presentation contract.
 
-### Infantry condition and morale
+### Unit radio feedback
 
-1. Model a small deterministic condition set for individual infantry: steady, shaken, panicked
-   and sick/injured.
-2. Derive transitions from explicit combat pressure, damage and isolation rather than
-   uncontrolled per-frame randomness.
-3. Make each state immediately readable through posture, movement, status text and concise
-   effects; humorous battlefield copy must not obscure the actual mechanic.
-4. Let Medics restore health and stabilize recoverable fear/sickness states through quick,
-   explicit treatment actions; no resurrection in the first version.
+Command acknowledgements are implemented as presentation-only feedback:
+
+1. Move, attack, gather and stop orders select concise Italian responses, including
+   role-specific lines for infantry, Engineers, Medics, Scouts, Harvesters and Tanks.
+2. Browsers with Web Speech support prefer an Italian voice; a readable military subtitle is
+   always shown as the deterministic visual fallback.
+3. A short rate limit prevents multi-unit orders and rapid clicks from becoming noisy.
+4. Speech follows the existing effects mute and volume controls and never enters simulation,
+   save or replay state.
+
+Individual morale and condition states are intentionally deferred. Their behavioral, UI and
+Medic interactions would add disproportionate complexity to the current tactical loop.
 
 ### Test organization
 
-All 52 test files now live in local `__tests__` directories beside their owning modules.
+All test files live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports. The current full baseline is 269 passing tests.
+only file locations and relative imports. The current full baseline is 54 test files and
+286 passing tests.
 
 ### Campaign production
 
