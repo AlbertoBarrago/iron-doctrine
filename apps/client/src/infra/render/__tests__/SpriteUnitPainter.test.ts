@@ -60,6 +60,19 @@ describe('tank sprite direction', () => {
     expect(rifleman.anchor.y).toBe(0.71);
   });
 
+  it('applies the owner tint without changing authored texture selection', () => {
+    const painter = new SpriteUnitPainter({
+      texture: () => Texture.EMPTY,
+    } as never);
+
+    painter.draw({ id: 11, unitType: 'rifleman', angle: 0 } as never, 100, 80, 8, 1, {
+      tint: 0xcd9186,
+    });
+
+    const rifleman = painter.container.children[0]?.children[0] as Sprite;
+    expect(rifleman.tint).toBe(0xcd9186);
+  });
+
   it('selects authored movement and recoil frames from presentation state', () => {
     const requested: string[] = [];
     const painter = new SpriteUnitPainter({

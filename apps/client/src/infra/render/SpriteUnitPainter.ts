@@ -53,6 +53,7 @@ interface SpritePresentation {
   moving?: boolean;
   firing?: boolean;
   engaged?: boolean;
+  tint?: number;
 }
 
 export function tankDirection(angle: number): SpriteDirection {
@@ -200,6 +201,9 @@ export class SpriteUnitPainter {
     }
     state.root.position.set(x, y);
     state.root.visible = true;
+    const tint = presentation.tint ?? 0xffffff;
+    state.current.tint = tint;
+    if (state.outgoing) state.outgoing.tint = tint;
     const spriteSize = radius * (unitType === 'tank' ? 3.2 : 4.6);
     state.current.width = spriteSize;
     state.current.height = spriteSize;

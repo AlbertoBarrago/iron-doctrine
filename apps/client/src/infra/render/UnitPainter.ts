@@ -8,7 +8,7 @@ import {
   shadeColor,
 } from './renderStyle.js';
 
-interface Point {
+export interface Point {
   x: number;
   y: number;
 }
@@ -24,15 +24,10 @@ export function drawGroundSelection(
   sx: number,
   sy: number,
   radius: number,
+  angle: number,
+  vehicle: boolean,
 ): void {
-  const halfWidth = radius + 5;
-  const halfHeight = Math.max(5, halfWidth * 0.48);
-  const corners = [
-    { x: sx, y: sy - halfHeight },
-    { x: sx + halfWidth, y: sy },
-    { x: sx, y: sy + halfHeight },
-    { x: sx - halfWidth, y: sy },
-  ];
+  const corners = groundSelectionCorners(sx, sy, radius, angle, vehicle);
   const armLength = 0.34;
 
   corners.forEach((corner, index) => {
@@ -50,6 +45,34 @@ export function drawGroundSelection(
       );
   });
   graphics.stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
+}
+
+export function groundSelectionCorners(
+  sx: number,
+  sy: number,
+  radius: number,
+  angle: number,
+  vehicle: boolean,
+): Point[] {
+  if (vehicle) {
+    const halfLength = radius * 1.25 + 5;
+    const halfWidth = radius * 0.78 + 4;
+    return [
+      localToScreen(sx, sy, angle, halfLength, -halfWidth),
+      localToScreen(sx, sy, angle, halfLength, halfWidth),
+      localToScreen(sx, sy, angle, -halfLength, halfWidth),
+      localToScreen(sx, sy, angle, -halfLength, -halfWidth),
+    ];
+  }
+
+  const halfWidth = radius + 5;
+  const halfHeight = Math.max(5, halfWidth * 0.48);
+  return [
+    { x: sx, y: sy - halfHeight },
+    { x: sx + halfWidth, y: sy },
+    { x: sx, y: sy + halfHeight },
+    { x: sx - halfWidth, y: sy },
+  ];
 }
 
 export function drawUnit(

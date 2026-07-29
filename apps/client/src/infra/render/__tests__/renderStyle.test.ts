@@ -4,6 +4,7 @@ import {
   infantryMotion,
   materialRamp,
   shadeColor,
+  spriteFactionTint,
 } from '../renderStyle.js';
 
 describe('battlefield render style', () => {
@@ -20,6 +21,11 @@ describe('battlefield render style', () => {
       light: 0x687956,
       edge: 0x81966b,
     });
+  });
+
+  it('lightens owner colors into material-preserving sprite tints', () => {
+    expect(spriteFactionTint(0xb0a149)).toBe(0xd1c895);
+    expect(spriteFactionTint(0xa9412e)).toBe(0xcd9186);
   });
 
   it('keeps idle infantry stable and applies firing recoil independently', () => {

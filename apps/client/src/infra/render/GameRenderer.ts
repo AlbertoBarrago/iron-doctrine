@@ -39,6 +39,7 @@ import {
   type CommandFeedbackKind,
 } from './commandFeedback.js';
 import { clampMovementTarget } from './movementTarget.js';
+import { spriteFactionTint } from './renderStyle.js';
 import {
   harvesterStatus,
   selectionCommands,
@@ -707,11 +708,16 @@ export class GameRenderer {
       const firing =
         e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0);
       const engaged = e.unitType === 'rifleman' && e.attackTarget !== undefined && !moving;
-      if (this.selected.has(e.id)) drawGroundSelection(this.unitUnderlay, sx, sy, r);
+      if (this.selected.has(e.id)) {
+        const vehicle =
+          e.unitType !== undefined && UNIT_STATS[e.unitType]?.movementClass === 'vehicle';
+        drawGroundSelection(this.unitUnderlay, sx, sy, r, e.angle, vehicle);
+      }
       const spriteRendered = this.spriteUnits.draw(e, sx, sy, r, animationTime, {
         moving,
         firing,
         engaged,
+        tint: spriteFactionTint(color),
       });
       if (spriteRendered) {
         drawGroundShadow(this.unitUnderlay, sx, sy, r, e.unitType === 'rifleman' ? 0.72 : 1);

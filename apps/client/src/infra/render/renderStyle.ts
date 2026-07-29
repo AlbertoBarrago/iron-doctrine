@@ -49,6 +49,14 @@ export function materialRamp(color: number): MaterialRamp {
   };
 }
 
+export function spriteFactionTint(color: number): number {
+  const mix = 0.58;
+  const red = Math.round(0xff + (((color >> 16) & 0xff) - 0xff) * mix);
+  const green = Math.round(0xff + (((color >> 8) & 0xff) - 0xff) * mix);
+  const blue = Math.round(0xff + ((color & 0xff) - 0xff) * mix);
+  return (red << 16) | (green << 8) | blue;
+}
+
 export function infantryMotion(
   animationTime: number,
   moving: boolean,
