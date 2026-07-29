@@ -8,16 +8,18 @@ import { Container, Graphics } from 'pixi.js';
 import { PIXELS_PER_UNIT, type Camera } from './camera.js';
 
 const CHUNK_CELLS = 16;
-const GROUND_TILE_CELLS = 2;
+const GROUND_PATCH_CELLS = 4;
 const MACRO_PATCH_CELLS = 8;
 
 interface TerrainPalette {
   base: number;
   ground: readonly [number, number, number, number];
   soil: number;
+  dust: number;
   stone: number;
   stoneLight: number;
   cliffShadow: number;
+  mineralStain: number;
   scrub: number;
   scrubDark: number;
 }
@@ -27,9 +29,11 @@ const PALETTES: Record<MapBiome, TerrainPalette> = {
     base: 0x2d3827,
     ground: [0x35402c, 0x303a28, 0x293323, 0x3a422e],
     soil: 0x4a3c25,
+    dust: 0x6f6645,
     stone: 0x41443a,
     stoneLight: 0x626452,
     cliffShadow: 0x171a14,
+    mineralStain: 0x6b542b,
     scrub: 0x56613b,
     scrubDark: 0x303824,
   },
@@ -37,9 +41,11 @@ const PALETTES: Record<MapBiome, TerrainPalette> = {
     base: 0x615c42,
     ground: [0x777050, 0x6b6648, 0x817858, 0x5f6043],
     soil: 0x806443,
-    stone: 0x665f50,
-    stoneLight: 0x9a9076,
+    dust: 0xa09166,
+    stone: 0x716956,
+    stoneLight: 0xaaa080,
     cliffShadow: 0x38352f,
+    mineralStain: 0x8e682e,
     scrub: 0x56613a,
     scrubDark: 0x343c2b,
   },
@@ -155,10 +161,8 @@ export class TerrainPainter {
     this.container.addChild(base, macroGround);
 
     const blocked = new Set(map.blocked.map(([x, y]) => `${x}:${y}`));
-    const reserved = new Set([
-      ...map.resources.map((resource) => `${resource.x}:${resource.y}`),
-      ...map.spawns.map((spawn) => `${spawn.x}:${spawn.y}`),
-    ]);
+    const resources = new Set(map.resources.map((resource) => `${resource.x}:${resource.y}`));
+    const reserved = new Set([...resources, ...map.spawns.map((spawn) => `${spawn.x}:${spawn.y}`)]);
     for (let chunkY = 0; chunkY < map.height; chunkY += CHUNK_CELLS) {
       for (let chunkX = 0; chunkX < map.width; chunkX += CHUNK_CELLS) {
         const ground = new Graphics();
@@ -168,14 +172,20 @@ export class TerrainPainter {
         const maxY = Math.min(map.height, chunkY + CHUNK_CELLS);
         const maxX = Math.min(map.width, chunkX + CHUNK_CELLS);
 
-        for (let y = chunkY; y < maxY; y += GROUND_TILE_CELLS) {
-          for (let x = chunkX; x < maxX; x += GROUND_TILE_CELLS) {
+        for (let y = chunkY; y < maxY; y += GROUND_PATCH_CELLS) {
+          for (let x = chunkX; x < maxX; x += GROUND_PATCH_CELLS) {
             const sample = terrainSample(environment.seed, x, y);
-            const width = Math.min(GROUND_TILE_CELLS, map.width - x) * cellPixels;
-            const height = Math.min(GROUND_TILE_CELLS, map.height - y) * cellPixels;
-            ground
-              .rect(left + x * cellPixels, top + y * cellPixels, width + 1, height + 1)
-              .fill({ color: palette.ground[sample.groundIndex], alpha: 0.34 });
+            const width = Math.min(GROUND_PATCH_CELLS, map.width - x) * cellPixels;
+            const height = Math.min(GROUND_PATCH_CELLS, map.height - y) * cellPixels;
+            drawGroundPatch(
+              ground,
+              left + x * cellPixels + width / 2,
+              top + y * cellPixels + height / 2,
+              width,
+              height,
+              palette,
+              sample,
+            );
           }
         }
 
@@ -186,6 +196,7 @@ export class TerrainPainter {
             if (blocked.has(`${x}:${y}`)) {
               const rockSample = terrainSample(environment.seed ^ 0x51f15e, x, y);
               const remainsSample = warRemainsSample(environment.seed, x, y, true);
+              const exposedEdges = rockEdgeMask(blocked, x, y);
               drawRockFoot(
                 details,
                 screenX + cellPixels / 2,
@@ -193,8 +204,17 @@ export class TerrainPainter {
                 cellPixels,
                 palette,
                 rockSample,
+                exposedEdges,
               );
-              drawCliffCell(cliffs, screenX, screenY, cellPixels, palette, rockSample);
+              drawCliffCell(
+                cliffs,
+                screenX,
+                screenY,
+                cellPixels,
+                palette,
+                rockSample,
+                exposedEdges,
+              );
               drawWarRemains(
                 remains,
                 screenX + cellPixels / 2,
@@ -205,6 +225,16 @@ export class TerrainPainter {
               );
               this.features.set(`${x}:${y}`, terrainFeature(remainsSample, true)!);
               continue;
+            }
+            if (resources.has(`${x}:${y}`)) {
+              drawOreTransition(
+                details,
+                screenX + cellPixels / 2,
+                screenY + cellPixels / 2,
+                cellPixels,
+                palette,
+                terrainSample(environment.seed ^ 0x4177a31d, x, y),
+              );
             }
             drawDetail(
               details,
@@ -253,6 +283,19 @@ export class TerrainPainter {
   }
 }
 
+/**
+ * N/E/S/W bit mask for visible formation edges. The helper is pure so visual
+ * adjacency cannot modify or leak into the authored navigation mask.
+ */
+export function rockEdgeMask(blocked: ReadonlySet<string>, x: number, y: number): number {
+  let mask = 0;
+  if (!blocked.has(`${x}:${y - 1}`)) mask |= 1;
+  if (!blocked.has(`${x + 1}:${y}`)) mask |= 2;
+  if (!blocked.has(`${x}:${y + 1}`)) mask |= 4;
+  if (!blocked.has(`${x - 1}:${y}`)) mask |= 8;
+  return mask;
+}
+
 export function terrainFeature(remains: WarRemains, blocked: boolean): TerrainFeature | null {
   if (remains === 'shells') {
     return {
@@ -283,6 +326,53 @@ export function terrainFeature(remains: WarRemains, blocked: boolean): TerrainFe
     };
   }
   return null;
+}
+
+function drawGroundPatch(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  palette: TerrainPalette,
+  sample: TerrainSample,
+): void {
+  const cos = Math.cos(sample.rotation);
+  const sin = Math.sin(sample.rotation);
+  const centerX = x + cos * width * 0.16;
+  const centerY = y + sin * height * 0.16;
+  const radiusX = width * (0.68 + sample.scale * 0.12);
+  const radiusY = height * (0.46 + sample.scale * 0.1);
+  const points: number[] = [];
+
+  for (let index = 0; index < 10; index++) {
+    const angle = (index / 10) * Math.PI * 2;
+    const ripple = 0.9 + Math.sin(index * 4.37 + sample.rotation) * 0.1;
+    const localX = Math.cos(angle) * radiusX * ripple;
+    const localY = Math.sin(angle) * radiusY * ripple;
+    points.push(centerX + localX * cos - localY * sin, centerY + localX * sin + localY * cos);
+  }
+
+  graphics.poly(points).fill({
+    color: palette.ground[sample.groundIndex],
+    alpha: 0.22,
+  });
+
+  const striationLength = width * 0.38;
+  graphics
+    .moveTo(
+      centerX - cos * striationLength - sin * height * 0.08,
+      centerY - sin * striationLength + cos * height * 0.08,
+    )
+    .lineTo(
+      centerX + cos * striationLength - sin * height * 0.08,
+      centerY + sin * striationLength + cos * height * 0.08,
+    )
+    .stroke({
+      width: Math.max(1, height * 0.018),
+      color: palette.dust,
+      alpha: 0.1,
+    });
 }
 
 function drawMacroPatch(
@@ -324,13 +414,15 @@ function drawRockFoot(
   size: number,
   palette: TerrainPalette,
   sample: TerrainSample,
+  exposedEdges: number,
 ): void {
+  if (exposedEdges === 0) return;
   const cos = Math.cos(sample.rotation);
   const sin = Math.sin(sample.rotation);
   graphics
-    .ellipse(x + size * 0.04, y + size * 0.11, size * 0.62, size * 0.52)
+    .ellipse(x + size * 0.04, y + size * 0.11, size * 0.52, size * 0.42)
     .fill({ color: palette.soil, alpha: 0.34 })
-    .ellipse(x + size * 0.09, y + size * 0.16, size * 0.56, size * 0.43)
+    .ellipse(x + size * 0.09, y + size * 0.16, size * 0.48, size * 0.36)
     .fill({ color: palette.cliffShadow, alpha: 0.24 });
   for (const offset of [-0.34, 0.31]) {
     graphics
@@ -340,6 +432,43 @@ function drawRockFoot(
         size * 0.08,
       )
       .fill({ color: palette.stone, alpha: 0.62 });
+  }
+}
+
+function drawOreTransition(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  palette: TerrainPalette,
+  sample: TerrainSample,
+): void {
+  const cos = Math.cos(sample.rotation);
+  const sin = Math.sin(sample.rotation);
+  graphics
+    .ellipse(x, y + size * 0.04, size * 0.47, size * 0.34)
+    .fill({ color: palette.soil, alpha: 0.3 })
+    .ellipse(x - cos * size * 0.08, y - sin * size * 0.08, size * 0.36, size * 0.25)
+    .fill({ color: palette.mineralStain, alpha: 0.2 });
+
+  for (const offset of [-0.18, 0.06, 0.24]) {
+    const startX = x - cos * size * 0.4 - sin * size * offset;
+    const startY = y - sin * size * 0.4 + cos * size * offset;
+    graphics
+      .moveTo(startX, startY)
+      .lineTo(
+        startX + cos * size * 0.22 - sin * size * 0.06,
+        startY + sin * size * 0.22 + cos * size * 0.06,
+      )
+      .lineTo(
+        startX + cos * size * 0.38 + sin * size * 0.02,
+        startY + sin * size * 0.38 - cos * size * 0.02,
+      )
+      .stroke({
+        width: Math.max(1, size * 0.025),
+        color: palette.cliffShadow,
+        alpha: 0.22,
+      });
   }
 }
 
@@ -386,35 +515,56 @@ function drawCliffCell(
   size: number,
   palette: TerrainPalette,
   sample: TerrainSample,
+  exposedEdges: number,
 ): void {
   const centerX = x + size / 2;
   const centerY = y + size / 2;
-  const inset = size * (0.05 + (sample.scale - 0.72) * 0.04);
-  const variation = (sample.scale - 0.95) * size * 0.14;
-  graphics
-    .ellipse(centerX + size * 0.09, centerY + size * 0.12, size * 0.54, size * 0.48)
-    .fill({ color: palette.cliffShadow, alpha: 0.72 })
-    .moveTo(x + inset, y + size * (0.28 + variation / size))
-    .lineTo(x + size * 0.25, y + inset)
-    .lineTo(x + size * 0.72, y + inset * 0.8)
-    .lineTo(x + size - inset, y + size * 0.32)
-    .lineTo(x + size * 0.9, y + size * 0.8)
-    .lineTo(x + size * 0.42, y + size - inset)
-    .lineTo(x + inset * 0.8, y + size * 0.68)
-    .closePath()
-    .fill({ color: palette.stone })
-    .moveTo(x + size * 0.18, y + size * 0.3)
-    .lineTo(x + size * 0.7, y + size * 0.12)
-    .lineTo(x + size * 0.82, y + size * 0.36)
-    .lineTo(x + size * 0.38, y + size * 0.5)
-    .closePath()
-    .fill({ color: palette.stoneLight, alpha: 0.48 })
-    .circle(
-      centerX + Math.cos(sample.rotation) * size * 0.2,
-      centerY + Math.sin(sample.rotation) * size * 0.2,
-      size * (0.13 + sample.scale * 0.04),
-    )
-    .fill({ color: palette.stoneLight, alpha: 0.32 });
+  graphics.rect(x, y, size + 0.5, size + 0.5).fill({ color: palette.stone });
+
+  if (sample.detail !== 'none') {
+    graphics
+      .ellipse(
+        centerX + Math.cos(sample.rotation) * size * 0.14,
+        centerY + Math.sin(sample.rotation) * size * 0.14,
+        size * (0.28 + sample.scale * 0.05),
+        size * (0.18 + sample.scale * 0.04),
+      )
+      .fill({ color: palette.stoneLight, alpha: 0.18 });
+
+    const strataOffset = ((sample.scale - 0.72) / 0.46) * size * 0.22;
+    graphics
+      .moveTo(x + size * 0.12, y + size * 0.34 + strataOffset)
+      .lineTo(x + size * 0.48, y + size * 0.25)
+      .lineTo(x + size * 0.88, y + size * 0.38 - strataOffset * 0.25)
+      .stroke({ width: Math.max(1, size * 0.035), color: palette.cliffShadow, alpha: 0.24 });
+  }
+
+  if (exposedEdges & 1) {
+    graphics
+      .moveTo(x, y + size * 0.04)
+      .lineTo(x + size, y + size * 0.04)
+      .stroke({ width: Math.max(1, size * 0.08), color: palette.stoneLight, alpha: 0.5 });
+  }
+  if (exposedEdges & 2) {
+    graphics
+      .moveTo(x + size * 0.94, y)
+      .lineTo(x + size * 0.94, y + size)
+      .stroke({ width: Math.max(1, size * 0.12), color: palette.cliffShadow, alpha: 0.44 });
+  }
+  if (exposedEdges & 4) {
+    graphics
+      .rect(x, y + size * 0.84, size, size * 0.16)
+      .fill({ color: palette.cliffShadow, alpha: 0.42 })
+      .moveTo(x + size * 0.06, y + size * 0.82)
+      .lineTo(x + size * 0.92, y + size * 0.82)
+      .stroke({ width: Math.max(1, size * 0.045), color: palette.stoneLight, alpha: 0.22 });
+  }
+  if (exposedEdges & 8) {
+    graphics
+      .moveTo(x + size * 0.04, y)
+      .lineTo(x + size * 0.04, y + size)
+      .stroke({ width: Math.max(1, size * 0.08), color: palette.stoneLight, alpha: 0.24 });
+  }
 }
 
 function drawWarRemains(

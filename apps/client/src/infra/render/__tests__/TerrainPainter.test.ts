@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createEmptyMap } from '@iron/shared';
 import {
   mapEnvironment,
+  rockEdgeMask,
   terrainFeature,
   terrainMacroSample,
   terrainSample,
@@ -56,6 +57,24 @@ describe('terrain presentation', () => {
     expect(openDecorated.length).toBeGreaterThan(70);
     expect(openDecorated.length).toBeLessThan(150);
     expect(new Set(openDecorated)).toEqual(new Set(['shells', 'bones']));
+  });
+
+  it('derives exposed rock edges without mutating the authored collision mask', () => {
+    const blocked = new Set(['4:4', '5:4', '4:5', '5:5']);
+    const snapshot = [...blocked];
+
+    expect(rockEdgeMask(blocked, 4, 4)).toBe(1 | 8);
+    expect(rockEdgeMask(blocked, 5, 4)).toBe(1 | 2);
+    expect(rockEdgeMask(blocked, 4, 5)).toBe(4 | 8);
+    expect(rockEdgeMask(blocked, 5, 5)).toBe(2 | 4);
+    expect([...blocked]).toEqual(snapshot);
+  });
+
+  it('returns independent cosmetic samples', () => {
+    const sample = terrainSample(1979, 12, 37);
+    sample.scale = 99;
+
+    expect(terrainSample(1979, 12, 37).scale).toBeLessThanOrEqual(1.18);
   });
 
   it('describes only inspectable battlefield props and authored cover', () => {
