@@ -1,0 +1,20 @@
+{
+  "frames": {
+    "technical.registration.idle.south.0": {
+      "frame": { "x": 2, "y": 2, "w": 64, "h": 64 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+      "sourceSize": { "w": 64, "h": 64 }
+    }
+  },
+  "animations": { "technical.registration.idle.south": ["technical.registration.idle.south.0"] },
+  "meta": {
+    "app": "iron-doctrine",
+    "version": "1",
+    "image": "iron-pass.webp",
+    "format": "RGBA8888",
+    "size": { "w": 68, "h": 68 },
+    "scale": "1"
+  }
+}

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <title>Technical atlas registration mark</title>
+  <rect width="64" height="64" fill="none"/>
+  <path d="M8 22V8h14M42 8h14v14M56 42v14H42M22 56H8V42" fill="none" stroke="#e0b34b" stroke-width="4"/>
+  <circle cx="32" cy="32" r="10" fill="none" stroke="#8f3429" stroke-width="4"/>
+  <path d="M32 16v32M16 32h32" stroke="#394338" stroke-width="2"/>
+</svg>

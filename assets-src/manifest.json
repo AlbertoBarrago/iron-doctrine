@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "atlas": {
+    "id": "iron-pass",
+    "maxWidth": 2048,
+    "padding": 2
+  },
+  "assets": [
+    {
+      "id": "technical.registration",
+      "source": "technical/registration-mark.svg",
+      "frameWidth": 64,
+      "frameHeight": 64,
+      "directions": ["south"],
+      "states": {
+        "idle": 1
+      },
+      "runtime": false
+    }
+  ]
+}
