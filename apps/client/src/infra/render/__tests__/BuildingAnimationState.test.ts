@@ -17,7 +17,7 @@ function building(
       currentBuildTicks: 60,
       produces: [],
     },
-  } as EntitySnapshot;
+  } as unknown as EntitySnapshot;
 }
 
 describe('building animation state', () => {

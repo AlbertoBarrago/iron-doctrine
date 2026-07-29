@@ -14,7 +14,7 @@ export interface BuildingAnimationInput {
   entity: EntitySnapshot;
   presentationTime: number;
   constructionProgress: number;
-  servicing?: boolean;
+  servicing?: boolean | undefined;
 }
 
 interface AnimationDefinition {
@@ -27,12 +27,14 @@ interface TrackedBuilding {
   buildingType: AuthoredBuildingType;
   constructionProgress: number;
   queueLength: number;
-  loopState?: BuildingAnimationName;
+  loopState?: BuildingAnimationName | undefined;
   loopStartedAt: number;
-  oneShot?: {
-    state: 'complete' | 'exit';
-    startedAt: number;
-  };
+  oneShot?:
+    | {
+        state: 'complete' | 'exit';
+        startedAt: number;
+      }
+    | undefined;
   pendingExit?: boolean;
 }
 

@@ -92,7 +92,7 @@ export function drawResourceField(
       .stroke({ width: Math.max(1, radius * 0.035), color: 0x3e3424, alpha: 0.42 });
   }
 
-  const visibleFragments = new Set(
+  const visibleFragments = new Set<number>(
     FRAGMENT_SURVIVAL_ORDER.slice(0, presentation.fragmentCount),
   );
   for (const [fragmentIndex, fragment] of ORE_FRAGMENTS.entries()) {
