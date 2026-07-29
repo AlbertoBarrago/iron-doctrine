@@ -26,9 +26,14 @@ import { ParticleSystem } from './Particles.js';
 import { TerrainPainter } from './TerrainPainter.js';
 import { AmbientLifePainter } from './AmbientLifePainter.js';
 import { drawGroundSelection, drawGroundShadow, drawUnit } from './UnitPainter.js';
+import { SpriteBuildingPainter } from './SpriteBuildingPainter.js';
 import { SpriteUnitPainter } from './SpriteUnitPainter.js';
 import { ProductionAssetLoader } from '../assets/AssetLoader.js';
-import { drawBuilding, type WallConnections } from './BuildingPainter.js';
+import {
+  drawBuilding,
+  drawBuildingConstructionOverlay,
+  type WallConnections,
+} from './BuildingPainter.js';
 import { drawResourceField } from './ResourcePainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
@@ -81,6 +86,7 @@ export class GameRenderer {
   private readonly unitUnderlay = new Graphics();
   private readonly units = new Graphics();
   private readonly productionAssets = new ProductionAssetLoader();
+  private readonly spriteBuildings = new SpriteBuildingPainter(this.productionAssets);
   private readonly spriteUnits = new SpriteUnitPainter(this.productionAssets);
   private readonly fogGfx = new Graphics();
   private readonly overlay = new Graphics();
@@ -193,14 +199,19 @@ export class GameRenderer {
     try {
       await this.productionAssets.load();
     } catch (error) {
-      console.warn('Production unit atlas unavailable; using procedural fallback.', error);
+      console.warn('Production atlas unavailable; using procedural fallback.', error);
     }
     if (this.disposed) return;
 
     this.terrain.build(config.map);
     this.ambientLife.build(config.map, presentation.chickenEasterEgg);
     this.app.stage.addChild(this.terrain.container, this.ambientLife.graphics, this.world);
-    this.world.addChild(this.unitUnderlay, this.spriteUnits.container, this.units);
+    this.world.addChild(
+      this.unitUnderlay,
+      this.spriteBuildings.container,
+      this.spriteUnits.container,
+      this.units,
+    );
     this.app.stage.addChild(this.particles.gfx, this.fogGfx, this.overlay);
 
     const aiCredits =
@@ -488,6 +499,7 @@ export class GameRenderer {
     this.terrain.updateView(this.camera, this.app.renderer.width, this.app.renderer.height);
     this.unitUnderlay.clear();
     this.units.clear();
+    this.spriteBuildings.beginFrame();
     this.spriteUnits.beginFrame();
     this.particles.update(dtMs / 1000);
     if (prev && curr) {
@@ -536,6 +548,7 @@ export class GameRenderer {
       this.drawFog(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);
     }
+    this.spriteBuildings.endFrame();
     this.spriteUnits.endFrame();
     this.particles.draw();
     this.drawSelectionBox();
@@ -671,21 +684,30 @@ export class GameRenderer {
 
       if (e.kind === 'building') {
         const s = r;
-        drawBuilding(
-          this.units,
-          e,
-          sx,
-          sy,
-          s,
-          color,
-          e.buildingType === 'concrete_wall' ? wallConnections(e, wallKeys, wallStep) : undefined,
-          {
-            animationTime,
-            constructionProgress: e.construction
-              ? Math.min(1, e.construction.progressTicks / e.construction.buildTicks)
-              : 1,
-          },
-        );
+        const constructionProgress = e.construction
+          ? Math.min(1, e.construction.progressTicks / e.construction.buildTicks)
+          : 1;
+        const spriteRendered = this.spriteBuildings.draw(e, sx, sy, s, {
+          constructionProgress,
+          tint: spriteFactionTint(color),
+        });
+        if (!spriteRendered) {
+          drawBuilding(
+            this.units,
+            e,
+            sx,
+            sy,
+            s,
+            color,
+            e.buildingType === 'concrete_wall' ? wallConnections(e, wallKeys, wallStep) : undefined,
+            {
+              animationTime,
+              constructionProgress,
+            },
+          );
+        } else if (e.construction) {
+          drawBuildingConstructionOverlay(this.units, sx, sy, s, constructionProgress);
+        }
         if (this.selected.has(e.id)) {
           this.units
             .rect(sx - s - 3, sy - s - 3, s * 2 + 6, s * 2 + 6)

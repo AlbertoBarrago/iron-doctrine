@@ -356,6 +356,16 @@ function drawConstructionScaffold(
     .stroke({ width: Math.max(1, size * 0.045), color: MATERIAL.copper, alpha: 0.88 });
 }
 
+export function drawBuildingConstructionOverlay(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  progress: number,
+): void {
+  drawConstructionScaffold(graphics, x, y, size, progress);
+}
+
 function drawRoofEdge(
   graphics: Graphics,
   x: number,
