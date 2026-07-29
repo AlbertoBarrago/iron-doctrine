@@ -711,7 +711,7 @@ export class GameRenderer {
         firing,
       });
       if (spriteRendered) {
-        drawGroundShadow(this.unitUnderlay, sx, sy, r, 1);
+        drawGroundShadow(this.unitUnderlay, sx, sy, r, e.unitType === 'rifleman' ? 0.72 : 1);
       } else {
         drawUnit(this.units, e, sx, sy, r, color, {
           animationTime,

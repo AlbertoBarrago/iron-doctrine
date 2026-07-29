@@ -3,7 +3,7 @@ import type { EntitySnapshot } from '@iron/engine';
 import type { ProductionFrameId } from '../../assets/assets.gen.js';
 import type { ProductionAssetLoader } from '../assets/AssetLoader.js';
 
-const TANK_DIRECTIONS = [
+const SPRITE_DIRECTIONS = [
   'e',
   'ese',
   'se',
@@ -22,41 +22,44 @@ const TANK_DIRECTIONS = [
   'ene',
 ] as const;
 
-type TankDirection = (typeof TANK_DIRECTIONS)[number];
-type TankVisualState = 'idle' | 'move' | 'recoil';
+type SpriteDirection = (typeof SPRITE_DIRECTIONS)[number];
+type SpriteUnitType = 'tank' | 'rifleman';
+type SpriteVisualState = 'idle' | 'move' | 'recoil' | 'fire';
 
 const TURN = Math.PI * 2;
-const DIRECTION_STEP = TURN / TANK_DIRECTIONS.length;
+const DIRECTION_STEP = TURN / SPRITE_DIRECTIONS.length;
 const DIRECTION_HYSTERESIS = 0.08;
 const DIRECTION_BLEND_SECONDS = 0.09;
-const MOVEMENT_FRAME_SECONDS = 0.12;
-const RECOIL_FRAME_SECONDS = 0.07;
-const RECOIL_FRAMES = 2;
+const TANK_MOVEMENT_FRAME_SECONDS = 0.12;
+const TANK_ACTION_FRAME_SECONDS = 0.07;
+const RIFLEMAN_MOVEMENT_FRAME_SECONDS = 0.16;
+const RIFLEMAN_ACTION_FRAME_SECONDS = 0.065;
+const ACTION_FRAMES = 2;
 
-interface TankSpriteState {
+interface DirectionalSpriteState {
   root: Container;
   current: Sprite;
   outgoing: Sprite | null;
-  direction: TankDirection;
+  direction: SpriteDirection;
   frameId: ProductionFrameId;
   transitionStartedAt: number;
-  recoilStartedAt: number | null;
+  actionStartedAt: number | null;
   firing: boolean;
 }
 
-interface TankPresentation {
+interface SpritePresentation {
   moving?: boolean;
   firing?: boolean;
 }
 
-export function tankDirection(angle: number): TankDirection {
+export function tankDirection(angle: number): SpriteDirection {
   const normalized = ((angle % TURN) + TURN) % TURN;
-  const index = Math.round(normalized / DIRECTION_STEP) % TANK_DIRECTIONS.length;
-  return TANK_DIRECTIONS[index]!;
+  const index = Math.round(normalized / DIRECTION_STEP) % SPRITE_DIRECTIONS.length;
+  return SPRITE_DIRECTIONS[index]!;
 }
 
-export function stableTankDirection(angle: number, current: TankDirection): TankDirection {
-  const currentIndex = TANK_DIRECTIONS.indexOf(current);
+export function stableTankDirection(angle: number, current: SpriteDirection): SpriteDirection {
+  const currentIndex = SPRITE_DIRECTIONS.indexOf(current);
   const currentAngle = currentIndex * DIRECTION_STEP;
   const delta = ((((angle - currentAngle + Math.PI) % TURN) + TURN) % TURN) - Math.PI;
   if (Math.abs(delta) <= DIRECTION_STEP / 2 + DIRECTION_HYSTERESIS) return current;
@@ -65,23 +68,32 @@ export function stableTankDirection(angle: number, current: TankDirection): Tank
 
 export function tankFrame(
   angle: number,
-  state: TankVisualState = 'idle',
+  state: 'idle' | 'move' | 'recoil' = 'idle',
   step = 0,
 ): ProductionFrameId {
   return `unit.tank.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
 }
 
-function tankFrameForDirection(
-  direction: TankDirection,
-  state: TankVisualState,
+export function riflemanFrame(
+  angle: number,
+  state: 'idle' | 'move' | 'fire' = 'idle',
+  step = 0,
+): ProductionFrameId {
+  return `unit.rifleman.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
+}
+
+function frameForDirection(
+  unitType: SpriteUnitType,
+  direction: SpriteDirection,
+  state: SpriteVisualState,
   step: number,
 ): ProductionFrameId {
-  return `unit.tank.${state}.${direction}.${step}` as ProductionFrameId;
+  return `unit.${unitType}.${state}.${direction}.${step}` as ProductionFrameId;
 }
 
 export class SpriteUnitPainter {
   readonly container = new Container();
-  private readonly tanks = new Map<number, TankSpriteState>();
+  private readonly units = new Map<number, DirectionalSpriteState>();
 
   constructor(private readonly assets: ProductionAssetLoader) {}
 
@@ -91,13 +103,14 @@ export class SpriteUnitPainter {
     y: number,
     radius: number,
     animationTime = performance.now() / 1000,
-    presentation: TankPresentation = {},
+    presentation: SpritePresentation = {},
   ): boolean {
-    if (entity.unitType !== 'tank') return false;
-    let state = this.tanks.get(entity.id);
+    if (entity.unitType !== 'tank' && entity.unitType !== 'rifleman') return false;
+    const unitType = entity.unitType;
+    let state = this.units.get(entity.id);
     if (!state) {
       const direction = tankDirection(entity.angle);
-      const frameId = tankFrameForDirection(direction, 'idle', 0);
+      const frameId = frameForDirection(unitType, direction, 'idle', 0);
       const texture = this.assets.texture(frameId);
       if (!texture) return false;
       const root = new Container();
@@ -110,34 +123,39 @@ export class SpriteUnitPainter {
         direction,
         frameId,
         transitionStartedAt: animationTime,
-        recoilStartedAt: null,
+        actionStartedAt: null,
         firing: false,
       };
-      this.tanks.set(entity.id, state);
+      this.units.set(entity.id, state);
       this.container.addChild(root);
     }
 
-    if (presentation.firing && !state.firing) state.recoilStartedAt = animationTime;
+    if (presentation.firing && !state.firing) state.actionStartedAt = animationTime;
     state.firing = presentation.firing ?? false;
 
-    let visualState: TankVisualState = 'idle';
+    const actionState = unitType === 'tank' ? 'recoil' : 'fire';
+    const actionFrameSeconds =
+      unitType === 'tank' ? TANK_ACTION_FRAME_SECONDS : RIFLEMAN_ACTION_FRAME_SECONDS;
+    const movementFrameSeconds =
+      unitType === 'tank' ? TANK_MOVEMENT_FRAME_SECONDS : RIFLEMAN_MOVEMENT_FRAME_SECONDS;
+    let visualState: SpriteVisualState = 'idle';
     let step = 0;
-    if (state.recoilStartedAt !== null) {
-      const elapsed = animationTime - state.recoilStartedAt;
-      if (elapsed < RECOIL_FRAME_SECONDS * RECOIL_FRAMES) {
-        visualState = 'recoil';
-        step = Math.min(RECOIL_FRAMES - 1, Math.floor(elapsed / RECOIL_FRAME_SECONDS));
+    if (state.actionStartedAt !== null) {
+      const elapsed = animationTime - state.actionStartedAt;
+      if (elapsed < actionFrameSeconds * ACTION_FRAMES) {
+        visualState = actionState;
+        step = Math.min(ACTION_FRAMES - 1, Math.floor(elapsed / actionFrameSeconds));
       } else {
-        state.recoilStartedAt = null;
+        state.actionStartedAt = null;
       }
     }
     if (visualState === 'idle' && presentation.moving) {
       visualState = 'move';
-      step = Math.floor((animationTime + entity.id * 0.031) / MOVEMENT_FRAME_SECONDS) % 2;
+      step = Math.floor((animationTime + entity.id * 0.031) / movementFrameSeconds) % 2;
     }
 
     const nextDirection = stableTankDirection(entity.angle, state.direction);
-    const nextFrameId = tankFrameForDirection(nextDirection, visualState, step);
+    const nextFrameId = frameForDirection(unitType, nextDirection, visualState, step);
     if (nextDirection !== state.direction) {
       const texture = this.assets.texture(nextFrameId);
       if (texture) {
@@ -172,24 +190,25 @@ export class SpriteUnitPainter {
     }
     state.root.position.set(x, y);
     state.root.visible = true;
-    state.current.width = radius * 3.2;
-    state.current.height = radius * 3.2;
+    const spriteSize = radius * (unitType === 'tank' ? 3.2 : 4.6);
+    state.current.width = spriteSize;
+    state.current.height = spriteSize;
     if (state.outgoing) {
-      state.outgoing.width = radius * 3.2;
-      state.outgoing.height = radius * 3.2;
+      state.outgoing.width = spriteSize;
+      state.outgoing.height = spriteSize;
     }
     return true;
   }
 
   beginFrame(): void {
-    for (const state of this.tanks.values()) state.root.visible = false;
+    for (const state of this.units.values()) state.root.visible = false;
   }
 
   endFrame(): void {
-    for (const [id, state] of this.tanks) {
+    for (const [id, state] of this.units) {
       if (state.root.visible) continue;
       state.root.destroy({ children: true });
-      this.tanks.delete(id);
+      this.units.delete(id);
     }
   }
 
