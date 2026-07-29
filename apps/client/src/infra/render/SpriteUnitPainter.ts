@@ -23,20 +23,52 @@ const SPRITE_DIRECTIONS = [
 ] as const;
 
 type SpriteDirection = (typeof SPRITE_DIRECTIONS)[number];
-type SpriteUnitType = 'tank' | 'rifleman';
+type SpriteUnitType = 'tank' | 'rifleman' | 'scout';
 type SpriteVisualState = 'idle' | 'move' | 'recoil' | 'fire';
 
 const TURN = Math.PI * 2;
 const DIRECTION_STEP = TURN / SPRITE_DIRECTIONS.length;
 const DIRECTION_HYSTERESIS = 0.08;
 const DIRECTION_BLEND_SECONDS = 0.09;
-const TANK_MOVEMENT_FRAME_SECONDS = 0.12;
-const TANK_ACTION_FRAME_SECONDS = 0.07;
-const RIFLEMAN_MOVEMENT_FRAME_SECONDS = 0.06;
-const RIFLEMAN_MOVEMENT_FRAMES = 8;
-const RIFLEMAN_ANCHOR_Y = 0.71;
-const RIFLEMAN_ACTION_FRAME_SECONDS = 0.065;
-const ACTION_FRAMES = 2;
+interface SpriteUnitConfig {
+  anchorY: number;
+  movementFrameSeconds: number;
+  movementFrames: number;
+  sizeScale: number;
+  action?: {
+    frameSeconds: number;
+    frames: number;
+    state: 'recoil' | 'fire';
+  };
+  engagedFrame?: {
+    state: 'fire';
+    step: number;
+  };
+}
+
+const UNIT_CONFIG: Record<SpriteUnitType, SpriteUnitConfig> = {
+  tank: {
+    anchorY: 0.5,
+    movementFrameSeconds: 0.12,
+    movementFrames: 2,
+    sizeScale: 3.2,
+    action: { frameSeconds: 0.07, frames: 2, state: 'recoil' },
+  },
+  rifleman: {
+    anchorY: 0.71,
+    movementFrameSeconds: 0.06,
+    movementFrames: 8,
+    sizeScale: 4.6,
+    action: { frameSeconds: 0.065, frames: 2, state: 'fire' },
+    engagedFrame: { state: 'fire', step: 1 },
+  },
+  scout: {
+    anchorY: 0.5,
+    movementFrameSeconds: 0.08,
+    movementFrames: 4,
+    sizeScale: 3.7,
+  },
+};
 
 interface DirectionalSpriteState {
   root: Container;
@@ -86,6 +118,14 @@ export function riflemanFrame(
   return `unit.rifleman.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
 }
 
+export function scoutFrame(
+  angle: number,
+  state: 'idle' | 'move' = 'idle',
+  step = 0,
+): ProductionFrameId {
+  return `unit.scout.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
+}
+
 function frameForDirection(
   unitType: SpriteUnitType,
   direction: SpriteDirection,
@@ -109,8 +149,15 @@ export class SpriteUnitPainter {
     animationTime = performance.now() / 1000,
     presentation: SpritePresentation = {},
   ): boolean {
-    if (entity.unitType !== 'tank' && entity.unitType !== 'rifleman') return false;
+    if (
+      entity.unitType !== 'tank' &&
+      entity.unitType !== 'rifleman' &&
+      entity.unitType !== 'scout'
+    ) {
+      return false;
+    }
     const unitType = entity.unitType;
+    const config = UNIT_CONFIG[unitType];
     let state = this.units.get(entity.id);
     if (!state) {
       const direction = tankDirection(entity.angle);
@@ -134,34 +181,31 @@ export class SpriteUnitPainter {
       this.container.addChild(root);
     }
 
-    if (presentation.firing && !state.firing) state.actionStartedAt = animationTime;
+    if (config.action && presentation.firing && !state.firing) {
+      state.actionStartedAt = animationTime;
+    }
     state.firing = presentation.firing ?? false;
 
-    const actionState = unitType === 'tank' ? 'recoil' : 'fire';
-    const actionFrameSeconds =
-      unitType === 'tank' ? TANK_ACTION_FRAME_SECONDS : RIFLEMAN_ACTION_FRAME_SECONDS;
-    const movementFrameSeconds =
-      unitType === 'tank' ? TANK_MOVEMENT_FRAME_SECONDS : RIFLEMAN_MOVEMENT_FRAME_SECONDS;
     let visualState: SpriteVisualState = 'idle';
     let step = 0;
-    if (state.actionStartedAt !== null) {
+    if (config.action && state.actionStartedAt !== null) {
       const elapsed = animationTime - state.actionStartedAt;
-      if (elapsed < actionFrameSeconds * ACTION_FRAMES) {
-        visualState = actionState;
-        step = Math.min(ACTION_FRAMES - 1, Math.floor(elapsed / actionFrameSeconds));
+      if (elapsed < config.action.frameSeconds * config.action.frames) {
+        visualState = config.action.state;
+        step = Math.min(config.action.frames - 1, Math.floor(elapsed / config.action.frameSeconds));
       } else {
         state.actionStartedAt = null;
       }
     }
     if (visualState === 'idle') {
-      if (unitType === 'rifleman' && presentation.engaged) {
-        visualState = 'fire';
-        step = 1;
+      if (config.engagedFrame && presentation.engaged) {
+        visualState = config.engagedFrame.state;
+        step = config.engagedFrame.step;
       } else if (presentation.moving) {
         visualState = 'move';
-        const movementFrames = unitType === 'tank' ? 2 : RIFLEMAN_MOVEMENT_FRAMES;
         step =
-          Math.floor((animationTime + entity.id * 0.031) / movementFrameSeconds) % movementFrames;
+          Math.floor((animationTime + entity.id * 0.031) / config.movementFrameSeconds) %
+          config.movementFrames;
       }
     }
 
@@ -204,7 +248,7 @@ export class SpriteUnitPainter {
     const tint = presentation.tint ?? 0xffffff;
     state.current.tint = tint;
     if (state.outgoing) state.outgoing.tint = tint;
-    const spriteSize = radius * (unitType === 'tank' ? 3.2 : 4.6);
+    const spriteSize = radius * config.sizeScale;
     state.current.width = spriteSize;
     state.current.height = spriteSize;
     if (state.outgoing) {
@@ -228,7 +272,7 @@ export class SpriteUnitPainter {
 
   private createSprite(texture: Sprite['texture'], unitType: SpriteUnitType): Sprite {
     const sprite = new Sprite(texture);
-    sprite.anchor.set(0.5, unitType === 'rifleman' ? RIFLEMAN_ANCHOR_Y : 0.5);
+    sprite.anchor.set(0.5, UNIT_CONFIG[unitType].anchorY);
     return sprite;
   }
 }

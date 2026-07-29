@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   SpriteUnitPainter,
   riflemanFrame,
+  scoutFrame,
   stableTankDirection,
   tankDirection,
   tankFrame,
@@ -25,6 +26,8 @@ describe('tank sprite direction', () => {
     expect(riflemanFrame(Math.PI / 8)).toBe('unit.rifleman.idle.ese.0');
     expect(riflemanFrame(Math.PI / 8, 'move', 7)).toBe('unit.rifleman.move.ese.7');
     expect(riflemanFrame(Math.PI / 8, 'fire', 1)).toBe('unit.rifleman.fire.ese.1');
+    expect(scoutFrame(Math.PI / 8)).toBe('unit.scout.idle.ese.0');
+    expect(scoutFrame(Math.PI / 8, 'move', 3)).toBe('unit.scout.move.ese.3');
   });
 
   it('holds the current facing around a direction boundary', () => {
@@ -132,11 +135,31 @@ describe('tank sprite direction', () => {
     }
   });
 
-  it('leaves tanks to the procedural fallback while the atlas is unavailable', () => {
+  it('plays all four Scout wheel poses at the authored cadence', () => {
+    const requested: string[] = [];
+    const painter = new SpriteUnitPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return Texture.EMPTY;
+      },
+    } as never);
+    const scout = { id: 13, unitType: 'scout', angle: 0 };
+
+    for (const animationTime of [0.02, 0.1, 0.18, 0.26]) {
+      painter.draw(scout as never, 100, 80, 8, animationTime, { moving: true });
+    }
+
+    for (let step = 0; step < 4; step++) {
+      expect(requested).toContain(`unit.scout.move.e.${step}`);
+    }
+  });
+
+  it('leaves supported units to the procedural fallback while the atlas is unavailable', () => {
     const painter = new SpriteUnitPainter({
       texture: () => null,
     } as never);
     expect(painter.draw({ id: 7, unitType: 'tank', angle: 0 } as never, 100, 80, 12)).toBe(false);
+    expect(painter.draw({ id: 13, unitType: 'scout', angle: 0 } as never, 100, 80, 8)).toBe(false);
     expect(painter.container.children).toHaveLength(0);
   });
 });
