@@ -136,12 +136,13 @@ The Rifleman uses the same camera-axis and 16-direction contract as the tank. In
 `Rifleman - Iron Pass` is the direction root, `Upper body` carries restrained body motion and
 `Weapon rig` carries recoil. Boots and legs remain attached to the root.
 
-Its four movement frames alternate contact and passing poses. Each leg has separate thigh and shin
-geometry; the passing foot lifts while the other remains grounded, and the upper body provides a
-small counterweight. This is the infantry version of keeping tank tracks grounded: locomotion
-changes the pose around a stable world contact instead of translating the sprite. Fire briefly
-moves the weapon backward from a symmetrical, vertical ready stance; the runtime effect layer
-remains responsible for muzzle flash and projectiles.
+Its eight movement frames describe two complete steps: contact, compression, passing and lift for
+each side. Each leg has separate thigh and shin geometry; the passing foot lifts while the other
+remains grounded, and the pelvis and upper body transfer weight in opposition. This is the infantry
+version of keeping tank tracks grounded: locomotion changes the pose around a stable world contact
+instead of translating the sprite. Fire briefly moves the weapon backward from a symmetrical,
+vertical ready stance; the runtime effect layer remains responsible for muzzle flash and
+projectiles.
 
 ## Production build
 

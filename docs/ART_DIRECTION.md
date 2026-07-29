@@ -184,7 +184,7 @@ node scripts/blender/compose-infantry.mjs \
 pnpm assets:build
 ```
 
-The Rifleman establishes shared infantry scale, camera, palette and a four-pose grounded gait.
+The Rifleman establishes shared infantry scale, camera, palette and an eight-pose grounded gait.
 Engineer and Medic should reuse that foundation while remaining identifiable through equipment
 and silhouette.
 
