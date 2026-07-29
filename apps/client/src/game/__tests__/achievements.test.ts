@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { MatchMetricsSnapshot } from '@iron/engine';
 import {
   ACHIEVEMENTS,
+  achievementsForMission,
   achievementTooltip,
   evaluateAchievements,
   loadAchievementProgress,
@@ -36,6 +37,9 @@ describe('commander achievements', () => {
     const cartographer = ACHIEVEMENTS[0];
     expect(achievementTooltip(cartographer, false)).toContain('Locked — Cartographer');
     expect(achievementTooltip(cartographer, true)).toContain('Earned — Cartographer');
+    expect(achievementTooltip(cartographer, false, 'operation')).toContain(
+      'Not earned in this operation — Cartographer',
+    );
   });
 
   it('unlocks metric-based decorations idempotently', () => {
@@ -56,6 +60,47 @@ describe('commander achievements', () => {
       'untouchable',
     ]);
     expect(evaluateAchievements(storage, 'FOX', report, true, []).newlyUnlocked).toEqual([]);
+  });
+
+  it('keeps decorations scoped to the operation where they were earned', () => {
+    const storage = memoryStorage();
+    const report = metrics({ exploredPercent: 100 });
+
+    const firstContact = evaluateAchievements(
+      storage,
+      'FOX',
+      report,
+      true,
+      ['base_foundations', 'first_contact'],
+      'first_contact',
+    );
+    expect(achievementsForMission(firstContact.progress, 'first_contact')).toContain(
+      'cartographer',
+    );
+    expect(achievementsForMission(firstContact.progress, 'iron_pass')).toEqual([]);
+
+    const ironPass = evaluateAchievements(
+      storage,
+      'FOX',
+      report,
+      true,
+      ['base_foundations', 'first_contact', 'iron_pass'],
+      'iron_pass',
+    );
+    expect(ironPass.newlyUnlocked).toEqual([]);
+    expect(achievementsForMission(ironPass.progress, 'iron_pass')).toContain('cartographer');
+  });
+
+  it('preserves legacy global unlocks without inventing mission provenance', () => {
+    const storage = memoryStorage();
+    storage.setItem(
+      'iron-doctrine.achievements.v1.FOX',
+      JSON.stringify({ version: 1, unlocked: ['cartographer', 'invalid'] }),
+    );
+
+    const progress = loadAchievementProgress(storage, 'FOX');
+    expect(progress.unlocked).toEqual(['cartographer']);
+    expect(progress.byMission).toEqual({});
   });
 
   it('unlocks Campaign Veteran from profile-scoped completion', () => {

@@ -92,7 +92,7 @@ export function App(): JSX.Element {
         achievements={
           activeCallsign
             ? loadAchievementProgress(localStorage, activeCallsign)
-            : { version: 1, unlocked: [] }
+            : { version: 2, unlocked: [], byMission: {} }
         }
         onCreateCommander={(callsign) => {
           createCommanderProfile(localStorage, callsign);
@@ -149,6 +149,7 @@ export function App(): JSX.Element {
           metrics,
           victory,
           loadCampaignProgress(localStorage, activeCallsign).completed,
+          skirmish.mission === 'skirmish' ? null : skirmish.mission,
         ).newlyUnlocked;
       }}
       onExit={() => {

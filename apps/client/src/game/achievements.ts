@@ -1,5 +1,5 @@
 import type { MatchMetricsSnapshot } from '@iron/engine';
-import type { CampaignMissionId } from './campaign.js';
+import { CAMPAIGN_MISSIONS, type CampaignMissionId } from './campaign.js';
 import type { CampaignStorage } from './campaignProgress.js';
 
 export const ACHIEVEMENTS = [
@@ -41,36 +41,82 @@ export type AchievementDefinition = (typeof ACHIEVEMENTS)[number];
 export function achievementTooltip(
   achievement: AchievementDefinition,
   unlocked: boolean,
+  scope: 'commander' | 'operation' = 'commander',
 ): string {
+  if (scope === 'operation') {
+    return `${unlocked ? 'Earned in this operation' : 'Not earned in this operation'} — ${achievement.title}: ${achievement.description}`;
+  }
   return `${unlocked ? 'Earned' : 'Locked'} — ${achievement.title}: ${achievement.description}`;
 }
 
 export interface AchievementProgress {
-  version: 1;
+  version: 2;
   unlocked: AchievementId[];
+  byMission: Partial<Record<CampaignMissionId, AchievementId[]>>;
 }
 
-const STORAGE_PREFIX = 'iron-doctrine.achievements.v1';
+const STORAGE_PREFIX = 'iron-doctrine.achievements.v2';
+const LEGACY_STORAGE_PREFIX = 'iron-doctrine.achievements.v1';
 const VALID_IDS = new Set<string>(ACHIEVEMENTS.map((achievement) => achievement.id));
+const VALID_MISSIONS = new Set<string>(CAMPAIGN_MISSIONS.map((mission) => mission.id));
+const EMPTY_PROGRESS: AchievementProgress = { version: 2, unlocked: [], byMission: {} };
 
 export function loadAchievementProgress(
   storage: CampaignStorage,
   callsign: string,
 ): AchievementProgress {
-  const raw = storage.getItem(`${STORAGE_PREFIX}.${callsign}`);
-  if (!raw) return { version: 1, unlocked: [] };
+  const current = parseProgress(storage.getItem(`${STORAGE_PREFIX}.${callsign}`));
+  if (current) return current;
+  const legacy = parseLegacyProgress(storage.getItem(`${LEGACY_STORAGE_PREFIX}.${callsign}`));
+  return legacy ?? { ...EMPTY_PROGRESS, byMission: {} };
+}
+
+export function achievementsForMission(
+  progress: AchievementProgress,
+  mission: CampaignMissionId,
+): readonly AchievementId[] {
+  return progress.byMission[mission] ?? [];
+}
+
+function parseProgress(raw: string | null): AchievementProgress | null {
+  if (!raw) return null;
   try {
     const value: unknown = JSON.parse(raw);
-    if (!value || typeof value !== 'object') return { version: 1, unlocked: [] };
+    if (!value || typeof value !== 'object') return null;
     const unlocked = (value as { unlocked?: unknown }).unlocked;
-    if (!Array.isArray(unlocked)) return { version: 1, unlocked: [] };
+    const byMission = (value as { byMission?: unknown }).byMission;
+    if (!Array.isArray(unlocked) || !byMission || typeof byMission !== 'object') return null;
     return {
-      version: 1,
-      unlocked: [...new Set(unlocked.filter((id): id is AchievementId => VALID_IDS.has(String(id))))],
+      version: 2,
+      unlocked: validAchievementIds(unlocked),
+      byMission: Object.fromEntries(
+        Object.entries(byMission).flatMap(([mission, ids]) =>
+          VALID_MISSIONS.has(mission) && Array.isArray(ids)
+            ? [[mission, validAchievementIds(ids)]]
+            : [],
+        ),
+      ) as AchievementProgress['byMission'],
     };
   } catch {
-    return { version: 1, unlocked: [] };
+    return null;
   }
+}
+
+function parseLegacyProgress(raw: string | null): AchievementProgress | null {
+  if (!raw) return null;
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== 'object') return null;
+    const unlocked = (value as { unlocked?: unknown }).unlocked;
+    if (!Array.isArray(unlocked)) return null;
+    return { version: 2, unlocked: validAchievementIds(unlocked), byMission: {} };
+  } catch {
+    return null;
+  }
+}
+
+function validAchievementIds(values: readonly unknown[]): AchievementId[] {
+  return [...new Set(values.filter((id): id is AchievementId => VALID_IDS.has(String(id))))];
 }
 
 export function evaluateAchievements(
@@ -79,6 +125,7 @@ export function evaluateAchievements(
   metrics: MatchMetricsSnapshot,
   victory: boolean,
   completedMissions: readonly CampaignMissionId[],
+  mission: CampaignMissionId | null = null,
 ): { progress: AchievementProgress; newlyUnlocked: AchievementId[] } {
   const current = loadAchievementProgress(storage, callsign);
   const earned = new Set<AchievementId>();
@@ -90,11 +137,23 @@ export function evaluateAchievements(
   if (new Set(completedMissions).size >= 5) earned.add('campaign_veteran');
 
   const newlyUnlocked = [...earned].filter((id) => !current.unlocked.includes(id));
+  const missionUnlocks = mission
+    ? [...new Set([...(current.byMission[mission] ?? []), ...earned])]
+    : [];
   const progress = {
-    version: 1 as const,
+    version: 2 as const,
     unlocked: [...current.unlocked, ...newlyUnlocked],
+    byMission: mission
+      ? {
+          ...current.byMission,
+          [mission]: missionUnlocks,
+        }
+      : current.byMission,
   };
-  if (newlyUnlocked.length > 0) {
+  if (
+    newlyUnlocked.length > 0 ||
+    (mission !== null && missionUnlocks.length !== (current.byMission[mission]?.length ?? 0))
+  ) {
     storage.setItem(`${STORAGE_PREFIX}.${callsign}`, JSON.stringify(progress));
   }
   return { progress, newlyUnlocked };
