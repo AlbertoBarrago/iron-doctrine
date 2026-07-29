@@ -5,10 +5,11 @@
  */
 import { Graphics } from 'pixi.js';
 import type { Camera } from './camera.js';
+import { MATERIAL, shadeColor } from './renderStyle.js';
 
 interface Particle {
   active: boolean;
-  shape: 'dot' | 'streak';
+  shape: 'dot' | 'streak' | 'smoke' | 'dust';
   wx: number;
   wy: number;
   vx: number;
@@ -83,6 +84,18 @@ export class ParticleSystem {
         Math.sin(ang) * speed,
       );
     }
+    for (let index = 0; index < Math.max(2, Math.round(scale * 3)); index++) {
+      this.spawn(
+        wx + (index - 1) * 0.08 * scale,
+        wy,
+        index % 2 === 0 ? MATERIAL.smoke : shadeColor(MATERIAL.smoke, 0.65),
+        2.6 * scale,
+        0.9 + index * 0.14,
+        (index - 1) * 0.12,
+        -0.75 - index * 0.08,
+        'smoke',
+      );
+    }
   }
 
   /** Short presentation-only rifle round; simulation damage remains hitscan. */
@@ -142,11 +155,12 @@ export class ParticleSystem {
       this.spawn(
         wx,
         wy,
-        offset < 0 ? 0xc89a35 : 0x80642d,
+        offset < 0 ? MATERIAL.dust : shadeColor(MATERIAL.dust, 0.72),
         1.4 * scale,
         0.28,
         Math.cos(direction) * 1.8,
         Math.sin(direction) * 1.8,
+        'dust',
       );
     }
   }
@@ -172,11 +186,12 @@ export class ParticleSystem {
       this.spawn(
         wx + (index - 0.5) * 0.18 * scale,
         wy,
-        index === 0 ? 0x555b55 : 0x303532,
+        index === 0 ? MATERIAL.smoke : shadeColor(MATERIAL.smoke, 0.72),
         1.8 * scale,
         0.9 + index * 0.18,
         0.12 * (index === 0 ? -1 : 1),
         -0.65 - index * 0.12,
+        'smoke',
       );
     }
   }
@@ -205,6 +220,21 @@ export class ParticleSystem {
           .moveTo(sx, sy)
           .lineTo(sx - p.vx * 0.035 * this.camera.scale, sy - p.vy * 0.035 * this.camera.scale)
           .stroke({ width: p.size, color: p.color, alpha });
+      } else if (p.shape === 'smoke') {
+        const age = 1 - alpha;
+        const radius = p.size * (0.8 + age * 1.45);
+        this.gfx
+          .ellipse(sx, sy, radius * 1.15, radius * 0.78)
+          .fill({ color: p.color, alpha: alpha * 0.48 });
+        this.gfx
+          .circle(sx - radius * 0.32, sy - radius * 0.12, radius * 0.58)
+          .fill({ color: p.color, alpha: alpha * 0.28 });
+      } else if (p.shape === 'dust') {
+        const age = 1 - alpha;
+        const radius = p.size * (0.7 + age);
+        this.gfx
+          .ellipse(sx, sy, radius * 1.4, radius * 0.55)
+          .fill({ color: p.color, alpha: alpha * 0.34 });
       } else {
         this.gfx.circle(sx, sy, p.size).fill({ color: p.color, alpha });
       }
