@@ -184,7 +184,7 @@ export interface EnergyData {
 }
 export const Energy = defineComponent<EnergyData>('Energy', () => ({ produced: 0, consumed: 0 }));
 
-/** Marks a building that harvesters can deposit resources at (refinery / base). */
+/** Marks a building where harvesters can deposit resources. */
 export interface DropOffData {
   _: 0;
 }

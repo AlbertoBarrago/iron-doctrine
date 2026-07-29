@@ -13,7 +13,7 @@ describe('Save / Load', () => {
   function makeMatch(): Simulation {
     const grid = new NavGrid(64, 64, fp.fromInt(1));
     const sim = new Simulation({ seed: 12345, grid });
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: at(0, 0) });
     sim.enqueue({ type: 'spawnResource', amount: 800, at: at(6, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'tank', player: 0, at: at(-3, 2) });

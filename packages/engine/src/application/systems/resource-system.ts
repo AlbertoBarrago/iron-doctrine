@@ -33,7 +33,7 @@ const NODE_REACH_SQ = fp.fromInt(16); // 4 units
 const CLEAR_NODE_REACH_SQ = fp.fromFloat(2.75 * 2.75);
 /**
  * Drop-offs keep a wider interaction boundary so multiple harvesters can queue around
- * a large refinery without relying entirely on unit separation.
+ * a large drop-off building without relying entirely on unit separation.
  */
 const DROP_OFF_REACH_SQ = fp.fromInt(16); // 4 units
 
@@ -125,7 +125,7 @@ export function createResourceSystem(economy: PlayerEconomy, metrics?: MatchMetr
           }
           case 'toBase': {
             const base = nearestDropOff(world, pos, owner);
-            if (base === undefined) break; // no refinery yet: wait
+            if (base === undefined) break; // no drop-off available: wait
             if (v2.distSq(pos, world.get(base, Position)!) <= DROP_OFF_REACH_SQ) {
               h.phase = 'depositing';
               move.target = null;

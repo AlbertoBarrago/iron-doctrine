@@ -3,6 +3,7 @@ import { Simulation } from '../simulation.js';
 import { NavGrid } from '../pathfinding/nav-grid.js';
 import { Harvest, Position, ResourceCarrier, ResourceNode } from '../../domain/components/index.js';
 import { PlayerEconomy } from '../../domain/economy/player-economy.js';
+import { BUILDING_STATS } from '../../domain/archetypes/buildings.js';
 import * as fp from '../../domain/math/fixed.js';
 
 const at = (x: number, y: number) => ({ x: fp.fromInt(x), y: fp.fromInt(y) });
@@ -25,10 +26,18 @@ describe('Harvester economy loop', () => {
     return new Simulation({ seed: 1, grid });
   }
 
-  it('gathers ore and deposits it as credits at the refinery', () => {
+  it('uses the construction yard as the only ore drop-off', () => {
+    const dropOffs = Object.entries(BUILDING_STATS)
+      .filter(([, stats]) => stats.dropOff)
+      .map(([building]) => building);
+
+    expect(dropOffs).toEqual(['construction_yard']);
+  });
+
+  it('gathers ore and deposits it as credits at the construction yard', () => {
     const sim = makeSim();
     // Base/drop-off, ore field close by, and a harvester.
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: at(0, 0) });
     sim.enqueue({ type: 'spawnResource', amount: 500, at: at(5, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(2, 0) });
     sim.step();
@@ -77,7 +86,7 @@ describe('Harvester economy loop', () => {
 
   it('keeps overlapping harvesters progressing through independent economy cycles', () => {
     const sim = makeSim();
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: at(0, 0) });
     sim.enqueue({ type: 'spawnResource', amount: 10_000, at: at(9, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3, 0) });
@@ -103,7 +112,7 @@ describe('Harvester economy loop', () => {
 
   it('keeps a full squad of harvesters progressing through a shared node and drop-off', () => {
     const sim = makeSim();
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: at(0, 0) });
     sim.enqueue({ type: 'spawnResource', amount: 20_000, at: at(9, 0) });
     for (let i = 0; i < 5; i++) {
       sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(3 + i, 0) });
@@ -130,7 +139,7 @@ describe('Harvester economy loop', () => {
 
   it('depletes the ore node over time', () => {
     const sim = makeSim();
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+    sim.enqueue({ type: 'spawnBuilding', building: 'construction_yard', player: 0, at: at(0, 0) });
     sim.enqueue({ type: 'spawnResource', amount: 40, at: at(4, 0) });
     sim.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(2, 0) });
     sim.step();
@@ -206,7 +215,7 @@ describe('Harvester economy loop', () => {
   it('aggregates power from buildings', () => {
     const sim = makeSim();
     sim.enqueue({ type: 'spawnBuilding', building: 'power_plant', player: 0, at: at(0, 0) }); // +100
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(6, 0) }); // -30
+    sim.enqueue({ type: 'spawnBuilding', building: 'factory', player: 0, at: at(6, 0) }); // -30
     sim.step();
     sim.step();
     const power = sim.economy.get(0).power;
@@ -218,7 +227,12 @@ describe('Harvester economy loop', () => {
     const build = () => {
       const grid = new NavGrid(64, 64, fp.fromInt(1));
       const s = new Simulation({ seed: 55, grid });
-      s.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(0, 0) });
+      s.enqueue({
+        type: 'spawnBuilding',
+        building: 'construction_yard',
+        player: 0,
+        at: at(0, 0),
+      });
       s.enqueue({ type: 'spawnResource', amount: 500, at: at(5, 1) });
       s.enqueue({ type: 'spawnUnit', unit: 'harvester', player: 0, at: at(2, 0) });
       return s;

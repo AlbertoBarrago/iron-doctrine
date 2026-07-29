@@ -56,7 +56,6 @@ export const BUILDING_STATS: Readonly<Record<string, BuildingStats>> = {
     dropOff: true,
   },
   power_plant: { hp: 800, footprint: 2, cost: 800, buildTicks: 100, power: 100 },
-  refinery: { hp: 1000, footprint: 3, cost: 1500, buildTicks: 180, power: -30, dropOff: true },
   barracks: {
     hp: 800,
     footprint: 2,

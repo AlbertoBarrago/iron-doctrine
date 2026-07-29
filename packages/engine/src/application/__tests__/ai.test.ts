@@ -168,7 +168,12 @@ describe('AIDirector', () => {
     const sim = makeSim();
     deployAiBase(sim, 20, 0);
     // Human target near the origin.
-    sim.enqueue({ type: 'spawnBuilding', building: 'refinery', player: 0, at: at(-20, 0) });
+    sim.enqueue({
+      type: 'spawnBuilding',
+      building: 'construction_yard',
+      player: 0,
+      at: at(-20, 0),
+    });
 
     // Run until the AI has an army and has issued attacks; the human building should
     // eventually take damage or be destroyed.
