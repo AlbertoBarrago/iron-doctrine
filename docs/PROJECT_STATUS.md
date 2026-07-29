@@ -116,7 +116,7 @@ The first production infantry slice is implemented:
 
 - `assets-src/units/infantry/rifleman.blend` is the editable Rifleman source;
 - 16 authored facings share the accepted vehicle camera and runtime direction contract;
-- idle, two-frame grounded movement and two-frame weapon recoil are generated from one model;
+- idle, four-pose articulated movement and two-frame weapon recoil are generated from one model;
 - the renderer selects authored Rifleman frames while Engineer and Medic retain their procedural
   fallback.
 
