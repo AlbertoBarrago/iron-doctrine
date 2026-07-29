@@ -144,6 +144,39 @@
       "runtime": true
     },
     {
+      "id": "unit.harvester",
+      "source": "vehicles/harvester/harvester.png",
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "directions": [
+        "e",
+        "ese",
+        "se",
+        "sse",
+        "s",
+        "ssw",
+        "sw",
+        "wsw",
+        "w",
+        "wnw",
+        "nw",
+        "nnw",
+        "n",
+        "nne",
+        "ne",
+        "ene"
+      ],
+      "states": {
+        "idle": 1,
+        "idle-loaded": 1,
+        "move": 4,
+        "move-loaded": 4,
+        "gather": 4,
+        "deposit": 3
+      },
+      "runtime": true
+    },
+    {
       "id": "technical.registration",
       "source": "technical/registration-mark.svg",
       "frameWidth": 64,
