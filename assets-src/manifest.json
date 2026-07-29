@@ -30,7 +30,9 @@
         "ene"
       ],
       "states": {
-        "idle": 1
+        "idle": 1,
+        "move": 2,
+        "recoil": 2
       },
       "runtime": true
     },

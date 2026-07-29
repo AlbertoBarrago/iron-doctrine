@@ -36,6 +36,12 @@ DIRECTIONS = (
     "ene",
 )
 
+STATE_STEPS = {
+    "idle": 1,
+    "move": 2,
+    "recoil": 2,
+}
+
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
@@ -110,6 +116,24 @@ def build_tank():
     root = bpy.data.objects.new("Battle Tank - Iron Pass", None)
     bpy.context.collection.objects.link(root)
 
+    main_gun = cylinder(
+        "Main gun",
+        (2.05, 0, 1.66),
+        0.13,
+        2.55,
+        steel,
+        vertices=12,
+        rotation=(0, math.pi / 2, 0),
+    )
+    muzzle_brake = cylinder(
+        "Muzzle brake",
+        (3.28, 0, 1.66),
+        0.2,
+        0.38,
+        steel,
+        vertices=12,
+        rotation=(0, math.pi / 2, 0),
+    )
     parts = [
         box("Lower hull", (0, 0, 0.62), (3.9, 2.25, 0.55), olive_dark, 0.16),
         box("Sloped hull", (0.12, 0, 1.05), (3.45, 1.88, 0.62), olive, 0.16),
@@ -119,8 +143,8 @@ def build_tank():
         box("Right track", (0, -1.16, 0.48), (4.15, 0.46, 0.62), rubber, 0.2),
         cylinder("Turret", (0.18, 0, 1.61), 0.9, 0.48, olive, vertices=10),
         box("Turret mantlet", (0.91, 0, 1.62), (0.45, 0.78, 0.44), olive_dark, 0.12),
-        cylinder("Main gun", (2.05, 0, 1.66), 0.13, 2.55, steel, vertices=12, rotation=(0, math.pi / 2, 0)),
-        cylinder("Muzzle brake", (3.28, 0, 1.66), 0.2, 0.38, steel, vertices=12, rotation=(0, math.pi / 2, 0)),
+        main_gun,
+        muzzle_brake,
         cylinder("Commander hatch", (-0.08, -0.25, 1.91), 0.31, 0.11, olive_light, vertices=12),
         box("Faction plate", (-0.42, -0.91, 1.17), (0.6, 0.055, 0.24), red, 0.02),
         box("Unit stripe", (0.82, 0.94, 1.18), (0.18, 0.055, 0.44), brass, 0.02),
@@ -152,7 +176,30 @@ def build_tank():
     parts.append(antenna)
     for obj in parts:
         parent_to(obj, root)
-    return root
+    return {
+        "root": root,
+        "main_gun": main_gun,
+        "muzzle_brake": muzzle_brake,
+    }
+
+
+def pose_tank(rig, state: str, step: int) -> None:
+    root = rig["root"]
+    root.location = (0, 0, 0)
+    root.rotation_euler.x = 0
+    root.rotation_euler.y = 0
+    rig["main_gun"].location.x = 2.05
+    rig["muzzle_brake"].location.x = 3.28
+
+    if state == "move":
+        phase = -1 if step == 0 else 1
+        root.location.z = phase * 0.025
+        root.rotation_euler.y = phase * 0.012
+    elif state == "recoil":
+        recoil = 0.34 if step == 0 else 0.14
+        rig["main_gun"].location.x -= recoil
+        rig["muzzle_brake"].location.x -= recoil
+        root.rotation_euler.y = -recoil * 0.025
 
 
 def look_at(obj, target=(0, 0, 0.8)):
@@ -206,7 +253,7 @@ def main():
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
 
-    root = build_tank()
+    rig = build_tank()
     configure_scene()
 
     blend_path = Path(args.blend).resolve()
@@ -216,10 +263,17 @@ def main():
     bpy.ops.wm.save_as_mainfile(filepath=str(blend_path))
 
     scene = bpy.context.scene
-    for index, direction in enumerate(DIRECTIONS):
-        root.rotation_euler.z = -index * (2 * math.pi / len(DIRECTIONS))
-        scene.render.filepath = str(frames_dir / f"{index:02d}-{direction}.png")
-        bpy.ops.render.render(write_still=True)
+    frame_index = 0
+    for state, steps in STATE_STEPS.items():
+        for direction_index, direction in enumerate(DIRECTIONS):
+            for step in range(steps):
+                pose_tank(rig, state, step)
+                rig["root"].rotation_euler.z = -direction_index * (2 * math.pi / len(DIRECTIONS))
+                scene.render.filepath = str(
+                    frames_dir / f"{frame_index:03d}-{state}-{direction}-{step:02d}.png"
+                )
+                bpy.ops.render.render(write_still=True)
+                frame_index += 1
 
 
 if __name__ == "__main__":

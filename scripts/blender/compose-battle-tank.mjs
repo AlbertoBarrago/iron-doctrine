@@ -8,14 +8,27 @@ if (!framesDir || !output) {
   throw new Error('Usage: node scripts/blender/compose-battle-tank.mjs <frames-dir> <output>');
 }
 
-const frames = (await readdir(framesDir)).filter((name) => /^\d{2}-[a-z]+\.png$/.test(name)).sort();
-if (frames.length !== 16) throw new Error(`Expected 16 tank frames, found ${frames.length}`);
+const stateSteps = {
+  idle: 1,
+  move: 2,
+  recoil: 2,
+};
+const directionCount = 16;
+const expectedFrames =
+  directionCount * Object.values(stateSteps).reduce((total, steps) => total + steps, 0);
+const frames = (await readdir(framesDir))
+  .filter((name) => /^\d{3}-(?:idle|move|recoil)-[a-z]+-\d{2}\.png$/.test(name))
+  .sort();
+if (frames.length !== expectedFrames) {
+  throw new Error(`Expected ${expectedFrames} tank frames, found ${frames.length}`);
+}
 
 const frameSize = 192;
+const columns = 8;
 await sharp({
   create: {
-    width: frameSize * 4,
-    height: frameSize * 4,
+    width: frameSize * columns,
+    height: frameSize * Math.ceil(frames.length / columns),
     channels: 4,
     background: { r: 0, g: 0, b: 0, alpha: 0 },
   },
@@ -23,8 +36,8 @@ await sharp({
   .composite(
     frames.map((name, index) => ({
       input: path.join(framesDir, name),
-      left: (index % 4) * frameSize,
-      top: Math.floor(index / 4) * frameSize,
+      left: (index % columns) * frameSize,
+      top: Math.floor(index / columns) * frameSize,
     })),
   )
   .png()
