@@ -730,6 +730,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 32  | HUD build iconography         | production-quality unit/building icons in the build and production queue UI, once the faction sprite pass defines how tanks, vehicles and helicopters read at HUD scale                                   | planned                                                |
 | 33  | Army control HUD              | nine local control groups with assign/recall/focus shortcuts, clickable group chips and owned-force composition with selected counts                                                                       | ✅ done                                                |
 | 34  | Unit radio acknowledgements   | rate-limited Italian role responses for core orders, optional browser speech and accessible subtitle fallback, isolated from simulation state                                                              | ✅ done                                                |
+| 35  | Military Diorama visual pass  | shared procedural material ramps, directional edge lighting, layered vehicle and structure surfaces, volumetric pooled smoke and dust                                                                      | ✅ done (browser playtest pending)                     |
 
 ---
 

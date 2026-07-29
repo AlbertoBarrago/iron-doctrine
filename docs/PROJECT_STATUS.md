@@ -58,6 +58,12 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Camera zoom-out uses the current battlefield and viewport dimensions as a dynamic floor, so
   normal navigation never exposes the rectangular exterior around a built-in map.
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
+- The first Military Diorama pass gives units and structures a shared four-step material ramp,
+  consistent upper-left edge lighting, deeper foundations and role-specific industrial details.
+- Vehicle silhouettes now expose layered armor, running gear, glass reflections and readable
+  working surfaces without changing entity footprints or authoritative state.
+- Smoke and dust use distinct expanding shapes while impacts retain sharp ballistic streaks;
+  all effects remain bounded, pooled and presentation-only.
 - Map environment metadata is presentation-only, backwards-compatible and versioned independently
   from authoritative simulation state.
 - Static terrain geometry is built once in chunked Pixi containers; camera movement updates its
@@ -204,7 +210,7 @@ Medic interactions would add disproportionate complexity to the current tactical
 All test files live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
 only file locations and relative imports. The current full baseline is 54 test files and
-286 passing tests.
+287 passing tests.
 
 ### Campaign production
 
