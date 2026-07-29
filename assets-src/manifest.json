@@ -67,6 +67,35 @@
       "runtime": true
     },
     {
+      "id": "unit.scout",
+      "source": "vehicles/scout/scout.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "directions": [
+        "e",
+        "ese",
+        "se",
+        "sse",
+        "s",
+        "ssw",
+        "sw",
+        "wsw",
+        "w",
+        "wnw",
+        "nw",
+        "nnw",
+        "n",
+        "nne",
+        "ne",
+        "ene"
+      ],
+      "states": {
+        "idle": 1,
+        "move": 4
+      },
+      "runtime": true
+    },
+    {
       "id": "technical.registration",
       "source": "technical/registration-mark.svg",
       "frameWidth": 64,
