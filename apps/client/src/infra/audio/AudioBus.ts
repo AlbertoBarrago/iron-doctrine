@@ -31,8 +31,9 @@ export const AMBIENT_PHRASE_SECONDS = 6;
 export const AMBIENT_PULSE_SECONDS = 1.4;
 
 export const ambientChord = (phrase: number): readonly number[] =>
-  AMBIENT_CHORDS[((phrase % AMBIENT_CHORDS.length) + AMBIENT_CHORDS.length) %
-    AMBIENT_CHORDS.length]!;
+  AMBIENT_CHORDS[
+    ((phrase % AMBIENT_CHORDS.length) + AMBIENT_CHORDS.length) % AMBIENT_CHORDS.length
+  ]!;
 
 export class AudioBus {
   private ctx: AudioContext | null = null;
@@ -46,6 +47,7 @@ export class AudioBus {
   private ambientPhrase = 0;
   private ambientTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly ambientSources = new Set<OscillatorNode>();
+  private activeSpeech: SpeechSynthesisUtterance | null = null;
 
   private ensure(): AudioContext | null {
     if (!this.ctx) {
@@ -65,6 +67,10 @@ export class AudioBus {
 
   setMuted(muted: boolean): void {
     this.sfxMuted = muted;
+    if (muted && this.activeSpeech) {
+      globalThis.speechSynthesis?.cancel();
+      this.activeSpeech = null;
+    }
     this.updateGains();
   }
 
@@ -124,12 +130,37 @@ export class AudioBus {
     }
   }
 
+  speak(line: string): void {
+    if (this.sfxMuted || line.length === 0) return;
+    const synthesis = globalThis.speechSynthesis;
+    const Utterance = globalThis.SpeechSynthesisUtterance;
+    if (!synthesis || !Utterance) return;
+
+    synthesis.cancel();
+    const utterance = new Utterance(line);
+    utterance.lang = 'it-IT';
+    utterance.rate = 1.02;
+    utterance.pitch = 0.82;
+    utterance.volume = normalizeVolume(this.sfxVolume * 0.82);
+    const italianVoice = synthesis
+      .getVoices()
+      .find((voice) => voice.lang.toLowerCase().startsWith('it'));
+    if (italianVoice) utterance.voice = italianVoice;
+    utterance.onend = () => {
+      if (this.activeSpeech === utterance) this.activeSpeech = null;
+    };
+    this.activeSpeech = utterance;
+    synthesis.speak(utterance);
+  }
+
   dispose(): void {
     this.ambientRequested = false;
     if (this.ambientTimer) clearTimeout(this.ambientTimer);
     this.ambientTimer = null;
     for (const source of this.ambientSources) source.stop();
     this.ambientSources.clear();
+    if (this.activeSpeech) globalThis.speechSynthesis?.cancel();
+    this.activeSpeech = null;
     if (this.ctx) void this.ctx.close();
     this.ctx = null;
     this.sfxGain = null;
