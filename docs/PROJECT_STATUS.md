@@ -129,6 +129,9 @@ Commander achievements and Battle Reports are implemented:
 5. Base Foundations uses its tutorial completion as a reportable victory, so its authoritative
    exploration/economy telemetry and earned decorations appear in the Operation Complete dialog
    even though the mission has no conventional `MatchState`.
+6. The Operations Map shows decoration provenance for the selected operation. Global commander
+   unlocks remain available to Battle Reports, while unplayed operations no longer mirror medals
+   earned elsewhere.
 
 ### Support units
 
@@ -210,7 +213,7 @@ Medic interactions would add disproportionate complexity to the current tactical
 All test files live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
 only file locations and relative imports. The current full baseline is 54 test files and
-287 passing tests.
+289 passing tests.
 
 ### Campaign production
 
