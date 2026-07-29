@@ -146,6 +146,17 @@ instead of translating the sprite. Fire briefly moves the weapon backward from a
 vertical ready stance; the runtime effect layer remains responsible for muzzle flash and
 projectiles.
 
+## The Engineer and Medic scenes
+
+Engineer and Medic reuse the Rifleman's camera, skeleton proportions and grounded eight-pose walk,
+but not its weapon semantics. The Engineer carries a compact powered cutter and tool roll; it has
+only `idle` and `move` because the simulation exposes no authoritative engineering-work state. The
+Medic adds a four-frame `heal` loop around the field injector, selected only while
+`healingTarget` is present.
+
+This is a useful production rule: author a distinctive silhouette freely, but never add an action
+animation that implies gameplay the engine does not perform.
+
 ## The Scout scene
 
 The Scout keeps the tank's positive-X facing and camera. `Scout - Iron Pass` rotates through the
@@ -187,6 +198,17 @@ The source sheets use eight 320-pixel columns. The final row may contain transpa
 `sourceColumns` in the manifest makes that layout explicit so the compiler can reject accidental
 missing frames without rejecting intentional padding.
 
+## The defense scenes
+
+The Turret is exported as two registered sheets. `turret_base.png` contains construction,
+commissioning and idle frames. `turret_head.png` contains 16 idle facings and two recoil frames per
+facing. Keeping the base and head separate avoids duplicating static pixels and lets authoritative
+target facing rotate only the weapon assembly.
+
+Concrete Walls use one frame family for every four-bit north/east/south/west connection mask.
+Each mask has four cumulative construction stages and one completed frame. This keeps adjacent
+segments visually continuous while preserving the navigation grid as the source of truth.
+
 ## Production build
 
 From the repository root:
@@ -217,6 +239,20 @@ blender --background --python scripts/blender/render-infantry.py -- \
   --frames-dir "$frames_dir"
 node scripts/blender/compose-infantry.mjs \
   "$frames_dir" assets-src/units/infantry/rifleman.png
+pnpm assets:build
+```
+
+For Engineer or Medic, provide the role to both scripts:
+
+```sh
+role="engineer" # or medic
+frames_dir="$(mktemp -d /tmp/iron-doctrine-infantry-frames.XXXXXX)"
+blender --background --python scripts/blender/render-infantry.py -- \
+  --role "$role" \
+  --blend "assets-src/units/infantry/$role.blend" \
+  --frames-dir "$frames_dir"
+node scripts/blender/compose-infantry.mjs \
+  "$role" "$frames_dir" "assets-src/units/infantry/$role.png"
 pnpm assets:build
 ```
 
@@ -253,6 +289,18 @@ blender --background --python scripts/blender/render-base-structures.py -- \
   --frames-dir "$frames_dir"
 node scripts/blender/compose-base-structures.mjs \
   "$frames_dir" assets-src/structures/base
+pnpm assets:build
+```
+
+For the Turret and connected Concrete Walls:
+
+```sh
+frames_dir="$(mktemp -d /tmp/iron-doctrine-defense-frames.XXXXXX)"
+blender --background --python scripts/blender/render-defenses.py -- \
+  --assets-dir assets-src/structures/defenses \
+  --frames-dir "$frames_dir"
+node scripts/blender/compose-defenses.mjs \
+  "$frames_dir" assets-src/structures/defenses
 pnpm assets:build
 ```
 

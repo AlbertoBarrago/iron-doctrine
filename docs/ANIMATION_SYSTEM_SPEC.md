@@ -25,13 +25,14 @@ Use immutable snapshots for persistent state:
 Use sequenced `PresentationEvent` records for discrete events that may occur between published
 snapshots:
 
-- unit produced and exit started;
-- weapon fired, entity hit and entity destroyed;
-- ore gathered, deposited and depleted;
-- building completed.
+- weapon fired;
+- entity damaged or removed;
+- ore deposited.
 
-Each event has a monotonic ID, simulation tick, kind, position and typed payload. The renderer
-deduplicates by event ID. Events are presentation inputs, not mutable simulation components.
+Each event has a monotonic sequence, simulation tick, kind, position and typed payload. The
+renderer deduplicates by sequence. Events are presentation inputs, not mutable simulation
+components. Unit production, building completion, ore depletion and combat-vs-recycle removal
+still require explicit engine-side event causes before they can be represented without inference.
 
 ## Presentation clock
 
@@ -82,8 +83,8 @@ death → spawn → hit → action → move → damaged idle → idle
 
 ## Resources and effects
 
-- Resource snapshots expose original and remaining quantity for four depletion levels.
-- Ore collapse and disappearance are presentation one-shots.
+- Resource snapshots expose original and remaining quantity for continuous depletion.
+- Fragment count, fragment scale and ground scarring derive from the authoritative ratio.
 - Damage smoke uses at most one persistent emitter per entity.
 - Spawn, completion, hit and debris effects use bounded pools.
 - Pool exhaustion drops decorative particles before tactical feedback.
@@ -95,6 +96,7 @@ Production assets are separated into logical atlases:
 - `vehicles`
 - `infantry`
 - `structures`
+- `defenses`
 - `world` when resource and environmental sprite families are introduced
 
 Every atlas has an explicit maximum width and height. No generated texture may exceed 8192 pixels;

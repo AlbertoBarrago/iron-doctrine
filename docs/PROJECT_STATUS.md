@@ -18,7 +18,7 @@ First Contact is a playable vertical slice:
 - dispatch a fast, fragile scout buggy with extended vision ahead of the main force;
 - drive tanks through ore fields and over hostile infantry without vehicle deadlocks;
 - identify infantry roles and industrial structures through grounded silhouettes, materials and motion;
-- distinguish active engineers through a presentation-only tool-check animation;
+- distinguish Rifleman, Engineer and Medic through authored role-specific silhouettes;
 - fight through a deterministic, chunk-rendered Mediterranean environment on Iron Pass;
 - fight a paced deterministic AI with victory and defeat conditions;
 - restart a finished match or return cleanly to the main menu;
@@ -77,7 +77,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
   discoverable from the opening play area; realism remains subordinate to RTS readability and
   measurable frame-time budgets.
 - Infantry gait and recoil remain presentation-only and derive from immutable render snapshots.
-- Engineer tool motion remains presentation-only; the scout is an unarmed player reconnaissance unit.
+- Engineer locomotion remains presentation-only and never invents a work state; the scout is an
+  unarmed player reconnaissance unit.
 - Building operation and construction state drive ambient animation without entering the simulation.
 - Campaign victories prioritize returning to the campaign route; defeats prioritize retrying the mission.
 - Procedural unit silhouettes, ballistic combat cues and distinct weapon audio improve battlefield readability.
@@ -125,7 +126,7 @@ The production vehicle family now also includes the Harvester:
 - its 16 facings separate empty and loaded idle/travel states;
 - collection and deposit machinery animate through authoritative economy phases;
 - visible ore accumulation follows authoritative cargo amount instead of a cosmetic counter;
-- the source remains 192 pixels while 128-pixel runtime frames keep the atlas at `2012×7714`,
+- the source remains 192 pixels while 128-pixel runtime frames keep the atlas at `2008×5640`,
   below the 8192-pixel texture ceiling.
 
 The representative production base family is implemented:
@@ -144,21 +145,29 @@ The Iron Pass terrain realism pass is implemented:
 - ore fields disturb and stain the underlying soil without implying additional collision;
 - all variation remains seeded, static, chunked and presentation-only.
 
-The first production infantry slice is implemented:
+The production infantry family is implemented:
 
 - `assets-src/units/infantry/rifleman.blend` is the editable Rifleman source;
 - 16 authored facings share the accepted vehicle camera and runtime direction contract;
 - idle, eight-pose articulated movement and two-frame weapon recoil are generated from one model;
-- the renderer selects authored Rifleman frames while Engineer and Medic retain their procedural
-  fallback.
+- Engineer uses a powered cutter and tool-roll silhouette without a fabricated work state;
+- Medic healing uses four authored injector frames only while `healingTarget` is authoritative;
+- all three infantry roles retain stable ground contact across their eight-pose walk cycles.
+
+The production defense family is implemented:
+
+- the Turret uses a fixed authored base and a separate 16-facing head;
+- authoritative target facing drives the head while sequenced fire events preserve recoil;
+- Concrete Walls cover all 16 north/east/south/west connection masks;
+- construction is authored for both defense types and missing frames fall back procedurally;
+- the separate defense atlas contains 137 frames at `1808×5162`.
 
 Production-art refinement proceeds family by family in this order:
 
-1. perform final normal/minimum-zoom and mixed-faction browser acceptance;
-2. complete damage and destruction across the authored families;
-3. extend the Rifleman infantry foundation to Engineer and Medic;
-4. author the remaining turret, wall and resource presentation families;
-5. consume sequenced presentation events for effects that can occur between rendered snapshots.
+1. perform final normal/minimum-zoom and mixed-faction acceptance;
+2. distinguish combat destruction from recycle/demolish at the authoritative event source;
+3. decide whether the depleted ore presentation needs an authored Blender family after playtesting;
+4. profile atlas loading and the client bundle on release-target hardware.
 
 The current tank export covers idle, a restrained two-frame suspension cycle while moving and a
 two-frame barrel recoil triggered by authoritative weapon timing. The suspension isolates the upper
