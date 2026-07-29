@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from '../simulation.js';
-import { Position, Health, Attack, Movement, Projectile } from '../../domain/components/index.js';
+import {
+  Position,
+  Health,
+  Attack,
+  Facing,
+  Movement,
+  Projectile,
+} from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 import { NavGrid } from '../pathfinding/nav-grid.js';
@@ -62,6 +69,16 @@ describe('Combat', () => {
     for (let i = 0; i < 100; i++) sim.step();
     expect(sim.world.isAlive(friend)).toBe(true);
     expect(sim.world.get(friend, Health)!.hp).toBe(60);
+  });
+
+  it('faces an in-range target before firing', () => {
+    const sim = new Simulation({ seed: 1 });
+    const rifleman = spawn(sim, 'rifleman', 0, 0, 0);
+    spawn(sim, 'engineer', 1, -3, 0);
+
+    const facing = sim.world.get(rifleman, Facing)!.dir;
+    expect(facing.x).toBeLessThan(fp.FP.ZERO);
+    expect(facing.y).toBe(fp.FP.ZERO);
   });
 
   it('a tank fires travelling projectiles that damage the target', () => {

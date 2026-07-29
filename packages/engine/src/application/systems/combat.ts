@@ -17,6 +17,7 @@ import {
   Attack,
   Movement,
   Building,
+  Facing,
   Projectile,
   Selectable,
 } from '../../domain/components/index.js';
@@ -80,6 +81,10 @@ export function createCombatSystem(
         const inRange = v2.distSq(pos, targetPos) <= rangeSq;
 
         if (inRange) {
+          const aimDirection = v2.sub(targetPos, pos);
+          if (world.has(e, Facing) && v2.lenSq(aimDirection) > fp.FP.ZERO) {
+            world.add(e, Facing, { dir: v2.normalize(aimDirection) });
+          }
           if (attack.chase) {
             const move = world.get(e, Movement); // stop chasing once in range
             if (move) move.target = null;
