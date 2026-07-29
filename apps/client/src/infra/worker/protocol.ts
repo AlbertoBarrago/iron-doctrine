@@ -1,5 +1,13 @@
 /** Message protocol between the main thread and the simulation Web Worker. */
-import type { Command, Snapshot, AIPlayerConfig, FirstContactConfig } from '@iron/engine';
+import type {
+  AIPlayerConfig,
+  BlackDawnConfig,
+  Command,
+  FirstContactConfig,
+  IronPassConfig,
+  SiegeLineConfig,
+  Snapshot,
+} from '@iron/engine';
 import type { MapDef } from '@iron/shared';
 
 export interface InitConfig {
@@ -9,6 +17,9 @@ export interface InitConfig {
   startingTech?: Record<number, string[]>;
   matchPlayers?: number[];
   firstContact?: FirstContactConfig;
+  ironPass?: IronPassConfig;
+  siegeLine?: SiegeLineConfig;
+  blackDawn?: BlackDawnConfig;
   map?: MapDef;
 }
 

@@ -4,9 +4,10 @@
  * per tick. The main thread only renders — it never touches simulation state.
  */
 /// <reference lib="webworker" />
-import { fp, NavGrid, Simulation } from '@iron/engine';
+import type { Simulation } from '@iron/engine';
 import { SIM_DT_MS, MAX_CATCHUP_TICKS } from '@iron/shared';
 import type { ToWorker, FromWorker } from './infra/worker/protocol.js';
+import { createSimulationFromInit } from './infra/worker/createSimulation.js';
 
 let sim: Simulation | null = null;
 let running = false;
@@ -39,22 +40,7 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
   const msg = ev.data;
   switch (msg.t) {
     case 'init': {
-      const c = msg.config;
-      const grid = c.map
-        ? new NavGrid(c.map.width, c.map.height, fp.fromFloat(c.map.cellSize))
-        : undefined;
-      if (grid && c.map) {
-        for (const [x, y] of c.map.blocked) grid.setBlocked(x, y, true);
-      }
-      sim = new Simulation({
-        seed: c.seed,
-        ...(grid ? { grid } : {}),
-        ...(c.aiPlayers ? { aiPlayers: c.aiPlayers } : {}),
-        ...(c.startingCredits ? { startingCredits: c.startingCredits } : {}),
-        ...(c.startingTech ? { startingTech: c.startingTech } : {}),
-        ...(c.matchPlayers ? { matchPlayers: c.matchPlayers } : {}),
-        ...(c.firstContact ? { firstContact: c.firstContact } : {}),
-      });
+      sim = createSimulationFromInit(msg.config);
       post({ t: 'ready' });
       post({ t: 'snapshot', snapshot: sim.snapshot() });
       break;
