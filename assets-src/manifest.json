@@ -7,6 +7,54 @@
   },
   "assets": [
     {
+      "id": "building.construction-yard",
+      "source": "structures/base/construction_yard.png",
+      "frameWidth": 320,
+      "frameHeight": 320,
+      "directions": ["south"],
+      "states": {
+        "idle": 1,
+        "operational": 1
+      },
+      "runtime": true
+    },
+    {
+      "id": "building.power-plant",
+      "source": "structures/base/power_plant.png",
+      "frameWidth": 320,
+      "frameHeight": 320,
+      "directions": ["south"],
+      "states": {
+        "idle": 1,
+        "operational": 1
+      },
+      "runtime": true
+    },
+    {
+      "id": "building.barracks",
+      "source": "structures/base/barracks.png",
+      "frameWidth": 320,
+      "frameHeight": 320,
+      "directions": ["south"],
+      "states": {
+        "idle": 1,
+        "operational": 1
+      },
+      "runtime": true
+    },
+    {
+      "id": "building.factory",
+      "source": "structures/base/factory.png",
+      "frameWidth": 320,
+      "frameHeight": 320,
+      "directions": ["south"],
+      "states": {
+        "idle": 1,
+        "operational": 1
+      },
+      "runtime": true
+    },
+    {
       "id": "unit.rifleman",
       "source": "units/infantry/rifleman.png",
       "frameWidth": 128,
