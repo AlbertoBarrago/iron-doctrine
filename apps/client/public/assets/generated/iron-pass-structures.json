@@ -1,0 +1,88 @@
+{
+  "frames": {
+    "building.barracks.idle.south.0": {
+      "frame": { "x": 2, "y": 2, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.barracks.operational.south.0": {
+      "frame": { "x": 324, "y": 2, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.idle.south.0": {
+      "frame": { "x": 646, "y": 2, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.construction-yard.operational.south.0": {
+      "frame": { "x": 968, "y": 2, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.idle.south.0": {
+      "frame": { "x": 1290, "y": 2, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.factory.operational.south.0": {
+      "frame": { "x": 1612, "y": 2, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.idle.south.0": {
+      "frame": { "x": 2, "y": 324, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "building.power-plant.operational.south.0": {
+      "frame": { "x": 324, "y": 324, "w": 320, "h": 320 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 320, "h": 320 },
+      "sourceSize": { "w": 320, "h": 320 }
+    },
+    "technical.registration.idle.south.0": {
+      "frame": { "x": 646, "y": 324, "w": 64, "h": 64 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 64 },
+      "sourceSize": { "w": 64, "h": 64 }
+    }
+  },
+  "animations": {
+    "building.barracks.idle.south": ["building.barracks.idle.south.0"],
+    "building.barracks.operational.south": ["building.barracks.operational.south.0"],
+    "building.construction-yard.idle.south": ["building.construction-yard.idle.south.0"],
+    "building.construction-yard.operational.south": [
+      "building.construction-yard.operational.south.0"
+    ],
+    "building.factory.idle.south": ["building.factory.idle.south.0"],
+    "building.factory.operational.south": ["building.factory.operational.south.0"],
+    "building.power-plant.idle.south": ["building.power-plant.idle.south.0"],
+    "building.power-plant.operational.south": ["building.power-plant.operational.south.0"],
+    "technical.registration.idle.south": ["technical.registration.idle.south.0"]
+  },
+  "meta": {
+    "app": "iron-doctrine",
+    "version": "1",
+    "image": "iron-pass-structures.webp",
+    "format": "RGBA8888",
+    "size": { "w": 1934, "h": 646 },
+    "scale": "1"
+  }
+}

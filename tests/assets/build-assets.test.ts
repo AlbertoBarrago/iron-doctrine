@@ -3,6 +3,7 @@ import { describeFrames, packFrames, validateManifest } from '../../scripts/buil
 
 const asset = {
   id: 'unit.tank',
+  atlas: 'vehicles',
   source: 'units/tank.png',
   frameWidth: 64,
   frameHeight: 48,
@@ -11,31 +12,74 @@ const asset = {
   runtime: true,
 };
 
+const atlases = {
+  vehicles: { id: 'iron-pass-vehicles', maxWidth: 256, maxHeight: 8192, padding: 2 },
+};
+
 describe('production asset compiler', () => {
   it('normalizes and sorts a valid manifest', () => {
     const manifest = validateManifest({
       version: 1,
-      atlas: { id: 'iron-pass', maxWidth: 256, padding: 2 },
+      atlases,
       assets: [asset],
     });
     expect(manifest.assets[0]).toEqual(asset);
+    expect(manifest.atlases.vehicles).toEqual(atlases.vehicles);
   });
 
-  it('rejects duplicate ids and unsafe source paths', () => {
+  it('rejects duplicate asset ids and unsafe source paths', () => {
     expect(() =>
       validateManifest({
         version: 1,
-        atlas: { id: 'iron-pass', maxWidth: 256, padding: 2 },
+        atlases,
         assets: [asset, asset],
       }),
     ).toThrow('Duplicate asset id');
     expect(() =>
       validateManifest({
         version: 1,
-        atlas: { id: 'iron-pass', maxWidth: 256, padding: 2 },
+        atlases,
         assets: [{ ...asset, source: '../tank.png' }],
       }),
     ).toThrow('must stay inside assets-src');
+  });
+
+  it('validates atlas groups, references and GPU-safe height limits', () => {
+    expect(() =>
+      validateManifest({
+        version: 1,
+        atlases: {
+          vehicles: atlases.vehicles,
+          infantry: { ...atlases.vehicles },
+        },
+        assets: [asset],
+      }),
+    ).toThrow('Duplicate atlas id');
+    expect(() =>
+      validateManifest({
+        version: 1,
+        atlases,
+        assets: [{ ...asset, atlas: 'missing' }],
+      }),
+    ).toThrow('references unknown atlas');
+    expect(() =>
+      validateManifest({
+        version: 1,
+        atlases: {
+          vehicles: { ...atlases.vehicles, maxHeight: 8193 },
+        },
+        assets: [asset],
+      }),
+    ).toThrow('must not exceed 8192');
+    expect(() =>
+      validateManifest({
+        version: 1,
+        atlases: {
+          vehicles: { ...atlases.vehicles, maxWidth: 8193 },
+        },
+        assets: [asset],
+      }),
+    ).toThrow('must not exceed 8192');
   });
 
   it('maps state, direction and animation frames deterministically', () => {
@@ -55,7 +99,7 @@ describe('production asset compiler', () => {
   it('preserves declared state order so frame names match source-sheet order', () => {
     const manifest = validateManifest({
       version: 1,
-      atlas: { id: 'iron-pass', maxWidth: 256, padding: 2 },
+      atlases,
       assets: [{ ...asset, states: { idle: 1, move: 2, fire: 2 } }],
     });
 
@@ -73,5 +117,10 @@ describe('production asset compiler', () => {
       ),
     ).toBe(true);
     expect(first.width).toBeLessThanOrEqual(140);
+  });
+
+  it('rejects a group whose packed shelves exceed its configured height', () => {
+    const frames = describeFrames(asset, 192, 96);
+    expect(() => packFrames(frames, 140, 2, 100)).toThrow('exceeds configured max height 100');
   });
 });

@@ -1,13 +1,29 @@
 {
   "version": 1,
-  "atlas": {
-    "id": "iron-pass",
-    "maxWidth": 2048,
-    "padding": 2
+  "atlases": {
+    "vehicles": {
+      "id": "iron-pass-vehicles",
+      "maxWidth": 2048,
+      "maxHeight": 8192,
+      "padding": 2
+    },
+    "infantry": {
+      "id": "iron-pass-infantry",
+      "maxWidth": 2048,
+      "maxHeight": 8192,
+      "padding": 2
+    },
+    "structures": {
+      "id": "iron-pass-structures",
+      "maxWidth": 2048,
+      "maxHeight": 8192,
+      "padding": 2
+    }
   },
   "assets": [
     {
       "id": "building.construction-yard",
+      "atlas": "structures",
       "source": "structures/base/construction_yard.png",
       "frameWidth": 320,
       "frameHeight": 320,
@@ -20,6 +36,7 @@
     },
     {
       "id": "building.power-plant",
+      "atlas": "structures",
       "source": "structures/base/power_plant.png",
       "frameWidth": 320,
       "frameHeight": 320,
@@ -32,6 +49,7 @@
     },
     {
       "id": "building.barracks",
+      "atlas": "structures",
       "source": "structures/base/barracks.png",
       "frameWidth": 320,
       "frameHeight": 320,
@@ -44,6 +62,7 @@
     },
     {
       "id": "building.factory",
+      "atlas": "structures",
       "source": "structures/base/factory.png",
       "frameWidth": 320,
       "frameHeight": 320,
@@ -56,6 +75,7 @@
     },
     {
       "id": "unit.rifleman",
+      "atlas": "infantry",
       "source": "units/infantry/rifleman.png",
       "frameWidth": 128,
       "frameHeight": 128,
@@ -86,6 +106,7 @@
     },
     {
       "id": "unit.tank",
+      "atlas": "vehicles",
       "source": "vehicles/tank/tank.png",
       "frameWidth": 192,
       "frameHeight": 192,
@@ -116,6 +137,7 @@
     },
     {
       "id": "unit.scout",
+      "atlas": "vehicles",
       "source": "vehicles/scout/scout.png",
       "frameWidth": 192,
       "frameHeight": 192,
@@ -145,6 +167,7 @@
     },
     {
       "id": "unit.harvester",
+      "atlas": "vehicles",
       "source": "vehicles/harvester/harvester.png",
       "frameWidth": 128,
       "frameHeight": 128,
@@ -178,6 +201,7 @@
     },
     {
       "id": "technical.registration",
+      "atlas": "structures",
       "source": "technical/registration-mark.svg",
       "frameWidth": 64,
       "frameHeight": 64,

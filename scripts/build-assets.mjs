@@ -11,14 +11,39 @@ const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, '..');
 export function validateManifest(value) {
   if (!value || typeof value !== 'object') throw new Error('Asset manifest must be an object');
   if (value.version !== 1) throw new Error(`Unsupported asset manifest version: ${value.version}`);
-  if (!value.atlas || typeof value.atlas !== 'object') {
-    throw new Error('Asset manifest requires an atlas object');
+  if (!value.atlases || typeof value.atlases !== 'object' || Array.isArray(value.atlases)) {
+    throw new Error('Asset manifest requires an atlases object');
   }
-  const atlas = {
-    id: validId(value.atlas.id, 'atlas.id'),
-    maxWidth: positiveInteger(value.atlas.maxWidth, 'atlas.maxWidth'),
-    padding: nonNegativeInteger(value.atlas.padding, 'atlas.padding'),
-  };
+  const atlasEntries = Object.entries(value.atlases);
+  if (atlasEntries.length === 0) throw new Error('Asset manifest requires at least one atlas');
+  const atlasIds = new Set();
+  const atlases = Object.fromEntries(
+    atlasEntries
+      .map(([key, candidate]) => {
+        const field = `atlases.${key}`;
+        const atlasKey = validId(key, 'atlas key');
+        if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+          throw new Error(`${field} must be an object`);
+        }
+        const id = validId(candidate.id, `${field}.id`);
+        if (atlasIds.has(id)) throw new Error(`Duplicate atlas id: ${id}`);
+        atlasIds.add(id);
+        const maxWidth = positiveInteger(candidate.maxWidth, `${field}.maxWidth`);
+        const maxHeight = positiveInteger(candidate.maxHeight, `${field}.maxHeight`);
+        if (maxWidth > 8192) throw new Error(`${field}.maxWidth must not exceed 8192`);
+        if (maxHeight > 8192) throw new Error(`${field}.maxHeight must not exceed 8192`);
+        return [
+          atlasKey,
+          {
+            id,
+            maxWidth,
+            maxHeight,
+            padding: nonNegativeInteger(candidate.padding, `${field}.padding`),
+          },
+        ];
+      })
+      .sort(([left], [right]) => left.localeCompare(right)),
+  );
   if (!Array.isArray(value.assets) || value.assets.length === 0) {
     throw new Error('Asset manifest requires at least one asset');
   }
@@ -30,10 +55,15 @@ export function validateManifest(value) {
     const id = validId(candidate.id, `${field}.id`);
     if (ids.has(id)) throw new Error(`Duplicate asset id: ${id}`);
     ids.add(id);
+    const atlas = validId(candidate.atlas, `${field}.atlas`);
+    if (!Object.hasOwn(atlases, atlas)) {
+      throw new Error(`${field}.atlas references unknown atlas: ${atlas}`);
+    }
     const directions = stringList(candidate.directions, `${field}.directions`);
     const states = validateStates(candidate.states, `${field}.states`);
     return {
       id,
+      atlas,
       source: safeSource(candidate.source, `${field}.source`),
       frameWidth: positiveInteger(candidate.frameWidth, `${field}.frameWidth`),
       frameHeight: positiveInteger(candidate.frameHeight, `${field}.frameHeight`),
@@ -45,7 +75,7 @@ export function validateManifest(value) {
 
   return {
     version: 1,
-    atlas,
+    atlases,
     assets: assets.sort((left, right) => left.id.localeCompare(right.id)),
   };
 }
@@ -89,7 +119,8 @@ export function describeFrames(asset, imageWidth, imageHeight) {
   return frames;
 }
 
-export function packFrames(frames, maxWidth, padding) {
+export function packFrames(frames, maxWidth, padding, maxHeight = 8192) {
+  if (frames.length === 0) throw new Error('Cannot pack an empty atlas');
   const widest = Math.max(...frames.map((frame) => frame.width));
   if (widest + padding * 2 > maxWidth) {
     throw new Error(`Frame width ${widest} exceeds atlas max width ${maxWidth}`);
@@ -112,10 +143,14 @@ export function packFrames(frames, maxWidth, padding) {
     usedWidth = Math.max(usedWidth, x);
   }
 
+  const height = Math.max(1, y + rowHeight + padding);
+  if (height > maxHeight) {
+    throw new Error(`Packed atlas height ${height} exceeds configured max height ${maxHeight}`);
+  }
   return {
     frames: packed,
     width: Math.max(1, Math.min(maxWidth, usedWidth)),
-    height: Math.max(1, y + rowHeight + padding),
+    height,
   };
 }
 
@@ -127,75 +162,99 @@ export async function buildAssets({ rootDir = DEFAULT_ROOT } = {}) {
   const manifest = validateManifest(JSON.parse(await readFile(manifestPath, 'utf8')));
 
   const sourceImages = new Map();
-  const describedFrames = [];
+  const describedFrames = new Map(Object.keys(manifest.atlases).map((key) => [key, []]));
   for (const asset of manifest.assets) {
     const sourcePath = path.join(sourceDir, asset.source);
     const source = sharp(sourcePath).ensureAlpha();
     const metadata = await source.metadata();
     if (!metadata.width || !metadata.height) throw new Error(`${asset.id}: unreadable dimensions`);
     sourceImages.set(asset.id, sourcePath);
-    describedFrames.push(...describeFrames(asset, metadata.width, metadata.height));
+    describedFrames
+      .get(asset.atlas)
+      .push(...describeFrames(asset, metadata.width, metadata.height));
   }
-
-  const packed = packFrames(describedFrames, manifest.atlas.maxWidth, manifest.atlas.padding);
-  const composites = await Promise.all(
-    packed.frames.map(async (frame) => ({
-      input: await sharp(sourceImages.get(frame.assetId))
-        .ensureAlpha()
-        .extract({
-          left: frame.sourceX,
-          top: frame.sourceY,
-          width: frame.width,
-          height: frame.height,
-        })
-        .png()
-        .toBuffer(),
-      left: frame.x,
-      top: frame.y,
-    })),
-  );
 
   await rm(publicDir, { recursive: true, force: true });
   await mkdir(publicDir, { recursive: true });
   await mkdir(path.dirname(generatedModule), { recursive: true });
 
-  const imageName = `${manifest.atlas.id}.webp`;
-  const jsonName = `${manifest.atlas.id}.json`;
   const prettierConfig = (await resolveConfig(path.join(rootDir, 'package.json'))) ?? {};
-  await sharp({
-    create: {
+  const builds = [];
+  for (const [atlasKey, atlas] of Object.entries(manifest.atlases)) {
+    const atlasAssets = manifest.assets.filter((asset) => asset.atlas === atlasKey);
+    const packed = packFrames(
+      describedFrames.get(atlasKey),
+      atlas.maxWidth,
+      atlas.padding,
+      atlas.maxHeight,
+    );
+    const composites = await Promise.all(
+      packed.frames.map(async (frame) => ({
+        input: await sharp(sourceImages.get(frame.assetId))
+          .ensureAlpha()
+          .extract({
+            left: frame.sourceX,
+            top: frame.sourceY,
+            width: frame.width,
+            height: frame.height,
+          })
+          .png()
+          .toBuffer(),
+        left: frame.x,
+        top: frame.y,
+      })),
+    );
+    const imageName = `${atlas.id}.webp`;
+    const jsonName = `${atlas.id}.json`;
+    await sharp({
+      create: {
+        width: packed.width,
+        height: packed.height,
+        channels: 4,
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      },
+    })
+      .composite(composites)
+      .webp({ lossless: true, effort: 6 })
+      .toFile(path.join(publicDir, imageName));
+    await writeFile(
+      path.join(publicDir, jsonName),
+      await format(JSON.stringify(pixiSpritesheet(atlasAssets, packed, imageName)), {
+        ...prettierConfig,
+        parser: 'json',
+      }),
+    );
+    builds.push({
+      atlasKey,
+      atlasId: atlas.id,
+      jsonName,
+      frameCount: packed.frames.length,
       width: packed.width,
       height: packed.height,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
-  })
-    .composite(composites)
-    .webp({ lossless: true, effort: 6 })
-    .toFile(path.join(publicDir, imageName));
+      packed,
+    });
+  }
 
-  const spritesheet = pixiSpritesheet(manifest, packed, imageName);
-  await writeFile(
-    path.join(publicDir, jsonName),
-    await format(JSON.stringify(spritesheet), { ...prettierConfig, parser: 'json' }),
-  );
   await writeFile(
     generatedModule,
-    await format(generatedTypescript(manifest, packed, jsonName), {
+    await format(generatedTypescript(manifest, builds), {
       ...prettierConfig,
       parser: 'typescript',
     }),
   );
 
   return {
-    atlasId: manifest.atlas.id,
-    frameCount: packed.frames.length,
-    width: packed.width,
-    height: packed.height,
+    atlases: builds.map(({ atlasId, frameCount, width, height }) => ({
+      atlasId,
+      frameCount,
+      width,
+      height,
+    })),
+    frameCount: builds.reduce((total, build) => total + build.frameCount, 0),
   };
 }
 
-function pixiSpritesheet(manifest, packed, imageName) {
+function pixiSpritesheet(assets, packed, imageName) {
   return {
     frames: Object.fromEntries(
       packed.frames.map((frame) => [
@@ -210,7 +269,7 @@ function pixiSpritesheet(manifest, packed, imageName) {
       ]),
     ),
     animations: Object.fromEntries(
-      manifest.assets.flatMap((asset) =>
+      assets.flatMap((asset) =>
         Object.keys(asset.states).flatMap((state) =>
           asset.directions.map((direction) => [
             `${asset.id}.${state}.${direction}`,
@@ -228,7 +287,7 @@ function pixiSpritesheet(manifest, packed, imageName) {
     ),
     meta: {
       app: 'iron-doctrine',
-      version: String(manifest.version),
+      version: '1',
       image: imageName,
       format: 'RGBA8888',
       size: { w: packed.width, h: packed.height },
@@ -237,11 +296,12 @@ function pixiSpritesheet(manifest, packed, imageName) {
   };
 }
 
-function generatedTypescript(manifest, packed, jsonName) {
+function generatedTypescript(manifest, builds) {
   const runtimeIds = manifest.assets.filter((asset) => asset.runtime).map((asset) => asset.id);
-  const frameIds = packed.frames.map((frame) => frame.id);
+  const atlasUrls = builds.map((build) => `/assets/generated/${build.jsonName}`);
+  const frameIds = builds.flatMap((build) => build.packed.frames.map((frame) => frame.id));
   return `/* This file is generated by scripts/build-assets.mjs. Do not edit. */
-export const PRODUCTION_ATLAS_URL = '/assets/generated/${jsonName}' as const;
+export const PRODUCTION_ATLAS_URLS = ${JSON.stringify(atlasUrls, null, 2)} as const;
 export const PRODUCTION_ASSET_IDS = ${JSON.stringify(runtimeIds, null, 2)} as const;
 export type ProductionAssetId = (typeof PRODUCTION_ASSET_IDS)[number];
 export const PRODUCTION_FRAME_IDS = ${JSON.stringify(frameIds, null, 2)} as const;
@@ -305,7 +365,9 @@ function nonNegativeInteger(value, field) {
 
 if (path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
   const result = await buildAssets();
-  process.stdout.write(
-    `[assets] ${result.atlasId}: ${result.frameCount} frames, ${result.width}x${result.height}\n`,
-  );
+  for (const atlas of result.atlases) {
+    process.stdout.write(
+      `[assets] ${atlas.atlasId}: ${atlas.frameCount} frames, ${atlas.width}x${atlas.height}\n`,
+    );
+  }
 }
