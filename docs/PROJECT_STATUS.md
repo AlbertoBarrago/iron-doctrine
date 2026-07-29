@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 299 automated tests;
+- 302 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -112,10 +112,18 @@ The first production vehicle slice is implemented:
 - a short crossfade and angular hysteresis keep steering transitions fluid without changing simulation;
 - a missing atlas falls back to the existing procedural painter instead of blocking a match.
 
+The first production infantry slice is implemented:
+
+- `assets-src/units/infantry/rifleman.blend` is the editable Rifleman source;
+- 16 authored facings share the accepted vehicle camera and runtime direction contract;
+- idle, two-frame grounded movement and two-frame weapon recoil are generated from one model;
+- the renderer selects authored Rifleman frames while Engineer and Medic retain their procedural
+  fallback.
+
 Production-art refinement proceeds family by family in this order:
 
-1. finish Battle Tank movement, firing and gameplay-scale acceptance;
-2. replace infantry roles with authored soldier sprites;
+1. complete Battle Tank damage, destruction and final gameplay-scale acceptance;
+2. extend the Rifleman infantry foundation to Engineer and Medic;
 3. replace the representative Iron Pass terrain;
 4. replace the representative industrial structures.
 

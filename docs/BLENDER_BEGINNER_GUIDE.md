@@ -1,8 +1,8 @@
 # Blender guide for Iron Doctrine
 
 This guide explains the small part of Blender needed to work on Iron Doctrine's production
-sprites. It is intentionally tied to the Battle Tank workflow rather than trying to cover Blender
-as a whole.
+sprites. It follows the Battle Tank and Rifleman workflows rather than trying to cover Blender as
+a whole.
 
 ## Mental model
 
@@ -23,11 +23,11 @@ deterministic WebP atlas + TypeScript frame IDs
 PixiJS renderer
 ```
 
-The authoritative source for the current tank geometry, materials, camera, lighting and poses is
-`scripts/blender/render-battle-tank.py`. Running it rebuilds `tank.blend` from scratch. Changes made
-only in the Blender UI are useful for experimentation, but they will be overwritten by the next
-scripted build. Copy successful experiments into the Python recipe before treating them as
-production work.
+The authoritative sources for geometry, materials, camera, lighting and poses are
+`scripts/blender/render-battle-tank.py` and `scripts/blender/render-infantry.py`. Running either
+script rebuilds its `.blend` file from scratch. Changes made only in the Blender UI are useful for
+experimentation, but they will be overwritten by the next scripted build. Copy successful
+experiments into the Python recipe before treating them as production work.
 
 ## Installation
 
@@ -42,6 +42,8 @@ Open the generated source file from the repository root:
 
 ```sh
 blender assets-src/vehicles/tank/tank.blend
+# or
+blender assets-src/units/infantry/rifleman.blend
 ```
 
 ## The interface you need
@@ -128,6 +130,17 @@ The pose values live in `pose_tank()`:
 That reset is important. Without it, state changes would accumulate transforms and later frames
 would depend on render order.
 
+## The Rifleman scene
+
+The Rifleman uses the same camera-axis and 16-direction contract as the tank. In the Outliner,
+`Rifleman - Iron Pass` is the direction root, `Upper body` carries restrained body motion and
+`Weapon rig` carries recoil. Boots and legs remain attached to the root.
+
+Its two movement frames alternate the feet along local X while the root stays fixed. This is the
+infantry version of keeping tank tracks grounded: locomotion changes the pose around a stable world
+contact instead of translating the sprite. Fire briefly moves the weapon backward; the runtime
+effect layer remains responsible for muzzle flash and projectiles.
+
 ## Production build
 
 From the repository root:
@@ -148,6 +161,18 @@ This workflow writes:
 - the 80-frame `tank.png` source sheet;
 - the generated WebP atlas and Pixi metadata;
 - compile-time-safe frame IDs in `assets.gen.ts`.
+
+For the Rifleman, use the parallel commands:
+
+```sh
+frames_dir="$(mktemp -d /tmp/iron-doctrine-rifleman-frames.XXXXXX)"
+blender --background --python scripts/blender/render-infantry.py -- \
+  --blend assets-src/units/infantry/rifleman.blend \
+  --frames-dir "$frames_dir"
+node scripts/blender/compose-infantry.mjs \
+  "$frames_dir" assets-src/units/infantry/rifleman.png
+pnpm assets:build
+```
 
 Blender may create `tank.blend1`, a local backup of the previous file. It is not a production asset
 and must not be committed.

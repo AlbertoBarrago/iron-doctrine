@@ -84,7 +84,8 @@ then with material, and finally under fog.
 
 ### Infantry
 
-- Infantry source art targets eight facings.
+- Infantry source art targets 16 facings so weapon and movement direction use the same runtime
+  contract as vehicles.
 - Rifleman, Engineer and Medic differ through silhouette and equipment before color:
   rifle length, tool pack and medical bag.
 - Required states: idle, move, action/fire, hit reaction and death.
@@ -168,6 +169,23 @@ The render script owns camera, lighting, palette and direction order. Editing th
 manually repainting individual direction frames is not, because it would break cross-frame
 consistency and reproducibility. The practical Blender introduction and asset acceptance workflow
 live in [BLENDER_BEGINNER_GUIDE.md](BLENDER_BEGINNER_GUIDE.md).
+
+### Rifleman authoring
+
+The first infantry source is `assets-src/units/infantry/rifleman.blend`. Its 16-facing idle,
+movement and fire source sheet uses the same deterministic offline workflow:
+
+```sh
+blender --background --python scripts/blender/render-infantry.py -- \
+  --blend assets-src/units/infantry/rifleman.blend \
+  --frames-dir /tmp/iron-doctrine-rifleman-frames
+node scripts/blender/compose-infantry.mjs \
+  /tmp/iron-doctrine-rifleman-frames assets-src/units/infantry/rifleman.png
+pnpm assets:build
+```
+
+The Rifleman establishes shared infantry scale, camera, palette and grounded gait. Engineer and
+Medic should reuse that foundation while remaining identifiable through equipment and silhouette.
 
 ### Authored movement rules
 
