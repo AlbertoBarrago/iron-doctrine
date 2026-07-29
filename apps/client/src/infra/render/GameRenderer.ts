@@ -24,6 +24,7 @@ import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { TerrainPainter } from './TerrainPainter.js';
+import { AmbientLifePainter } from './AmbientLifePainter.js';
 import { drawUnit } from './UnitPainter.js';
 import { drawBuilding, type WallConnections } from './BuildingPainter.js';
 import { drawResourceField } from './ResourcePainter.js';
@@ -72,6 +73,7 @@ export class GameRenderer {
   private readonly camera: Camera;
   private readonly world = new Container();
   private readonly terrain = new TerrainPainter();
+  private readonly ambientLife = new AmbientLifePainter();
   private readonly units = new Graphics();
   private readonly fogGfx = new Graphics();
   private readonly overlay = new Graphics();
@@ -170,7 +172,8 @@ export class GameRenderer {
     this.container.appendChild(this.app.canvas);
 
     this.terrain.build(config.map);
-    this.app.stage.addChild(this.terrain.container, this.world);
+    this.ambientLife.build(config.map);
+    this.app.stage.addChild(this.terrain.container, this.ambientLife.graphics, this.world);
     this.world.addChild(this.units);
     this.app.stage.addChild(this.particles.gfx, this.fogGfx, this.overlay);
 
@@ -458,6 +461,7 @@ export class GameRenderer {
     this.particles.update(dtMs / 1000);
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
+      this.ambientLife.draw(this.camera, (curr.tick + alpha) / SIM_HZ);
       const isNewTick = curr.tick !== this.lastUiTick;
       if (isNewTick) {
         this.detectCombatEffects(prev, curr);
