@@ -69,15 +69,24 @@ export function terrainSample(seed: number, x: number, y: number): TerrainSample
   };
 }
 
-/** Sparse presentation-only remains. Traversable cells always stay visually clear. */
+/**
+ * Sparse presentation-only remains. Open ground may receive only small debris;
+ * obstacle-like wreckage is reserved for blocked terrain.
+ */
 export function warRemainsSample(
   seed: number,
   x: number,
   y: number,
   blocked: boolean,
 ): WarRemains {
-  if (!blocked) return 'none';
-  const roll = terrainHash(seed ^ 0x6d2b79f5, x, y) & 127;
+  const hash = terrainHash(seed ^ 0x6d2b79f5, x, y);
+  if (!blocked) {
+    const openRoll = hash & 255;
+    if (openRoll < 2) return 'shells';
+    if (openRoll === 2) return 'bones';
+    return 'none';
+  }
+  const roll = hash & 127;
   if (roll < 4) return 'shells';
   if (roll < 6) return 'bones';
   if (roll < 8) return 'wreckage';
@@ -110,6 +119,10 @@ export class TerrainPainter {
     this.container.addChild(base);
 
     const blocked = new Set(map.blocked.map(([x, y]) => `${x}:${y}`));
+    const reserved = new Set([
+      ...map.resources.map((resource) => `${resource.x}:${resource.y}`),
+      ...map.spawns.map((spawn) => `${spawn.x}:${spawn.y}`),
+    ]);
     for (let chunkY = 0; chunkY < map.height; chunkY += CHUNK_CELLS) {
       for (let chunkX = 0; chunkX < map.width; chunkX += CHUNK_CELLS) {
         const ground = new Graphics();
@@ -162,6 +175,17 @@ export class TerrainPainter {
               palette,
               terrainSample(environment.seed, x, y),
             );
+            if (!reserved.has(`${x}:${y}`)) {
+              const detailSample = terrainSample(environment.seed ^ 0x51f15e, x, y);
+              drawWarRemains(
+                remains,
+                screenX + cellPixels / 2,
+                screenY + cellPixels / 2,
+                cellPixels * 0.72,
+                detailSample,
+                warRemainsSample(environment.seed, x, y, false),
+              );
+            }
           }
         }
 

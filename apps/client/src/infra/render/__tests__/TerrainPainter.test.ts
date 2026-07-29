@@ -19,18 +19,25 @@ describe('terrain presentation', () => {
     });
   });
 
-  it('keeps war remains deterministic, sparse and off traversable cells', () => {
-    expect(warRemainsSample(1979, 12, 37, false)).toBe('none');
+  it('keeps war remains deterministic, sparse and collision-readable', () => {
     expect(warRemainsSample(1979, 12, 37, true)).toBe(
       warRemainsSample(1979, 12, 37, true),
     );
 
-    const remains = Array.from({ length: 96 * 96 }, (_, index) =>
+    const blockedRemains = Array.from({ length: 96 * 96 }, (_, index) =>
       warRemainsSample(1979, index % 96, Math.floor(index / 96), true),
     );
-    const decorated = remains.filter((sample) => sample !== 'none');
-    expect(decorated.length).toBeGreaterThan(400);
-    expect(decorated.length).toBeLessThan(750);
-    expect(new Set(decorated)).toEqual(new Set(['shells', 'bones', 'wreckage']));
+    const blockedDecorated = blockedRemains.filter((sample) => sample !== 'none');
+    expect(blockedDecorated.length).toBeGreaterThan(400);
+    expect(blockedDecorated.length).toBeLessThan(750);
+    expect(new Set(blockedDecorated)).toEqual(new Set(['shells', 'bones', 'wreckage']));
+
+    const openRemains = Array.from({ length: 96 * 96 }, (_, index) =>
+      warRemainsSample(1979, index % 96, Math.floor(index / 96), false),
+    );
+    const openDecorated = openRemains.filter((sample) => sample !== 'none');
+    expect(openDecorated.length).toBeGreaterThan(70);
+    expect(openDecorated.length).toBeLessThan(150);
+    expect(new Set(openDecorated)).toEqual(new Set(['shells', 'bones']));
   });
 });
