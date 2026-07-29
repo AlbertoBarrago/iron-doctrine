@@ -377,6 +377,7 @@ export class GameRenderer {
   setPaused(paused: boolean): void {
     if (paused) this.bridge.pause();
     else this.bridge.start();
+    this.audio.setPaused(paused);
   }
 
   setAudioMuted(muted: boolean): void {

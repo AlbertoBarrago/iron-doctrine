@@ -20,6 +20,8 @@ export type SoundKind = (typeof SOUND_KINDS)[number];
 export const normalizeVolume = (volume: number): number => Math.min(1, Math.max(0, volume));
 export const busGain = (volume: number, muted: boolean, scale: number): number =>
   muted ? 0 : normalizeVolume(volume) * scale;
+export const musicGain = (volume: number, muted: boolean, paused: boolean): number =>
+  busGain(volume, muted || paused, 0.16);
 
 const AMBIENT_CHORDS = [
   [146.83, 174.61, 220], // D minor
@@ -43,6 +45,7 @@ export class AudioBus {
   private sfxVolume = 0.7;
   private musicMuted = false;
   private musicVolume = 0.35;
+  private paused = false;
   private ambientRequested = false;
   private ambientPhrase = 0;
   private ambientTimer: ReturnType<typeof setTimeout> | null = null;
@@ -81,6 +84,11 @@ export class AudioBus {
 
   setMusicVolume(volume: number): void {
     this.musicVolume = normalizeVolume(volume);
+    this.updateGains();
+  }
+
+  setPaused(paused: boolean): void {
+    this.paused = paused;
     this.updateGains();
   }
 
@@ -139,8 +147,9 @@ export class AudioBus {
 
   private updateGains(): void {
     if (this.sfxGain) this.sfxGain.gain.value = busGain(this.sfxVolume, this.sfxMuted, 0.35);
-    if (this.musicGain)
-      this.musicGain.gain.value = busGain(this.musicVolume, this.musicMuted, 0.16);
+    if (this.musicGain) {
+      this.musicGain.gain.value = musicGain(this.musicVolume, this.musicMuted, this.paused);
+    }
   }
 
   private startAmbientIfNeeded(ctx: AudioContext): void {
