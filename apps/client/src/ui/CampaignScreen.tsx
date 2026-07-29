@@ -15,6 +15,7 @@ import {
 } from '../game/commanderProfile.js';
 import {
   ACHIEVEMENTS,
+  achievementsForMission,
   achievementTooltip,
   type AchievementProgress,
 } from '../game/achievements.js';
@@ -45,6 +46,7 @@ export function CampaignScreen({
   });
   const selected = campaignMission(selectedId);
   const selectedStatus = campaignMissionStatus(selected, progress);
+  const selectedAchievements = achievementsForMission(achievements, selectedId);
   const route = CAMPAIGN_MISSIONS.map(
     (mission) => `${mission.mapPosition.x},${mission.mapPosition.y}`,
   ).join(' ');
@@ -109,17 +111,20 @@ export function CampaignScreen({
             <span className="is-active">Available</span>
             <span className="is-classified">Classified</span>
           </div>
-          <section className="commander-decorations" aria-label="Commander decorations">
-            <span>DECORATIONS</span>
+          <section
+            className="commander-decorations"
+            aria-label={`Operation ${selected.operation} decorations`}
+          >
+            <span>OP. {selected.operation} DECORATIONS</span>
             <div>
               {ACHIEVEMENTS.map((achievement) => {
-                const unlocked = achievements.unlocked.includes(achievement.id);
+                const unlocked = selectedAchievements.includes(achievement.id);
                 return (
                   <abbr
                     key={achievement.id}
                     className={unlocked ? 'is-unlocked' : ''}
-                    data-tooltip={achievementTooltip(achievement, unlocked)}
-                    aria-label={achievementTooltip(achievement, unlocked)}
+                    data-tooltip={achievementTooltip(achievement, unlocked, 'operation')}
+                    aria-label={achievementTooltip(achievement, unlocked, 'operation')}
                     tabIndex={0}
                   >
                     {achievement.title
