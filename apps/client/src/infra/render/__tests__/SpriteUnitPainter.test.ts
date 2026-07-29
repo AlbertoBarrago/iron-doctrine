@@ -79,6 +79,47 @@ describe('tank sprite direction', () => {
     expect(rifleman.tint).toBe(0xcd9186);
   });
 
+  it('keeps spawn and hit feedback grounded without replacing authored frames', () => {
+    const requested: string[] = [];
+    const painter = new SpriteUnitPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return Texture.EMPTY;
+      },
+    } as never);
+    const rifleman = {
+      id: 11,
+      unitType: 'rifleman',
+      angle: 0,
+      hp: 80,
+      maxHp: 100,
+    };
+
+    painter.draw(rifleman as never, 100, 80, 8, 1, {
+      moving: true,
+      spawned: true,
+      previousHp: 100,
+      tint: 0xcd9186,
+    });
+
+    const root = painter.container.children[0]!;
+    const sprite = root.children[0] as Sprite;
+    expect(root.alpha).toBe(0.35);
+    expect(root.scale.x).toBe(0.9);
+    expect(sprite.tint).toBe(0xffffff);
+    expect(requested.some((frame) => frame.startsWith('unit.rifleman.move.e.'))).toBe(true);
+
+    painter.draw(rifleman as never, 100, 80, 8, 1.2, {
+      moving: true,
+      spawned: false,
+      previousHp: 80,
+      tint: 0xcd9186,
+    });
+    expect(root.alpha).toBe(1);
+    expect(root.scale.x).toBe(1);
+    expect(sprite.tint).toBe(0xcd9186);
+  });
+
   it('selects authored movement and recoil frames from presentation state', () => {
     const requested: string[] = [];
     const painter = new SpriteUnitPainter({

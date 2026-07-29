@@ -2,6 +2,7 @@ import { Container, Sprite } from 'pixi.js';
 import type { EntitySnapshot } from '@iron/engine';
 import type { ProductionFrameId } from '../../assets/assets.gen.js';
 import type { ProductionAssetLoader } from '../assets/AssetLoader.js';
+import { UnitAnimationState } from './UnitAnimationState.js';
 
 const SPRITE_DIRECTIONS = [
   'e',
@@ -92,6 +93,8 @@ interface SpritePresentation {
   moving?: boolean;
   firing?: boolean;
   engaged?: boolean;
+  spawned?: boolean;
+  previousHp?: number;
   tint?: number;
 }
 
@@ -153,6 +156,7 @@ function frameForDirection(
 export class SpriteUnitPainter {
   readonly container = new Container();
   private readonly units = new Map<number, DirectionalSpriteState>();
+  private readonly animations = new UnitAnimationState();
 
   constructor(private readonly assets: ProductionAssetLoader) {}
 
@@ -196,6 +200,7 @@ export class SpriteUnitPainter {
       this.units.set(entity.id, state);
       this.container.addChild(root);
     }
+    const animation = this.animations.resolve(entity, animationTime, presentation);
 
     if (config.action && presentation.firing && !state.firing) {
       state.actionStartedAt = animationTime;
@@ -207,13 +212,13 @@ export class SpriteUnitPainter {
     if (unitType === 'harvester' && entity.cargo) {
       const cargoRatio =
         entity.cargo.capacity > 0 ? entity.cargo.amount / entity.cargo.capacity : 0;
-      if (entity.cargo.phase === 'gathering') {
+      if (animation.phase === 'gather') {
         visualState = 'gather';
         step = Math.min(3, Math.floor(cargoRatio * 4));
-      } else if (entity.cargo.phase === 'depositing') {
+      } else if (animation.phase === 'deposit') {
         visualState = 'deposit';
         step = cargoRatio > 2 / 3 ? 0 : cargoRatio > 1 / 3 ? 1 : 2;
-      } else if (presentation.moving) {
+      } else if (animation.phase === 'move') {
         visualState = entity.cargo.amount > 0 ? 'move-loaded' : 'move';
         step =
           Math.floor((animationTime + entity.id * 0.031) / config.movementFrameSeconds) %
@@ -231,10 +236,10 @@ export class SpriteUnitPainter {
       }
     }
     if (visualState === 'idle' && unitType !== 'harvester') {
-      if (config.engagedFrame && presentation.engaged) {
+      if (config.engagedFrame && animation.phase === 'attack') {
         visualState = config.engagedFrame.state;
         step = config.engagedFrame.step;
-      } else if (presentation.moving) {
+      } else if (animation.phase === 'move') {
         visualState = 'move';
         step =
           Math.floor((animationTime + entity.id * 0.031) / config.movementFrameSeconds) %
@@ -278,7 +283,11 @@ export class SpriteUnitPainter {
     }
     state.root.position.set(x, y);
     state.root.visible = true;
-    const tint = presentation.tint ?? 0xffffff;
+    const spawnProgress = animation.spawnProgress;
+    const spawnEase = spawnProgress === null ? 1 : 1 - (1 - spawnProgress) ** 2;
+    state.root.alpha = 0.35 + spawnEase * 0.65;
+    state.root.scale.set(0.9 + spawnEase * 0.1);
+    const tint = animation.hitProgress === null ? (presentation.tint ?? 0xffffff) : 0xffffff;
     state.current.tint = tint;
     if (state.outgoing) state.outgoing.tint = tint;
     const spriteSize = radius * config.sizeScale;
@@ -300,6 +309,7 @@ export class SpriteUnitPainter {
       if (state.root.visible) continue;
       state.root.destroy({ children: true });
       this.units.delete(id);
+      this.animations.delete(id);
     }
   }
 
