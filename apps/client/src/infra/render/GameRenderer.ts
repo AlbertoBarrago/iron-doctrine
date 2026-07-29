@@ -1501,7 +1501,6 @@ export class GameRenderer {
     if (now - this.lastRadioAt < 650) return;
     this.lastRadioAt = now;
     const line = radioAcknowledgement(order, unitType, this.radioSequence++);
-    this.audio.speak(line);
     if (!this.radioCaption) return;
     const speaker = profileFor(unitType)?.label ?? 'Unit';
     this.radioCaption.textContent = `${speaker.toUpperCase()} · ${line}`;

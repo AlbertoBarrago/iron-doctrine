@@ -199,11 +199,11 @@ Command acknowledgements are implemented as presentation-only feedback:
 
 1. Move, attack, gather and stop orders select concise Italian responses, including
    role-specific lines for infantry, Engineers, Medics, Scouts, Harvesters and Tanks.
-2. Browsers with Web Speech support prefer an Italian voice; a readable military subtitle is
-   always shown as the deterministic visual fallback.
+2. Command feedback currently uses readable military subtitles only. Browser-generated speech is
+   disabled because it sounds excessively mechanical; voice playback will return with original
+   recorded performances.
 3. A short rate limit prevents multi-unit orders and rapid clicks from becoming noisy.
-4. Speech follows the existing effects mute and volume controls and never enters simulation,
-   save or replay state.
+4. Radio feedback never enters simulation, save or replay state.
 
 Individual morale and condition states are intentionally deferred. Their behavioral, UI and
 Medic interactions would add disproportionate complexity to the current tactical loop.
