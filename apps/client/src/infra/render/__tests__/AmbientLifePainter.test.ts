@@ -35,4 +35,20 @@ describe('ambient battlefield life', () => {
       }
     }
   });
+
+  it('keeps the chicken opt-in, deterministic and bounded to one run and explosion', () => {
+    const options = { chickenOrigin: { x: -24, y: 18 } };
+    expect(ambientLifeFrame(404, 11.9, 96, 96, options).chicken).toBeNull();
+    expect(ambientLifeFrame(404, 12, 96, 96).chicken).toBeNull();
+
+    const run = ambientLifeFrame(404, 17, 96, 96, options).chicken;
+    expect(run).toMatchObject({ state: 'running' });
+    expect(Math.abs(run!.x)).toBeLessThanOrEqual(46);
+    expect(Math.abs(run!.y)).toBeLessThanOrEqual(46);
+
+    expect(ambientLifeFrame(404, 22.5, 96, 96, options).chicken).toMatchObject({
+      state: 'exploding',
+    });
+    expect(ambientLifeFrame(404, 23.25, 96, 96, options).chicken).toBeNull();
+  });
 });

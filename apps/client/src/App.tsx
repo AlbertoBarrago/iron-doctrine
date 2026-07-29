@@ -18,8 +18,10 @@ import {
 } from './game/skirmishConfig.js';
 import { completeCampaignMission, loadCampaignProgress } from './game/campaignProgress.js';
 import {
+  consumeChickenEasterEgg,
   createCommanderProfile,
   loadCommanderProfiles,
+  recordCompletedMatch,
   selectCommanderProfile,
 } from './game/commanderProfile.js';
 import type { CampaignMissionId } from './game/campaign.js';
@@ -58,6 +60,7 @@ export function App(): JSX.Element {
   const [, setCampaignRevision] = useState(0);
   const [skirmish, setSkirmish] = useState<SkirmishConfig | null>(null);
   const [gameReturnMode, setGameReturnMode] = useState<'menu' | 'campaign'>('menu');
+  const [chickenEasterEgg, setChickenEasterEgg] = useState(false);
   const maps = loadMapCatalog(localStorage);
   const commanders = loadCommanderProfiles(localStorage);
   const activeCallsign = commanders.activeCallsign;
@@ -66,6 +69,9 @@ export function App(): JSX.Element {
       <StartScreen
         maps={maps}
         onStart={(config) => {
+          setChickenEasterEgg(
+            activeCallsign ? consumeChickenEasterEgg(localStorage, activeCallsign) : false,
+          );
           setGameReturnMode('menu');
           setSkirmish(config);
           setMode('game');
@@ -99,6 +105,9 @@ export function App(): JSX.Element {
         onBack={() => setMode('menu')}
         onDeploy={(mission) => {
           if (!mission.runtimeMission || !maps[0]) return;
+          setChickenEasterEgg(
+            activeCallsign ? consumeChickenEasterEgg(localStorage, activeCallsign) : false,
+          );
           setGameReturnMode('campaign');
           setSkirmish({
             ...DEFAULT_SKIRMISH_SETTINGS,
@@ -126,12 +135,14 @@ export function App(): JSX.Element {
   return (
     <Game
       config={skirmish}
+      chickenEasterEgg={chickenEasterEgg}
       onMissionComplete={(mission) => {
         if (activeCallsign) completeCampaignMission(localStorage, activeCallsign, mission);
         setCampaignRevision((current) => current + 1);
       }}
       onBattleReport={(metrics, victory) => {
         if (!activeCallsign) return [];
+        recordCompletedMatch(localStorage, activeCallsign);
         return evaluateAchievements(
           localStorage,
           activeCallsign,
@@ -155,11 +166,13 @@ export function App(): JSX.Element {
  */
 function Game({
   config,
+  chickenEasterEgg,
   onMissionComplete,
   onBattleReport,
   onExit,
 }: {
   config: SkirmishConfig;
+  chickenEasterEgg: boolean;
   onMissionComplete(mission: CampaignMissionId): void;
   onBattleReport(metrics: MatchMetricsSnapshot, victory: boolean): AchievementId[];
   onExit(): void;
@@ -194,18 +207,22 @@ function Game({
     if (!el || rendererRef.current) return;
     const renderer = new GameRenderer(el);
     rendererRef.current = renderer;
-    void renderer.start(config).then(() => {
-      renderer.attachMinimap(minimapCanvasRef.current);
-      renderer.setAudioMuted(initialAudio.current.muted);
-      renderer.setAudioVolume(initialAudio.current.volume);
-      renderer.setMusicMuted(initialAudio.current.musicMuted);
-      renderer.setMusicVolume(initialAudio.current.musicVolume);
-    });
+    void renderer
+      .start(config, 123456789, {
+        chickenEasterEgg: chickenEasterEgg && session === 0,
+      })
+      .then(() => {
+        renderer.attachMinimap(minimapCanvasRef.current);
+        renderer.setAudioMuted(initialAudio.current.muted);
+        renderer.setAudioVolume(initialAudio.current.volume);
+        renderer.setMusicMuted(initialAudio.current.musicMuted);
+        renderer.setMusicVolume(initialAudio.current.musicVolume);
+      });
     return () => {
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [config, session]);
+  }, [chickenEasterEgg, config, session]);
 
   useEffect(() => {
     void session;
@@ -232,16 +249,10 @@ function Game({
 
   useEffect(() => {
     if (battleReportGenerated.current) return;
-    const victory = battleReportVictory(
-      config.mission,
-      tutorialStep === 'complete',
-      match,
-    );
+    const victory = battleReportVictory(config.mission, tutorialStep === 'complete', match);
     if (victory === null) return;
     const metrics =
-      config.mission === 'base_foundations'
-        ? rendererRef.current?.getMatchMetrics()
-        : matchMetrics;
+      config.mission === 'base_foundations' ? rendererRef.current?.getMatchMetrics() : matchMetrics;
     if (!metrics) return;
     battleReportGenerated.current = true;
     const newlyUnlocked = onBattleReport(metrics, victory);

@@ -119,7 +119,11 @@ export class GameRenderer {
     this.particles = new ParticleSystem(this.camera);
   }
 
-  async start(config: SkirmishConfig, seed = 123456789): Promise<void> {
+  async start(
+    config: SkirmishConfig,
+    seed = 123456789,
+    presentation: { chickenEasterEgg?: boolean } = {},
+  ): Promise<void> {
     useGameStore.getState().resetTutorial();
     useGameStore.getState().setControlGroups([]);
     useGameStore.getState().setMatchMetrics(null);
@@ -172,7 +176,7 @@ export class GameRenderer {
     this.container.appendChild(this.app.canvas);
 
     this.terrain.build(config.map);
-    this.ambientLife.build(config.map);
+    this.ambientLife.build(config.map, presentation.chickenEasterEgg);
     this.app.stage.addChild(this.terrain.container, this.ambientLife.graphics, this.world);
     this.world.addChild(this.units);
     this.app.stage.addChild(this.particles.gfx, this.fogGfx, this.overlay);
