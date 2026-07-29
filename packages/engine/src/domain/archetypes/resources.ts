@@ -11,7 +11,7 @@ import type { EntityId } from '@iron/shared';
 export function spawnResourceNode(world: World, at: Vec2, amount: number): EntityId {
   const e = world.createEntity();
   world.add(e, Position, { x: at.x, y: at.y });
-  world.add(e, ResourceNode, { amount });
+  world.add(e, ResourceNode, { amount, maxAmount: amount });
   world.add(e, Selectable, { radius: fp.fromFloat(0.8) });
   return e;
 }

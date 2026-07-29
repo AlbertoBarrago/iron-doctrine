@@ -143,9 +143,11 @@ export const Healing = defineComponent<HealingData>('Healing', () => ({
 /** A harvestable resource deposit (ore field) with a finite amount remaining. */
 export interface ResourceNodeData {
   amount: number;
+  maxAmount: number;
 }
 export const ResourceNode = defineComponent<ResourceNodeData>('ResourceNode', () => ({
   amount: 1000,
+  maxAmount: 1000,
 }));
 
 /** Cargo hold for a harvester. */

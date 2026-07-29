@@ -7,6 +7,14 @@ interface OreFragment {
   color: number;
 }
 
+export interface ResourceFieldPresentation {
+  richness: number;
+  fragmentCount: number;
+  fragmentScale: number;
+  scarAlpha: number;
+  harvestPulse: number;
+}
+
 const ORE_FRAGMENTS: readonly OreFragment[] = [
   { x: -0.82, y: 0.12, radius: 0.42, color: 0x9b6c22 },
   { x: -0.46, y: -0.48, radius: 0.5, color: 0xc08b2d },
@@ -17,13 +25,45 @@ const ORE_FRAGMENTS: readonly OreFragment[] = [
   { x: -0.42, y: 0.7, radius: 0.28, color: 0x80541c },
 ];
 
+const FRAGMENT_SURVIVAL_ORDER = [2, 1, 3, 0, 4, 5, 6] as const;
+
+export function resourceFieldPresentation(
+  amount: number,
+  maxAmount: number,
+  entityId: number,
+  presentationTime: number,
+  harvesting: boolean,
+): ResourceFieldPresentation {
+  const richness = Math.max(0, Math.min(1, maxAmount > 0 ? amount / maxAmount : 0));
+  const phase = presentationTime * Math.PI * 2.4 + entityId * 1.618;
+  const activity = harvesting ? (Math.sin(phase) + 1) * 0.5 : 0;
+  return {
+    richness,
+    fragmentCount: Math.ceil(richness * ORE_FRAGMENTS.length),
+    fragmentScale: 0.72 + richness * 0.28,
+    scarAlpha: 0.28 + (1 - richness) * 0.34,
+    harvestPulse: activity,
+  };
+}
+
 export function drawResourceField(
   graphics: Graphics,
   sx: number,
   sy: number,
   radius: number,
   entityId: number,
+  amount: number,
+  maxAmount: number,
+  presentationTime: number,
+  harvesting: boolean,
 ): void {
+  const presentation = resourceFieldPresentation(
+    amount,
+    maxAmount,
+    entityId,
+    presentationTime,
+    harvesting,
+  );
   const mirrored = entityId % 2 === 0 ? 1 : -1;
   const rotation = ((entityId * 0.61803398875) % 1) * Math.PI;
   const cos = Math.cos(rotation);
@@ -31,9 +71,13 @@ export function drawResourceField(
 
   graphics
     .ellipse(sx + radius * 0.08, sy + radius * 0.18, radius * 1.18, radius * 0.7)
-    .fill({ color: 0x342b1c, alpha: 0.32 })
+    .fill({ color: 0x342b1c, alpha: presentation.scarAlpha })
     .ellipse(sx - radius * 0.05, sy + radius * 0.04, radius * 1.02, radius * 0.56)
-    .stroke({ width: Math.max(1, radius * 0.08), color: 0x79603a, alpha: 0.46 });
+    .stroke({
+      width: Math.max(1, radius * 0.08),
+      color: 0x79603a,
+      alpha: 0.38 + (1 - presentation.richness) * 0.22,
+    });
 
   for (const offset of [-0.44, -0.12, 0.22, 0.5]) {
     graphics
@@ -48,10 +92,19 @@ export function drawResourceField(
       .stroke({ width: Math.max(1, radius * 0.035), color: 0x3e3424, alpha: 0.42 });
   }
 
-  for (const fragment of ORE_FRAGMENTS) {
+  const visibleFragments = new Set(
+    FRAGMENT_SURVIVAL_ORDER.slice(0, presentation.fragmentCount),
+  );
+  for (const [fragmentIndex, fragment] of ORE_FRAGMENTS.entries()) {
+    if (!visibleFragments.has(fragmentIndex)) continue;
     const x = sx + fragment.x * radius * 0.72 * mirrored;
     const y = sy + fragment.y * radius * 0.62;
-    const fragmentRadius = fragment.radius * radius * 0.38;
+    const fragmentRadius =
+      fragment.radius *
+      radius *
+      0.38 *
+      presentation.fragmentScale *
+      (1 + presentation.harvestPulse * 0.025);
 
     graphics
       .ellipse(
@@ -83,16 +136,34 @@ export function drawResourceField(
       .stroke({
         width: Math.max(1, radius * 0.09),
         color: 0xf1c85c,
-        alpha: 0.72,
+        alpha: 0.58 + presentation.richness * 0.14 + presentation.harvestPulse * 0.2,
       });
   }
 
-  for (const offset of [-0.76, 0.72]) {
+  for (const offset of [-0.76, 0.72].slice(0, Math.ceil(presentation.richness * 2))) {
     const chipX = sx + radius * offset;
     const chipY = sy + radius * (offset > 0 ? 0.52 : -0.44);
     graphics
       .circle(chipX, chipY, radius * 0.09)
       .fill({ color: offset > 0 ? 0xa87924 : 0x76501d })
       .stroke({ width: 1, color: 0x4a3218, alpha: 0.8 });
+  }
+
+  if (harvesting) {
+    const dustPhase = presentationTime * 2.1 + entityId;
+    for (let index = 0; index < 3; index++) {
+      const angle = dustPhase + index * ((Math.PI * 2) / 3);
+      const distance = radius * (0.72 + presentation.harvestPulse * 0.08);
+      graphics
+        .circle(
+          sx + Math.cos(angle) * distance,
+          sy + Math.sin(angle) * distance * 0.55,
+          Math.max(1, radius * (0.025 + index * 0.006)),
+        )
+        .fill({
+          color: 0xc8a66a,
+          alpha: 0.1 + presentation.harvestPulse * 0.16,
+        });
+    }
   }
 }

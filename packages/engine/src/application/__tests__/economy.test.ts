@@ -209,7 +209,7 @@ describe('Harvester economy loop', () => {
 
     const resource = sim.snapshot().entities.find((entity) => entity.kind === 'resource');
 
-    expect(resource?.resource).toEqual({ amount: 750 });
+    expect(resource?.resource).toEqual({ amount: 750, maxAmount: 750 });
   });
 
   it('aggregates power from buildings', () => {

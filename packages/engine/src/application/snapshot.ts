@@ -66,6 +66,7 @@ export interface EntitySnapshot {
 
 export interface ResourceSnapshot {
   amount: number;
+  maxAmount: number;
 }
 
 export interface CargoSnapshot {
@@ -180,7 +181,12 @@ export function buildSnapshot(
             phase: harvest.phase,
           },
         }),
-      ...(resource && { resource: { amount: resource.amount } }),
+      ...(resource && {
+        resource: {
+          amount: resource.amount,
+          maxAmount: resource.maxAmount ?? resource.amount,
+        },
+      }),
     });
   }
   return { tick, entities, players };
