@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 269 automated tests;
+- 273 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -167,12 +167,17 @@ silhouettes remain reserved for blocked terrain so collision stays immediately r
 
 ### Cosmetic easter eggs
 
-1. Add a rare, harmless chicken that runs erratically across the battlefield and ends in an
-   exaggerated presentation-only explosion.
-2. Trigger it after a deterministic number of completed matches stored in the commander profile,
-   rather than through per-frame randomness.
-3. Keep it outside authoritative combat: no damage, collision, commands, economy effects or
-   replay divergence. Further easter-egg ideas can extend the same presentation contract.
+The first commander-profile easter egg is implemented:
+
+1. Each commander records completed matches independently and earns one chicken event every
+   seven completed matches.
+2. The pending event is consumed when the next battle starts, so restarts and React remounts
+   cannot replay the same earned event.
+3. The chicken runs erratically near the opening area and ends in an exaggerated explosion.
+4. The entire event remains presentation-only: it has no damage, collision, commands, economy
+   effects, save-state coupling or replay divergence.
+
+Further easter-egg ideas can extend the same profile-scoped presentation contract.
 
 ### Infantry condition and morale
 
