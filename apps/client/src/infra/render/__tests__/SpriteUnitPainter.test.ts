@@ -57,7 +57,7 @@ describe('tank sprite direction', () => {
     const tank = painter.container.children[0]?.children[0] as Sprite;
     const rifleman = painter.container.children[1]?.children[0] as Sprite;
     expect(tank.anchor.y).toBe(0.5);
-    expect(rifleman.anchor.y).toBe(0.79);
+    expect(rifleman.anchor.y).toBe(0.71);
   });
 
   it('selects authored movement and recoil frames from presentation state', () => {
