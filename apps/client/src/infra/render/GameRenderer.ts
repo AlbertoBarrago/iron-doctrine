@@ -30,6 +30,7 @@ import { drawBuilding, type WallConnections } from './BuildingPainter.js';
 import { drawResourceField } from './ResourcePainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
+import { radioAcknowledgement, type RadioOrder } from '../audio/radioAcknowledgements.js';
 import {
   commandFeedbackFrame,
   type CommandFeedback,
@@ -103,6 +104,10 @@ export class GameRenderer {
   private terrainTooltip: HTMLDivElement | null = null;
   private terrainTooltipTitle: HTMLElement | null = null;
   private terrainTooltipCopy: HTMLElement | null = null;
+  private radioCaption: HTMLDivElement | null = null;
+  private radioCaptionTimer: ReturnType<typeof setTimeout> | null = null;
+  private radioSequence = 0;
+  private lastRadioAt = Number.NEGATIVE_INFINITY;
 
   private minimapCtx: CanvasRenderingContext2D | null = null;
   private minimapFrame = 0;
@@ -178,6 +183,7 @@ export class GameRenderer {
     this.ready = true;
     this.container.appendChild(this.app.canvas);
     this.createTerrainTooltip();
+    this.createRadioCaption();
 
     this.terrain.build(config.map);
     this.ambientLife.build(config.map, presentation.chickenEasterEgg);
@@ -443,6 +449,7 @@ export class GameRenderer {
       type: 'stop',
       entities: units.map((entity) => asEntityId(entity.id)),
     });
+    this.acknowledge('stop', units[0]?.unitType);
   }
 
   gatherWithSelectedHarvesters(target?: EntitySnapshot): void {
@@ -453,6 +460,7 @@ export class GameRenderer {
       entities: harvesters.map((entity) => asEntityId(entity.id)),
       ...(target ? { target: asEntityId(target.id) } : {}),
     });
+    this.acknowledge('gather', harvesters[0]?.unitType);
     useGameStore.getState().advanceTutorial('gather');
   }
 
@@ -1387,6 +1395,7 @@ export class GameRenderer {
           entities: attackers.map((entity) => asEntityId(entity.id)),
           target: asEntityId(enemy.id),
         });
+        this.acknowledge('attack', attackers[0]?.unitType);
       }
       return;
     }
@@ -1397,6 +1406,7 @@ export class GameRenderer {
       entities: units.map((entity) => asEntityId(entity.id)),
       target: { x: fp.fromFloat(target.x), y: fp.fromFloat(target.y) },
     });
+    this.acknowledge('move', units[0]?.unitType);
   }
 
   private selectedUnits(snapshot = this.bridge.latest.curr): EntitySnapshot[] {
@@ -1474,6 +1484,33 @@ export class GameRenderer {
     this.terrainTooltip = tooltip;
     this.terrainTooltipTitle = title;
     this.terrainTooltipCopy = copy;
+  }
+
+  private createRadioCaption(): void {
+    const caption = document.createElement('div');
+    caption.className = 'radio-caption';
+    caption.setAttribute('role', 'status');
+    caption.setAttribute('aria-live', 'polite');
+    caption.hidden = true;
+    this.container.appendChild(caption);
+    this.radioCaption = caption;
+  }
+
+  private acknowledge(order: RadioOrder, unitType: string | undefined): void {
+    const now = performance.now();
+    if (now - this.lastRadioAt < 650) return;
+    this.lastRadioAt = now;
+    const line = radioAcknowledgement(order, unitType, this.radioSequence++);
+    this.audio.speak(line);
+    if (!this.radioCaption) return;
+    const speaker = profileFor(unitType)?.label ?? 'Unit';
+    this.radioCaption.textContent = `${speaker.toUpperCase()} · ${line}`;
+    this.radioCaption.hidden = false;
+    if (this.radioCaptionTimer) clearTimeout(this.radioCaptionTimer);
+    this.radioCaptionTimer = setTimeout(() => {
+      if (this.radioCaption) this.radioCaption.hidden = true;
+      this.radioCaptionTimer = null;
+    }, 1_800);
   }
 
   private updateTerrainTooltip(sx: number, sy: number): void {
@@ -1670,6 +1707,10 @@ export class GameRenderer {
     this.disposed = true;
     this.bridge.dispose();
     this.audio.dispose();
+    if (this.radioCaptionTimer) clearTimeout(this.radioCaptionTimer);
+    this.radioCaptionTimer = null;
+    this.radioCaption?.remove();
+    this.radioCaption = null;
     this.terrainTooltip?.remove();
     this.terrainTooltip = null;
     // Only destroy Pixi if init finished; otherwise start() will tear it down itself.
