@@ -55,6 +55,11 @@ import {
 } from '../../state/gameStore.js';
 import { ControlGroups } from './controlGroups.js';
 import {
+  drawPersistentDamage,
+  persistentDamagePresentation,
+  shouldEmitDamageSmoke,
+} from './DamagePresentation.js';
+import {
   firstContactLayout,
   ironPassLayout,
   MISSION_RULES,
@@ -514,6 +519,7 @@ export class GameRenderer {
       if (isNewTick) {
         this.detectHarvestEffects(curr);
         this.detectAmbientEffects(curr);
+        this.detectPersistentDamageEffects(curr);
       }
       this.drawEntities(prev, curr, alpha);
       this.drawScenarioSite(curr);
@@ -586,6 +592,20 @@ export class GameRenderer {
     }
   }
 
+  private detectPersistentDamageEffects(curr: Snapshot): void {
+    for (const entity of curr.entities) {
+      if (entity.kind !== 'unit' && entity.kind !== 'building') continue;
+      if (entity.construction) continue;
+      const presentation = persistentDamagePresentation(entity.hp, entity.maxHp);
+      if (!shouldEmitDamageSmoke(presentation.stage, entity.id, curr.tick)) continue;
+      this.particles.smoke(
+        entity.x + entity.radius * 0.22,
+        entity.y - entity.radius * 0.2,
+        Math.max(0.45, entity.radius * presentation.smokeScale),
+      );
+    }
+  }
+
   private consumePresentationEvents(): void {
     for (const { event } of this.bridge.drainPresentationEvents()) {
       switch (event.kind) {
@@ -610,8 +630,10 @@ export class GameRenderer {
           break;
         }
         case 'entityDamaged':
+          this.particles.impact(event.x, event.y, 0.55);
           break;
         case 'entityDestroyed':
+          // The event records authoritative removal, not whether combat or recycling caused it.
           if (event.entityKind === 'projectile') {
             this.particles.impact(event.x, event.y, 1.2);
             this.audio.play('impact');
@@ -687,6 +709,7 @@ export class GameRenderer {
 
       const r = e.radius * this.camera.scale;
       const color = OWNER_COLORS[e.owner % OWNER_COLORS.length]!;
+      const persistentDamage = persistentDamagePresentation(e.hp, e.maxHp);
 
       if (e.kind === 'building') {
         const s = r;
@@ -731,6 +754,7 @@ export class GameRenderer {
           this.units.rect(sx - s, sy - s - 8, s * 2, 3).fill({ color: 0x000000, alpha: 0.5 });
           this.units.rect(sx - s, sy - s - 8, s * 2 * ratio, 3).fill({ color: 0xa4a957 });
         }
+        if (!e.construction) drawPersistentDamage(this.units, sx, sy, s, persistentDamage);
         continue;
       }
 
@@ -774,6 +798,7 @@ export class GameRenderer {
           .rect(sx - r, sy - r - 8, w * ratio, 3)
           .fill({ color: ratio > 0.5 ? 0x92994c : ratio > 0.25 ? 0xd1a63a : 0xa9412e });
       }
+      drawPersistentDamage(this.units, sx, sy, r, persistentDamage);
       if (e.cargo) this.drawCargoBar(e, sx, sy, r);
     }
   }
