@@ -154,6 +154,11 @@ send only armed units into combat while unarmed support stops. Automated regress
 1. Show invalid, blocked and unavailable orders clearly.
 2. Tune ore income, construction time and hostile pressure through complete matches.
 
+### Navigation polish
+
+1. Provide an explicit Back action from the Setup panel and Map Forge so both surfaces return to
+   their previous screen without forcing a reload or abandoning the current session implicitly.
+
 ### Campaign persistence
 
 Commander persistence is implemented:
