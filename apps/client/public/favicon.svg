@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Iron Doctrine</title>
+  <path d="M13 3h38l10 10v38L51 61H13L3 51V13z" fill="#111713" stroke="#d2a53d" stroke-width="4" />
+  <path d="M16 15h32v9H37v16h11v9H16v-9h11V24H16z" fill="#d2a53d" />
+  <path d="m32 25 7 7-7 7-7-7z" fill="#9f382d" />
+</svg>
