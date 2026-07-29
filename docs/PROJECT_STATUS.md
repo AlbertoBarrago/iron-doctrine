@@ -94,6 +94,15 @@ direction and acceptance gate. The current procedural painters remain temporary 
 are replaced family by family through an original sprite/atlas pipeline rather than receiving
 further isolated cosmetic detail.
 
+The production asset foundation is implemented:
+
+- `assets-src/manifest.json` declares exact frame grids, states and directions;
+- `scripts/build-assets.mjs` validates sources and creates a deterministic lossless WebP atlas,
+  Pixi spritesheet metadata and compile-time frame identifiers;
+- Vite runs the compiler before development and production builds;
+- `ProductionAssetLoader` exposes typed textures while procedural painters remain available;
+- a non-runtime technical registration mark exercises the pipeline without appearing in game.
+
 Public 1v1 work resumes after this visual gate and the core game loop are accepted as a coherent
 game.
 
@@ -228,7 +237,7 @@ Medic interactions would add disproportionate complexity to the current tactical
 All test files live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
 only file locations and relative imports. The current full baseline is 54 test files and
-290 passing tests.
+294 passing tests.
 
 ### Campaign production
 

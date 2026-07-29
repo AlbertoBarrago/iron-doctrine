@@ -735,6 +735,7 @@ Iterative, one subsystem at a time — each: implement → test → document →
 | 35  | Military Diorama visual pass  | shared procedural material ramps, directional edge lighting, layered vehicle and structure surfaces, volumetric pooled smoke and dust                                                                      | ✅ done (browser playtest pending)                     |
 | 36  | Battlefield Cohesion          | seeded macro-ground variation, soil-integrated rocks and ore fields, grounded war remains and ambient-life shadows without simulation coupling                                                              | ✅ done (browser playtest pending)                     |
 | 37  | Iron Pass production art gate | approved art bible and gameplay concept, then original sprite/atlas migration for one representative base, roster, environment and firefight before new gameplay or public 1v1 scope                           | in progress (direction approved)                      |
+| 38  | Production asset pipeline     | validated source manifest, deterministic lossless WebP atlas and Pixi metadata compiler, typed generated frame IDs and runtime loader with procedural fallback                                               | ✅ done                                                |
 
 ---
 
