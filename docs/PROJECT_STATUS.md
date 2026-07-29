@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 283 automated tests;
+- 297 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -102,6 +102,18 @@ The production asset foundation is implemented:
 - Vite runs the compiler before development and production builds;
 - `ProductionAssetLoader` exposes typed textures while procedural painters remain available;
 - a non-runtime technical registration mark exercises the pipeline without appearing in game.
+
+The first production vehicle slice is implemented:
+
+- `assets-src/vehicles/tank/tank.blend` is the editable, original Battle Tank source;
+- Blender renders one consistent low-poly model into 16 deterministic gameplay facings;
+- the asset compiler packs those frames into the typed production atlas;
+- the Pixi renderer selects the closest authored facing without rotating or blurring the hull;
+- a missing atlas falls back to the existing procedural painter instead of blocking a match.
+
+The current tank export covers the idle presentation only. Movement, recoil, damage and destruction
+remain part of the production-art gate and must be authored from the same source model. Runtime
+browser review at normal/minimum zoom remains required before the tank slice is accepted as final.
 
 Public 1v1 work resumes after this visual gate and the core game loop are accepted as a coherent
 game.

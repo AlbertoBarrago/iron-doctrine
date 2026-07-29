@@ -120,7 +120,7 @@ function drawScout(
     .fill({ color: MATERIAL.amber });
 }
 
-function drawGroundShadow(
+export function drawGroundShadow(
   graphics: Graphics,
   sx: number,
   sy: number,
@@ -178,18 +178,10 @@ function drawTank(
 
   const glacis = localToScreen(sx, sy, angle, radius * 0.52, 0);
   graphics
-    .moveTo(
-      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, -radius * 0.18, -radius * 0.42)),
-    )
-    .lineTo(
-      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, radius * 0.32, -radius * 0.22)),
-    )
-    .lineTo(
-      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, radius * 0.32, radius * 0.22)),
-    )
-    .lineTo(
-      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, -radius * 0.18, radius * 0.42)),
-    )
+    .moveTo(...pointTuple(localToScreen(glacis.x, glacis.y, angle, -radius * 0.18, -radius * 0.42)))
+    .lineTo(...pointTuple(localToScreen(glacis.x, glacis.y, angle, radius * 0.32, -radius * 0.22)))
+    .lineTo(...pointTuple(localToScreen(glacis.x, glacis.y, angle, radius * 0.32, radius * 0.22)))
+    .lineTo(...pointTuple(localToScreen(glacis.x, glacis.y, angle, -radius * 0.18, radius * 0.42)))
     .stroke({ width: Math.max(1, radius * 0.08), color: ramp.edge, alpha: 0.75 });
 
   const turret = localToScreen(sx, sy, angle, radius * 0.08, 0);
@@ -390,11 +382,7 @@ function drawInfantry(
   const chestLight = localToScreen(bodyX, bodyY, angle, radius * 0.18, -radius * 0.22);
   graphics
     .moveTo(chestLight.x, chestLight.y)
-    .lineTo(
-      ...pointTuple(
-        localToScreen(bodyX, bodyY, angle, radius * 0.36, -radius * 0.08),
-      ),
-    )
+    .lineTo(...pointTuple(localToScreen(bodyX, bodyY, angle, radius * 0.36, -radius * 0.08)))
     .stroke({ width: Math.max(1, radius * 0.08), color: ramp.edge, alpha: 0.65 });
   const helmetBandStart = localToScreen(bodyX, bodyY, angle, radius * 0.6, -radius * 0.27);
   const helmetBandEnd = localToScreen(bodyX, bodyY, angle, radius * 0.6, radius * 0.27);

@@ -25,7 +25,9 @@ import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { TerrainPainter } from './TerrainPainter.js';
 import { AmbientLifePainter } from './AmbientLifePainter.js';
-import { drawUnit } from './UnitPainter.js';
+import { drawGroundShadow, drawUnit } from './UnitPainter.js';
+import { SpriteUnitPainter } from './SpriteUnitPainter.js';
+import { ProductionAssetLoader } from '../assets/AssetLoader.js';
 import { drawBuilding, type WallConnections } from './BuildingPainter.js';
 import { drawResourceField } from './ResourcePainter.js';
 import { SimBridge } from '../worker/SimBridge.js';
@@ -75,7 +77,10 @@ export class GameRenderer {
   private readonly world = new Container();
   private readonly terrain = new TerrainPainter();
   private readonly ambientLife = new AmbientLifePainter();
+  private readonly unitUnderlay = new Graphics();
   private readonly units = new Graphics();
+  private readonly productionAssets = new ProductionAssetLoader();
+  private readonly spriteUnits = new SpriteUnitPainter(this.productionAssets);
   private readonly fogGfx = new Graphics();
   private readonly overlay = new Graphics();
   private readonly bridge = new SimBridge();
@@ -184,11 +189,17 @@ export class GameRenderer {
     this.container.appendChild(this.app.canvas);
     this.createTerrainTooltip();
     this.createRadioCaption();
+    try {
+      await this.productionAssets.load();
+    } catch (error) {
+      console.warn('Production unit atlas unavailable; using procedural fallback.', error);
+    }
+    if (this.disposed) return;
 
     this.terrain.build(config.map);
     this.ambientLife.build(config.map, presentation.chickenEasterEgg);
     this.app.stage.addChild(this.terrain.container, this.ambientLife.graphics, this.world);
-    this.world.addChild(this.units);
+    this.world.addChild(this.unitUnderlay, this.spriteUnits.container, this.units);
     this.app.stage.addChild(this.particles.gfx, this.fogGfx, this.overlay);
 
     const aiCredits =
@@ -473,7 +484,9 @@ export class GameRenderer {
 
     const { prev, curr, at } = this.bridge.latest;
     this.terrain.updateView(this.camera, this.app.renderer.width, this.app.renderer.height);
+    this.unitUnderlay.clear();
     this.units.clear();
+    this.spriteUnits.beginFrame();
     this.particles.update(dtMs / 1000);
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
@@ -521,6 +534,7 @@ export class GameRenderer {
       this.drawFog(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);
     }
+    this.spriteUnits.endFrame();
     this.particles.draw();
     this.drawSelectionBox();
   }
@@ -688,12 +702,18 @@ export class GameRenderer {
         continue;
       }
 
-      drawUnit(this.units, e, sx, sy, r, color, {
-        animationTime,
-        moving: Math.hypot(e.x - p.x, e.y - p.y) > 0.001,
-        firing:
-          e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0),
-      });
+      const spriteRendered = this.spriteUnits.draw(e, sx, sy, r);
+      if (spriteRendered) {
+        drawGroundShadow(this.unitUnderlay, sx, sy, r, 1);
+      } else {
+        drawUnit(this.units, e, sx, sy, r, color, {
+          animationTime,
+          moving: Math.hypot(e.x - p.x, e.y - p.y) > 0.001,
+          firing:
+            e.weaponCooldownLeft !== undefined &&
+            e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0),
+        });
+      }
       if (this.selected.has(e.id)) {
         this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
       }
