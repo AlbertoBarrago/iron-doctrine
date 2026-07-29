@@ -25,7 +25,7 @@ import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
 import { TerrainPainter } from './TerrainPainter.js';
 import { AmbientLifePainter } from './AmbientLifePainter.js';
-import { drawGroundShadow, drawUnit } from './UnitPainter.js';
+import { drawGroundSelection, drawGroundShadow, drawUnit } from './UnitPainter.js';
 import { SpriteUnitPainter } from './SpriteUnitPainter.js';
 import { ProductionAssetLoader } from '../assets/AssetLoader.js';
 import { drawBuilding, type WallConnections } from './BuildingPainter.js';
@@ -707,6 +707,7 @@ export class GameRenderer {
       const firing =
         e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0);
       const engaged = e.unitType === 'rifleman' && e.attackTarget !== undefined && !moving;
+      if (this.selected.has(e.id)) drawGroundSelection(this.unitUnderlay, sx, sy, r);
       const spriteRendered = this.spriteUnits.draw(e, sx, sy, r, animationTime, {
         moving,
         firing,
@@ -721,10 +722,6 @@ export class GameRenderer {
           firing,
         });
       }
-      if (this.selected.has(e.id)) {
-        this.units.circle(sx, sy, r + 4).stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
-      }
-
       // Health bar.
       if (e.maxHp > 0) {
         const w = r * 2;

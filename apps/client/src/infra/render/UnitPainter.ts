@@ -19,6 +19,39 @@ export interface UnitPresentation {
   firing: boolean;
 }
 
+export function drawGroundSelection(
+  graphics: Graphics,
+  sx: number,
+  sy: number,
+  radius: number,
+): void {
+  const halfWidth = radius + 5;
+  const halfHeight = Math.max(5, halfWidth * 0.48);
+  const corners = [
+    { x: sx, y: sy - halfHeight },
+    { x: sx + halfWidth, y: sy },
+    { x: sx, y: sy + halfHeight },
+    { x: sx - halfWidth, y: sy },
+  ];
+  const armLength = 0.34;
+
+  corners.forEach((corner, index) => {
+    const previous = corners[(index + corners.length - 1) % corners.length]!;
+    const next = corners[(index + 1) % corners.length]!;
+    graphics
+      .moveTo(
+        corner.x + (previous.x - corner.x) * armLength,
+        corner.y + (previous.y - corner.y) * armLength,
+      )
+      .lineTo(corner.x, corner.y)
+      .lineTo(
+        corner.x + (next.x - corner.x) * armLength,
+        corner.y + (next.y - corner.y) * armLength,
+      );
+  });
+  graphics.stroke({ width: 2, color: 0xf0c85a, alpha: 0.95 });
+}
+
 export function drawUnit(
   graphics: Graphics,
   entity: EntitySnapshot,
