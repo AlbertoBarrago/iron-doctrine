@@ -152,8 +152,8 @@ All shipped imagery, animation and audio must remain original and reviewable.
 
 ### Battle Tank authoring
 
-The first vehicle source is `assets-src/vehicles/tank/tank.blend`. Rebuild its checked-in 16-facing
-source sheet with Blender 5.2 LTS:
+The first vehicle source is `assets-src/vehicles/tank/tank.blend`. Rebuild its checked-in,
+16-facing idle, movement and recoil source sheet with Blender 5.2 LTS:
 
 ```sh
 blender --background --python scripts/blender/render-battle-tank.py -- \
@@ -166,7 +166,8 @@ pnpm assets:build
 
 The render script owns camera, lighting, palette and direction order. Editing the model is expected;
 manually repainting individual direction frames is not, because it would break cross-frame
-consistency and reproducibility.
+consistency and reproducibility. The practical Blender introduction and asset acceptance workflow
+live in [BLENDER_BEGINNER_GUIDE.md](BLENDER_BEGINNER_GUIDE.md).
 
 ## Iron Pass acceptance gate
 

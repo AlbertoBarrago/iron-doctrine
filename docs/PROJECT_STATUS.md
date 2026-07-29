@@ -112,10 +112,12 @@ The first production vehicle slice is implemented:
 - a short crossfade and angular hysteresis keep steering transitions fluid without changing simulation;
 - a missing atlas falls back to the existing procedural painter instead of blocking a match.
 
-The current tank export covers the idle presentation only. Movement, recoil, damage and destruction
-remain part of the production-art gate and must be authored from the same source model. The first
-runtime playtest accepted the model and overall visual direction; normal/minimum zoom and performance
-review remain required before the tank slice is accepted as final.
+The current tank export covers idle, a restrained two-frame suspension cycle while moving and a
+two-frame barrel recoil triggered by authoritative weapon timing. All 80 poses are authored from the
+same source model and selected only at the presentation boundary. Damage and destruction remain part
+of the production-art gate. The first runtime playtest accepted the model and overall visual
+direction; normal/minimum zoom and performance review remain required before the tank slice is
+accepted as final.
 
 Public 1v1 work resumes after this visual gate and the core game loop are accepted as a coherent
 game.
