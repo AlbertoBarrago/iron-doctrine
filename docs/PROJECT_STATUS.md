@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 276 automated tests;
+- 283 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -139,7 +139,7 @@ achievements, and fast treatment actions for the later morale/condition system.
 
 ### Battlefield life and cover
 
-The first static environment slice is implemented:
+The battlefield environment and cover slice is implemented:
 
 1. Authored blocked cells render as irregular, layered rock formations while retaining their
    existing authoritative navigation behavior.
@@ -149,7 +149,13 @@ The first static environment slice is implemented:
 3. Every built-in battlefield has an explicit biome seed and authored formations, including the
    shared Operation 01/02 and default skirmish map. At least one formation enters the opening
    vision area, while connectivity regressions verify that both spawns remain joined.
-4. No map-format migration or simulation state was introduced.
+4. No map-format migration or mutable prop entities were introduced.
+5. Authored blocked cells form an immutable cover mask, persisted independently from dynamic
+   navigation blockers. Riflemen, Engineers and Medics take 25% less hitscan and projectile
+   damage only when a rock cell lies directly between them and the threat; vehicles and
+   buildings receive no reduction.
+6. Hovering a rock formation, shell casings, battlefield remains or aircraft wreckage shows
+   its name and gameplay meaning. Cosmetic debris remains outside simulation state.
 
 Presentation-only ambient life is now implemented:
 
@@ -157,9 +163,6 @@ Presentation-only ambient life is now implemented:
 - rare military flyovers cross the map as restrained silhouettes and ground shadows;
 - both schedules derive from map environment metadata and simulation time, pause with the match,
   render behind units and below fog, and never enter collision, input, save or replay state.
-
-Still pending: combat cover bonuses, authored interactive props and the rare commander-profile
-easter eggs.
 
 The latest environment readability pass scatters shell casings and bones across traversable ground
 at low deterministic density, excluding resource and spawn cells. Large wrecks and obstacle-like
