@@ -52,6 +52,16 @@ describe('production asset compiler', () => {
     expect(() => describeFrames(asset, 128, 96)).toThrow('expected 6 source frames, found 4');
   });
 
+  it('preserves declared state order so frame names match source-sheet order', () => {
+    const manifest = validateManifest({
+      version: 1,
+      atlas: { id: 'iron-pass', maxWidth: 256, padding: 2 },
+      assets: [{ ...asset, states: { idle: 1, move: 2, fire: 2 } }],
+    });
+
+    expect(Object.keys(manifest.assets[0].states)).toEqual(['idle', 'move', 'fire']);
+  });
+
   it('packs frames in stable shelves within the configured width', () => {
     const frames = describeFrames(asset, 192, 96);
     const first = packFrames(frames, 140, 2);

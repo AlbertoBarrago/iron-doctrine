@@ -256,12 +256,10 @@ function validateStates(value, field) {
   const entries = Object.entries(value);
   if (entries.length === 0) throw new Error(`${field} requires at least one state`);
   return Object.fromEntries(
-    entries
-      .map(([id, count]) => [
-        validId(id, `${field}.${id}`),
-        positiveInteger(count, `${field}.${id}`),
-      ])
-      .sort(([left], [right]) => left.localeCompare(right)),
+    entries.map(([id, count]) => [
+      validId(id, `${field}.${id}`),
+      positiveInteger(count, `${field}.${id}`),
+    ]),
   );
 }
 
