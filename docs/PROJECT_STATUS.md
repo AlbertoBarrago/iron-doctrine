@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 311 automated tests;
+- 318 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -120,6 +120,28 @@ The second production vehicle slice is implemented:
 - owner tint preserves the authored olive, rubber, glass and metal value separation;
 - runtime frame selection remains presentation-only and retains the procedural fallback.
 
+The production vehicle family now also includes the Harvester:
+
+- its 16 facings separate empty and loaded idle/travel states;
+- collection and deposit machinery animate through authoritative economy phases;
+- visible ore accumulation follows authoritative cargo amount instead of a cosmetic counter;
+- the source remains 192 pixels while 128-pixel runtime frames keep the atlas at `2012×7714`,
+  below the 8192-pixel texture ceiling.
+
+The representative production base family is implemented:
+
+- Construction Yard, Power Plant, Barracks and Factory have editable Blender sources;
+- shared foundations, scale, camera and worn industrial materials keep the family coherent;
+- idle and operational frames expose function-specific machinery;
+- under-construction buildings retain the existing progress scaffold and procedural fallback.
+
+The Iron Pass terrain realism pass is implemented:
+
+- broad organic ground patches replace visible rectangular tile fills with less geometry;
+- contiguous blocked cells render as connected limestone masses with edges only where exposed;
+- ore fields disturb and stain the underlying soil without implying additional collision;
+- all variation remains seeded, static, chunked and presentation-only.
+
 The first production infantry slice is implemented:
 
 - `assets-src/units/infantry/rifleman.blend` is the editable Rifleman source;
@@ -130,11 +152,11 @@ The first production infantry slice is implemented:
 
 Production-art refinement proceeds family by family in this order:
 
-1. complete the Harvester vehicle source and cargo/action states;
-2. replace the representative base structures and their operational states;
-3. replace the representative Iron Pass terrain and structure-ground transitions;
-4. complete damage, destruction and final gameplay-scale acceptance across the authored families;
-5. extend the Rifleman infantry foundation to Engineer and Medic.
+1. perform final normal/minimum-zoom and mixed-faction browser acceptance;
+2. complete damage and destruction across the authored families;
+3. extend the Rifleman infantry foundation to Engineer and Medic;
+4. author the remaining turret, wall and resource presentation families;
+5. split the production atlas before additional frame families exceed the current texture budget.
 
 The current tank export covers idle, a restrained two-frame suspension cycle while moving and a
 two-frame barrel recoil triggered by authoritative weapon timing. The suspension isolates the upper

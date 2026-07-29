@@ -157,6 +157,23 @@ At runtime the Scout is unarmed, so its sheet contains one idle frame and four m
 direction. The pale bonnet panel is the controlled owner-tint surface; weathered olive, rubber,
 glass and exposed steel retain their own value ranges.
 
+## The Harvester scene
+
+`Harvester - Iron Pass` uses six wheels as the ground-contact assembly. The suspended cab and frame
+carry restrained movement, while the front collector and rear hopper animate independently.
+Separate empty/loaded travel states prevent the art from contradicting authoritative cargo.
+Gathering progressively fills the hopper; depositing opens the rear gate and tips the hopper.
+
+The Blender render remains 192 pixels for clean source geometry. The composer reduces each runtime
+tile to 128 pixels with a Mitchell filter. This is an atlas-budget decision, not a change to the
+editable model.
+
+## The base structure scenes
+
+The four representative base structures use a fixed, non-directional camera. Their foundations
+share one ground plane and scale reference. Idle and operational frames change only functional
+parts—crane, turbine fan, personnel door and factory bay—so silhouette remains stable.
+
 ## Production build
 
 From the repository root:
@@ -199,6 +216,30 @@ blender --background --python scripts/blender/render-scout.py -- \
   --frames-dir "$frames_dir"
 node scripts/blender/compose-scout.mjs \
   "$frames_dir" assets-src/vehicles/scout/scout.png
+pnpm assets:build
+```
+
+For the Harvester:
+
+```sh
+frames_dir="$(mktemp -d /tmp/iron-doctrine-harvester-frames.XXXXXX)"
+blender --background --python scripts/blender/render-harvester.py -- \
+  --blend assets-src/vehicles/harvester/harvester.blend \
+  --frames-dir "$frames_dir"
+node scripts/blender/compose-harvester.mjs \
+  "$frames_dir" assets-src/vehicles/harvester/harvester.png
+pnpm assets:build
+```
+
+For the base structures:
+
+```sh
+frames_dir="$(mktemp -d /tmp/iron-doctrine-base-frames.XXXXXX)"
+blender --background --python scripts/blender/render-base-structures.py -- \
+  --assets-dir assets-src/structures/base \
+  --frames-dir "$frames_dir"
+node scripts/blender/compose-base-structures.mjs \
+  "$frames_dir" assets-src/structures/base
 pnpm assets:build
 ```
 

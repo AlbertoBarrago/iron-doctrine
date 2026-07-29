@@ -209,6 +209,41 @@ suspension response. Wheel markers make rotation readable without exaggerating c
 The radio mast, exposed running gear and forward bonnet distinguish the unarmed reconnaissance
 role before owner tint is applied.
 
+### Harvester authoring
+
+The Harvester source is `assets-src/vehicles/harvester/harvester.blend`. Its 16 facings distinguish
+empty and loaded travel, progressive gathering and a three-pose tipped deposit:
+
+```sh
+blender --background --python scripts/blender/render-harvester.py -- \
+  --blend assets-src/vehicles/harvester/harvester.blend \
+  --frames-dir /tmp/iron-doctrine-harvester-frames
+node scripts/blender/compose-harvester.mjs \
+  /tmp/iron-doctrine-harvester-frames assets-src/vehicles/harvester/harvester.png
+pnpm assets:build
+```
+
+Blender retains 192-pixel authoring frames; the composer creates 128-pixel runtime tiles with a
+Mitchell filter to keep the 617-frame production atlas below the 8192-pixel texture limit without
+transparent-edge ringing. Cargo pose selection derives from authoritative amount and economy phase.
+
+### Base structure authoring
+
+Construction Yard, Power Plant, Barracks and Factory share one deterministic 320-pixel camera:
+
+```sh
+blender --background --python scripts/blender/render-base-structures.py -- \
+  --assets-dir assets-src/structures/base \
+  --frames-dir /tmp/iron-doctrine-base-frames
+node scripts/blender/compose-base-structures.mjs \
+  /tmp/iron-doctrine-base-frames assets-src/structures/base
+pnpm assets:build
+```
+
+Each structure has idle and operational frames. Construction uses the idle machinery pose plus the
+existing progress scaffold; completed buildings expose their local crane, fan, door or service-bay
+motion without adding simulation state.
+
 ### Authored movement rules
 
 Lessons from the first vehicle movement pass apply to every production sprite family:
