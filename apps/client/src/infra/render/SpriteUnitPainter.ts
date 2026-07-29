@@ -24,9 +24,17 @@ const SPRITE_DIRECTIONS = [
 ] as const;
 
 type SpriteDirection = (typeof SPRITE_DIRECTIONS)[number];
-type SpriteUnitType = 'tank' | 'rifleman' | 'scout' | 'harvester';
+type SpriteUnitType = 'tank' | 'rifleman' | 'engineer' | 'medic' | 'scout' | 'harvester';
 type SpriteVisualState =
-  'idle' | 'idle-loaded' | 'move' | 'move-loaded' | 'gather' | 'deposit' | 'recoil' | 'fire';
+  | 'idle'
+  | 'idle-loaded'
+  | 'move'
+  | 'move-loaded'
+  | 'gather'
+  | 'deposit'
+  | 'recoil'
+  | 'fire'
+  | 'heal';
 
 const TURN = Math.PI * 2;
 const DIRECTION_STEP = TURN / SPRITE_DIRECTIONS.length;
@@ -46,6 +54,11 @@ interface SpriteUnitConfig {
     state: 'fire';
     step: number;
   };
+  activeLoop?: {
+    frameSeconds: number;
+    frames: number;
+    state: 'heal';
+  };
 }
 
 const UNIT_CONFIG: Record<SpriteUnitType, SpriteUnitConfig> = {
@@ -63,6 +76,19 @@ const UNIT_CONFIG: Record<SpriteUnitType, SpriteUnitConfig> = {
     sizeScale: 4.6,
     action: { frameSeconds: 0.065, frames: 2, state: 'fire' },
     engagedFrame: { state: 'fire', step: 1 },
+  },
+  engineer: {
+    anchorY: 0.71,
+    movementFrameSeconds: 0.06,
+    movementFrames: 8,
+    sizeScale: 4.6,
+  },
+  medic: {
+    anchorY: 0.71,
+    movementFrameSeconds: 0.06,
+    movementFrames: 8,
+    sizeScale: 4.6,
+    activeLoop: { frameSeconds: 0.09, frames: 4, state: 'heal' },
   },
   scout: {
     anchorY: 0.5,
@@ -128,6 +154,22 @@ export function riflemanFrame(
   return `unit.rifleman.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
 }
 
+export function engineerFrame(
+  angle: number,
+  state: 'idle' | 'move' = 'idle',
+  step = 0,
+): ProductionFrameId {
+  return `unit.engineer.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
+}
+
+export function medicFrame(
+  angle: number,
+  state: 'idle' | 'move' | 'heal' = 'idle',
+  step = 0,
+): ProductionFrameId {
+  return `unit.medic.${state}.${tankDirection(angle)}.${step}` as ProductionFrameId;
+}
+
 export function scoutFrame(
   angle: number,
   state: 'idle' | 'move' = 'idle',
@@ -171,6 +213,8 @@ export class SpriteUnitPainter {
     if (
       entity.unitType !== 'tank' &&
       entity.unitType !== 'rifleman' &&
+      entity.unitType !== 'engineer' &&
+      entity.unitType !== 'medic' &&
       entity.unitType !== 'scout' &&
       entity.unitType !== 'harvester'
     ) {
@@ -236,7 +280,12 @@ export class SpriteUnitPainter {
       }
     }
     if (visualState === 'idle' && unitType !== 'harvester') {
-      if (config.engagedFrame && animation.phase === 'attack') {
+      if (config.activeLoop && animation.phase === 'heal') {
+        visualState = config.activeLoop.state;
+        step =
+          Math.floor((animationTime + entity.id * 0.031) / config.activeLoop.frameSeconds) %
+          config.activeLoop.frames;
+      } else if (config.engagedFrame && animation.phase === 'attack') {
         visualState = config.engagedFrame.state;
         step = config.engagedFrame.step;
       } else if (animation.phase === 'move') {

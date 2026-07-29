@@ -116,6 +116,25 @@ describe('production asset compiler', () => {
     expect(Object.keys(manifest.assets[0].states)).toEqual(['idle', 'move', 'fire']);
   });
 
+  it('keeps adaptive defense masks inside each declared animation state', () => {
+    const wall = {
+      ...asset,
+      id: 'building.concrete-wall',
+      directions: ['mask-00', 'mask-01'],
+      states: { construction: 2, idle: 1 },
+      sourceColumns: 4,
+    };
+
+    expect(describeFrames(wall, 256, 96).map((frame: { id: string }) => frame.id)).toEqual([
+      'building.concrete-wall.construction.mask-00.0',
+      'building.concrete-wall.construction.mask-00.1',
+      'building.concrete-wall.construction.mask-01.0',
+      'building.concrete-wall.construction.mask-01.1',
+      'building.concrete-wall.idle.mask-00.0',
+      'building.concrete-wall.idle.mask-01.0',
+    ]);
+  });
+
   it('packs frames in stable shelves within the configured width', () => {
     const frames = describeFrames(asset, 192, 96);
     const first = packFrames(frames, 140, 2);

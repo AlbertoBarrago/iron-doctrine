@@ -2,11 +2,13 @@ import type { EntitySnapshot } from '@iron/engine';
 import { Container, Sprite } from 'pixi.js';
 import type { ProductionFrameId } from '../../assets/assets.gen.js';
 import type { ProductionAssetLoader } from '../assets/AssetLoader.js';
+import type { WallConnections } from './BuildingPainter.js';
 import {
   type AuthoredBuildingType,
   type BuildingAnimationName,
   BuildingAnimationState,
 } from './BuildingAnimationState.js';
+import { SpriteDefensePainter } from './SpriteDefensePainter.js';
 
 const BUILDING_CONFIG = {
   construction_yard: { assetId: 'construction-yard', sizeScale: 3.2 },
@@ -27,7 +29,9 @@ interface BuildingPresentation {
   constructionProgress?: number;
   presentationTime?: number;
   servicing?: boolean;
+  firing?: boolean | undefined;
   tint?: number;
+  wallConnections?: WallConnections | undefined;
 }
 
 export function buildingFrame(
@@ -46,8 +50,11 @@ export class SpriteBuildingPainter {
   readonly container = new Container();
   private readonly buildings = new Map<number, BuildingSpriteState>();
   private readonly animations = new BuildingAnimationState();
+  private readonly defenses: SpriteDefensePainter;
 
-  constructor(private readonly assets: ProductionAssetLoader) {}
+  constructor(private readonly assets: ProductionAssetLoader) {
+    this.defenses = new SpriteDefensePainter(assets, this.container);
+  }
 
   draw(
     entity: EntitySnapshot,
@@ -56,6 +63,9 @@ export class SpriteBuildingPainter {
     radius: number,
     presentation: BuildingPresentation = {},
   ): boolean {
+    if (entity.buildingType === 'turret' || entity.buildingType === 'concrete_wall') {
+      return this.defenses.draw(entity, x, y, radius, presentation);
+    }
     if (!isSpriteBuilding(entity.buildingType)) return false;
     const buildingType = entity.buildingType;
     const constructionProgress = presentation.constructionProgress ?? 1;
@@ -101,6 +111,7 @@ export class SpriteBuildingPainter {
   }
 
   beginFrame(): void {
+    this.defenses.beginFrame();
     this.animations.beginFrame();
     for (const state of this.buildings.values()) state.root.visible = false;
   }
@@ -111,6 +122,7 @@ export class SpriteBuildingPainter {
       state.root.destroy({ children: true });
       this.buildings.delete(id);
     }
+    this.defenses.endFrame();
     this.animations.endFrame();
   }
 

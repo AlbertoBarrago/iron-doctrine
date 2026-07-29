@@ -3,24 +3,28 @@ import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 
-const [framesDir, output] = process.argv.slice(2);
-if (!framesDir || !output) {
-  throw new Error('Usage: node scripts/blender/compose-infantry.mjs <frames-dir> <output>');
+const [role = 'rifleman', framesDir, output] =
+  process.argv.length === 4 ? ['rifleman', ...process.argv.slice(2)] : process.argv.slice(2);
+if (!framesDir || !output || !['rifleman', 'engineer', 'medic'].includes(role)) {
+  throw new Error(
+    'Usage: node scripts/blender/compose-infantry.mjs [rifleman|engineer|medic] <frames-dir> <output>',
+  );
 }
 
-const stateSteps = {
-  idle: 1,
-  move: 8,
-  fire: 2,
+const stateStepsByRole = {
+  rifleman: { idle: 1, move: 8, fire: 2 },
+  engineer: { idle: 1, move: 8 },
+  medic: { idle: 1, move: 8, heal: 4 },
 };
+const stateSteps = stateStepsByRole[role];
 const directionCount = 16;
 const expectedFrames =
   directionCount * Object.values(stateSteps).reduce((total, steps) => total + steps, 0);
 const frames = (await readdir(framesDir))
-  .filter((name) => /^\d{3}-(?:idle|move|fire)-[a-z]+-\d{2}\.png$/.test(name))
+  .filter((name) => /^\d{3}-(?:idle|move|fire|heal)-[a-z]+-\d{2}\.png$/.test(name))
   .sort();
 if (frames.length !== expectedFrames) {
-  throw new Error(`Expected ${expectedFrames} Rifleman frames, found ${frames.length}`);
+  throw new Error(`Expected ${expectedFrames} ${role} frames, found ${frames.length}`);
 }
 
 const frameSize = 128;

@@ -634,6 +634,7 @@ export class GameRenderer {
           break;
         case 'entityDestroyed':
           // The event records authoritative removal, not whether combat or recycling caused it.
+          this.recentWeaponFire.delete(event.entityId);
           if (event.entityKind === 'projectile') {
             this.particles.impact(event.x, event.y, 1.2);
             this.audio.play('impact');
@@ -716,11 +717,16 @@ export class GameRenderer {
         const constructionProgress = e.construction
           ? Math.min(1, e.construction.progressTicks / e.construction.buildTicks)
           : 1;
+        const connections =
+          e.buildingType === 'concrete_wall' ? wallConnections(e, wallKeys, wallStep) : undefined;
+        const firing = this.presentationFiring(e, p, animationTime);
         const spriteRendered = this.spriteBuildings.draw(e, sx, sy, s, {
           constructionProgress,
           presentationTime: animationTime,
           servicing: servicingYards.has(e.id),
+          firing,
           tint: spriteFactionTint(color),
+          wallConnections: connections,
         });
         if (!spriteRendered) {
           drawBuilding(
@@ -730,7 +736,7 @@ export class GameRenderer {
             sy,
             s,
             color,
-            e.buildingType === 'concrete_wall' ? wallConnections(e, wallKeys, wallStep) : undefined,
+            connections,
             {
               animationTime,
               constructionProgress,
@@ -759,13 +765,7 @@ export class GameRenderer {
       }
 
       const moving = Math.hypot(e.x - p.x, e.y - p.y) > 0.001;
-      const snapshotFiring =
-        e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0);
-      const firedAt = this.recentWeaponFire.get(e.id);
-      const firing = snapshotFiring || (firedAt !== undefined && animationTime - firedAt < 0.18);
-      if (firedAt !== undefined && animationTime - firedAt >= 0.18) {
-        this.recentWeaponFire.delete(e.id);
-      }
+      const firing = this.presentationFiring(e, p, animationTime);
       const engaged = e.unitType === 'rifleman' && e.attackTarget !== undefined && !moving;
       if (this.selected.has(e.id)) {
         const vehicle =
@@ -801,6 +801,21 @@ export class GameRenderer {
       drawPersistentDamage(this.units, sx, sy, r, persistentDamage);
       if (e.cargo) this.drawCargoBar(e, sx, sy, r);
     }
+  }
+
+  private presentationFiring(
+    current: EntitySnapshot,
+    previous: EntitySnapshot,
+    animationTime: number,
+  ): boolean {
+    const snapshotFiring =
+      current.weaponCooldownLeft !== undefined &&
+      current.weaponCooldownLeft > (previous.weaponCooldownLeft ?? 0);
+    const firedAt = this.recentWeaponFire.get(current.id);
+    if (firedAt === undefined) return snapshotFiring;
+    if (animationTime - firedAt < 0.18) return true;
+    this.recentWeaponFire.delete(current.id);
+    return snapshotFiring;
   }
 
   private drawScenarioSite(curr: Snapshot): void {

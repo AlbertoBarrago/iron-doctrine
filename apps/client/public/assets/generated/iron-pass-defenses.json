@@ -1,0 +1,1178 @@
+{
+  "frames": {
+    "building.concrete-wall.construction.mask-00.0": {
+      "frame": { "x": 2, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-00.1": {
+      "frame": { "x": 260, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-00.2": {
+      "frame": { "x": 518, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-00.3": {
+      "frame": { "x": 776, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-01.0": {
+      "frame": { "x": 1034, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-01.1": {
+      "frame": { "x": 1292, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-01.2": {
+      "frame": { "x": 1550, "y": 2, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-01.3": {
+      "frame": { "x": 2, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-02.0": {
+      "frame": { "x": 260, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-02.1": {
+      "frame": { "x": 518, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-02.2": {
+      "frame": { "x": 776, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-02.3": {
+      "frame": { "x": 1034, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-03.0": {
+      "frame": { "x": 1292, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-03.1": {
+      "frame": { "x": 1550, "y": 260, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-03.2": {
+      "frame": { "x": 2, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-03.3": {
+      "frame": { "x": 260, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-04.0": {
+      "frame": { "x": 518, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-04.1": {
+      "frame": { "x": 776, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-04.2": {
+      "frame": { "x": 1034, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-04.3": {
+      "frame": { "x": 1292, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-05.0": {
+      "frame": { "x": 1550, "y": 518, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-05.1": {
+      "frame": { "x": 2, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-05.2": {
+      "frame": { "x": 260, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-05.3": {
+      "frame": { "x": 518, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-06.0": {
+      "frame": { "x": 776, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-06.1": {
+      "frame": { "x": 1034, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-06.2": {
+      "frame": { "x": 1292, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-06.3": {
+      "frame": { "x": 1550, "y": 776, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-07.0": {
+      "frame": { "x": 2, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-07.1": {
+      "frame": { "x": 260, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-07.2": {
+      "frame": { "x": 518, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-07.3": {
+      "frame": { "x": 776, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-08.0": {
+      "frame": { "x": 1034, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-08.1": {
+      "frame": { "x": 1292, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-08.2": {
+      "frame": { "x": 1550, "y": 1034, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-08.3": {
+      "frame": { "x": 2, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-09.0": {
+      "frame": { "x": 260, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-09.1": {
+      "frame": { "x": 518, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-09.2": {
+      "frame": { "x": 776, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-09.3": {
+      "frame": { "x": 1034, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-10.0": {
+      "frame": { "x": 1292, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-10.1": {
+      "frame": { "x": 1550, "y": 1292, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-10.2": {
+      "frame": { "x": 2, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-10.3": {
+      "frame": { "x": 260, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-11.0": {
+      "frame": { "x": 518, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-11.1": {
+      "frame": { "x": 776, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-11.2": {
+      "frame": { "x": 1034, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-11.3": {
+      "frame": { "x": 1292, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-12.0": {
+      "frame": { "x": 1550, "y": 1550, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-12.1": {
+      "frame": { "x": 2, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-12.2": {
+      "frame": { "x": 260, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-12.3": {
+      "frame": { "x": 518, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-13.0": {
+      "frame": { "x": 776, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-13.1": {
+      "frame": { "x": 1034, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-13.2": {
+      "frame": { "x": 1292, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-13.3": {
+      "frame": { "x": 1550, "y": 1808, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-14.0": {
+      "frame": { "x": 2, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-14.1": {
+      "frame": { "x": 260, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-14.2": {
+      "frame": { "x": 518, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-14.3": {
+      "frame": { "x": 776, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-15.0": {
+      "frame": { "x": 1034, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-15.1": {
+      "frame": { "x": 1292, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-15.2": {
+      "frame": { "x": 1550, "y": 2066, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.construction.mask-15.3": {
+      "frame": { "x": 2, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-00.0": {
+      "frame": { "x": 260, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-01.0": {
+      "frame": { "x": 518, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-02.0": {
+      "frame": { "x": 776, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-03.0": {
+      "frame": { "x": 1034, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-04.0": {
+      "frame": { "x": 1292, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-05.0": {
+      "frame": { "x": 1550, "y": 2324, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-06.0": {
+      "frame": { "x": 2, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-07.0": {
+      "frame": { "x": 260, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-08.0": {
+      "frame": { "x": 518, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-09.0": {
+      "frame": { "x": 776, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-10.0": {
+      "frame": { "x": 1034, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-11.0": {
+      "frame": { "x": 1292, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-12.0": {
+      "frame": { "x": 1550, "y": 2582, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-13.0": {
+      "frame": { "x": 2, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-14.0": {
+      "frame": { "x": 260, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.concrete-wall.idle.mask-15.0": {
+      "frame": { "x": 518, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.construction.south.0": {
+      "frame": { "x": 776, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.construction.south.1": {
+      "frame": { "x": 1034, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.construction.south.2": {
+      "frame": { "x": 1292, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.construction.south.3": {
+      "frame": { "x": 1550, "y": 2840, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.complete.south.0": {
+      "frame": { "x": 2, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.complete.south.1": {
+      "frame": { "x": 260, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.complete.south.2": {
+      "frame": { "x": 518, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.complete.south.3": {
+      "frame": { "x": 776, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-base.idle.south.0": {
+      "frame": { "x": 1034, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.e.0": {
+      "frame": { "x": 1292, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.ese.0": {
+      "frame": { "x": 1550, "y": 3098, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.se.0": {
+      "frame": { "x": 2, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.sse.0": {
+      "frame": { "x": 260, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.s.0": {
+      "frame": { "x": 518, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.ssw.0": {
+      "frame": { "x": 776, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.sw.0": {
+      "frame": { "x": 1034, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.wsw.0": {
+      "frame": { "x": 1292, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.w.0": {
+      "frame": { "x": 1550, "y": 3356, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.wnw.0": {
+      "frame": { "x": 2, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.nw.0": {
+      "frame": { "x": 260, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.nnw.0": {
+      "frame": { "x": 518, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.n.0": {
+      "frame": { "x": 776, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.nne.0": {
+      "frame": { "x": 1034, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.ne.0": {
+      "frame": { "x": 1292, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.idle.ene.0": {
+      "frame": { "x": 1550, "y": 3614, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.e.0": {
+      "frame": { "x": 2, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.e.1": {
+      "frame": { "x": 260, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ese.0": {
+      "frame": { "x": 518, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ese.1": {
+      "frame": { "x": 776, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.se.0": {
+      "frame": { "x": 1034, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.se.1": {
+      "frame": { "x": 1292, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.sse.0": {
+      "frame": { "x": 1550, "y": 3872, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.sse.1": {
+      "frame": { "x": 2, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.s.0": {
+      "frame": { "x": 260, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.s.1": {
+      "frame": { "x": 518, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ssw.0": {
+      "frame": { "x": 776, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ssw.1": {
+      "frame": { "x": 1034, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.sw.0": {
+      "frame": { "x": 1292, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.sw.1": {
+      "frame": { "x": 1550, "y": 4130, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.wsw.0": {
+      "frame": { "x": 2, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.wsw.1": {
+      "frame": { "x": 260, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.w.0": {
+      "frame": { "x": 518, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.w.1": {
+      "frame": { "x": 776, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.wnw.0": {
+      "frame": { "x": 1034, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.wnw.1": {
+      "frame": { "x": 1292, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.nw.0": {
+      "frame": { "x": 1550, "y": 4388, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.nw.1": {
+      "frame": { "x": 2, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.nnw.0": {
+      "frame": { "x": 260, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.nnw.1": {
+      "frame": { "x": 518, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.n.0": {
+      "frame": { "x": 776, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.n.1": {
+      "frame": { "x": 1034, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.nne.0": {
+      "frame": { "x": 1292, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.nne.1": {
+      "frame": { "x": 1550, "y": 4646, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ne.0": {
+      "frame": { "x": 2, "y": 4904, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ne.1": {
+      "frame": { "x": 260, "y": 4904, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ene.0": {
+      "frame": { "x": 518, "y": 4904, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    },
+    "building.turret-head.fire.ene.1": {
+      "frame": { "x": 776, "y": 4904, "w": 256, "h": 256 },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": { "x": 0, "y": 0, "w": 256, "h": 256 },
+      "sourceSize": { "w": 256, "h": 256 }
+    }
+  },
+  "animations": {
+    "building.concrete-wall.construction.mask-00": [
+      "building.concrete-wall.construction.mask-00.0",
+      "building.concrete-wall.construction.mask-00.1",
+      "building.concrete-wall.construction.mask-00.2",
+      "building.concrete-wall.construction.mask-00.3"
+    ],
+    "building.concrete-wall.construction.mask-01": [
+      "building.concrete-wall.construction.mask-01.0",
+      "building.concrete-wall.construction.mask-01.1",
+      "building.concrete-wall.construction.mask-01.2",
+      "building.concrete-wall.construction.mask-01.3"
+    ],
+    "building.concrete-wall.construction.mask-02": [
+      "building.concrete-wall.construction.mask-02.0",
+      "building.concrete-wall.construction.mask-02.1",
+      "building.concrete-wall.construction.mask-02.2",
+      "building.concrete-wall.construction.mask-02.3"
+    ],
+    "building.concrete-wall.construction.mask-03": [
+      "building.concrete-wall.construction.mask-03.0",
+      "building.concrete-wall.construction.mask-03.1",
+      "building.concrete-wall.construction.mask-03.2",
+      "building.concrete-wall.construction.mask-03.3"
+    ],
+    "building.concrete-wall.construction.mask-04": [
+      "building.concrete-wall.construction.mask-04.0",
+      "building.concrete-wall.construction.mask-04.1",
+      "building.concrete-wall.construction.mask-04.2",
+      "building.concrete-wall.construction.mask-04.3"
+    ],
+    "building.concrete-wall.construction.mask-05": [
+      "building.concrete-wall.construction.mask-05.0",
+      "building.concrete-wall.construction.mask-05.1",
+      "building.concrete-wall.construction.mask-05.2",
+      "building.concrete-wall.construction.mask-05.3"
+    ],
+    "building.concrete-wall.construction.mask-06": [
+      "building.concrete-wall.construction.mask-06.0",
+      "building.concrete-wall.construction.mask-06.1",
+      "building.concrete-wall.construction.mask-06.2",
+      "building.concrete-wall.construction.mask-06.3"
+    ],
+    "building.concrete-wall.construction.mask-07": [
+      "building.concrete-wall.construction.mask-07.0",
+      "building.concrete-wall.construction.mask-07.1",
+      "building.concrete-wall.construction.mask-07.2",
+      "building.concrete-wall.construction.mask-07.3"
+    ],
+    "building.concrete-wall.construction.mask-08": [
+      "building.concrete-wall.construction.mask-08.0",
+      "building.concrete-wall.construction.mask-08.1",
+      "building.concrete-wall.construction.mask-08.2",
+      "building.concrete-wall.construction.mask-08.3"
+    ],
+    "building.concrete-wall.construction.mask-09": [
+      "building.concrete-wall.construction.mask-09.0",
+      "building.concrete-wall.construction.mask-09.1",
+      "building.concrete-wall.construction.mask-09.2",
+      "building.concrete-wall.construction.mask-09.3"
+    ],
+    "building.concrete-wall.construction.mask-10": [
+      "building.concrete-wall.construction.mask-10.0",
+      "building.concrete-wall.construction.mask-10.1",
+      "building.concrete-wall.construction.mask-10.2",
+      "building.concrete-wall.construction.mask-10.3"
+    ],
+    "building.concrete-wall.construction.mask-11": [
+      "building.concrete-wall.construction.mask-11.0",
+      "building.concrete-wall.construction.mask-11.1",
+      "building.concrete-wall.construction.mask-11.2",
+      "building.concrete-wall.construction.mask-11.3"
+    ],
+    "building.concrete-wall.construction.mask-12": [
+      "building.concrete-wall.construction.mask-12.0",
+      "building.concrete-wall.construction.mask-12.1",
+      "building.concrete-wall.construction.mask-12.2",
+      "building.concrete-wall.construction.mask-12.3"
+    ],
+    "building.concrete-wall.construction.mask-13": [
+      "building.concrete-wall.construction.mask-13.0",
+      "building.concrete-wall.construction.mask-13.1",
+      "building.concrete-wall.construction.mask-13.2",
+      "building.concrete-wall.construction.mask-13.3"
+    ],
+    "building.concrete-wall.construction.mask-14": [
+      "building.concrete-wall.construction.mask-14.0",
+      "building.concrete-wall.construction.mask-14.1",
+      "building.concrete-wall.construction.mask-14.2",
+      "building.concrete-wall.construction.mask-14.3"
+    ],
+    "building.concrete-wall.construction.mask-15": [
+      "building.concrete-wall.construction.mask-15.0",
+      "building.concrete-wall.construction.mask-15.1",
+      "building.concrete-wall.construction.mask-15.2",
+      "building.concrete-wall.construction.mask-15.3"
+    ],
+    "building.concrete-wall.idle.mask-00": ["building.concrete-wall.idle.mask-00.0"],
+    "building.concrete-wall.idle.mask-01": ["building.concrete-wall.idle.mask-01.0"],
+    "building.concrete-wall.idle.mask-02": ["building.concrete-wall.idle.mask-02.0"],
+    "building.concrete-wall.idle.mask-03": ["building.concrete-wall.idle.mask-03.0"],
+    "building.concrete-wall.idle.mask-04": ["building.concrete-wall.idle.mask-04.0"],
+    "building.concrete-wall.idle.mask-05": ["building.concrete-wall.idle.mask-05.0"],
+    "building.concrete-wall.idle.mask-06": ["building.concrete-wall.idle.mask-06.0"],
+    "building.concrete-wall.idle.mask-07": ["building.concrete-wall.idle.mask-07.0"],
+    "building.concrete-wall.idle.mask-08": ["building.concrete-wall.idle.mask-08.0"],
+    "building.concrete-wall.idle.mask-09": ["building.concrete-wall.idle.mask-09.0"],
+    "building.concrete-wall.idle.mask-10": ["building.concrete-wall.idle.mask-10.0"],
+    "building.concrete-wall.idle.mask-11": ["building.concrete-wall.idle.mask-11.0"],
+    "building.concrete-wall.idle.mask-12": ["building.concrete-wall.idle.mask-12.0"],
+    "building.concrete-wall.idle.mask-13": ["building.concrete-wall.idle.mask-13.0"],
+    "building.concrete-wall.idle.mask-14": ["building.concrete-wall.idle.mask-14.0"],
+    "building.concrete-wall.idle.mask-15": ["building.concrete-wall.idle.mask-15.0"],
+    "building.turret-base.construction.south": [
+      "building.turret-base.construction.south.0",
+      "building.turret-base.construction.south.1",
+      "building.turret-base.construction.south.2",
+      "building.turret-base.construction.south.3"
+    ],
+    "building.turret-base.complete.south": [
+      "building.turret-base.complete.south.0",
+      "building.turret-base.complete.south.1",
+      "building.turret-base.complete.south.2",
+      "building.turret-base.complete.south.3"
+    ],
+    "building.turret-base.idle.south": ["building.turret-base.idle.south.0"],
+    "building.turret-head.idle.e": ["building.turret-head.idle.e.0"],
+    "building.turret-head.idle.ese": ["building.turret-head.idle.ese.0"],
+    "building.turret-head.idle.se": ["building.turret-head.idle.se.0"],
+    "building.turret-head.idle.sse": ["building.turret-head.idle.sse.0"],
+    "building.turret-head.idle.s": ["building.turret-head.idle.s.0"],
+    "building.turret-head.idle.ssw": ["building.turret-head.idle.ssw.0"],
+    "building.turret-head.idle.sw": ["building.turret-head.idle.sw.0"],
+    "building.turret-head.idle.wsw": ["building.turret-head.idle.wsw.0"],
+    "building.turret-head.idle.w": ["building.turret-head.idle.w.0"],
+    "building.turret-head.idle.wnw": ["building.turret-head.idle.wnw.0"],
+    "building.turret-head.idle.nw": ["building.turret-head.idle.nw.0"],
+    "building.turret-head.idle.nnw": ["building.turret-head.idle.nnw.0"],
+    "building.turret-head.idle.n": ["building.turret-head.idle.n.0"],
+    "building.turret-head.idle.nne": ["building.turret-head.idle.nne.0"],
+    "building.turret-head.idle.ne": ["building.turret-head.idle.ne.0"],
+    "building.turret-head.idle.ene": ["building.turret-head.idle.ene.0"],
+    "building.turret-head.fire.e": [
+      "building.turret-head.fire.e.0",
+      "building.turret-head.fire.e.1"
+    ],
+    "building.turret-head.fire.ese": [
+      "building.turret-head.fire.ese.0",
+      "building.turret-head.fire.ese.1"
+    ],
+    "building.turret-head.fire.se": [
+      "building.turret-head.fire.se.0",
+      "building.turret-head.fire.se.1"
+    ],
+    "building.turret-head.fire.sse": [
+      "building.turret-head.fire.sse.0",
+      "building.turret-head.fire.sse.1"
+    ],
+    "building.turret-head.fire.s": [
+      "building.turret-head.fire.s.0",
+      "building.turret-head.fire.s.1"
+    ],
+    "building.turret-head.fire.ssw": [
+      "building.turret-head.fire.ssw.0",
+      "building.turret-head.fire.ssw.1"
+    ],
+    "building.turret-head.fire.sw": [
+      "building.turret-head.fire.sw.0",
+      "building.turret-head.fire.sw.1"
+    ],
+    "building.turret-head.fire.wsw": [
+      "building.turret-head.fire.wsw.0",
+      "building.turret-head.fire.wsw.1"
+    ],
+    "building.turret-head.fire.w": [
+      "building.turret-head.fire.w.0",
+      "building.turret-head.fire.w.1"
+    ],
+    "building.turret-head.fire.wnw": [
+      "building.turret-head.fire.wnw.0",
+      "building.turret-head.fire.wnw.1"
+    ],
+    "building.turret-head.fire.nw": [
+      "building.turret-head.fire.nw.0",
+      "building.turret-head.fire.nw.1"
+    ],
+    "building.turret-head.fire.nnw": [
+      "building.turret-head.fire.nnw.0",
+      "building.turret-head.fire.nnw.1"
+    ],
+    "building.turret-head.fire.n": [
+      "building.turret-head.fire.n.0",
+      "building.turret-head.fire.n.1"
+    ],
+    "building.turret-head.fire.nne": [
+      "building.turret-head.fire.nne.0",
+      "building.turret-head.fire.nne.1"
+    ],
+    "building.turret-head.fire.ne": [
+      "building.turret-head.fire.ne.0",
+      "building.turret-head.fire.ne.1"
+    ],
+    "building.turret-head.fire.ene": [
+      "building.turret-head.fire.ene.0",
+      "building.turret-head.fire.ene.1"
+    ]
+  },
+  "meta": {
+    "app": "iron-doctrine",
+    "version": "1",
+    "image": "iron-pass-defenses.webp",
+    "format": "RGBA8888",
+    "size": { "w": 1808, "h": 5162 },
+    "scale": "1"
+  }
+}

@@ -18,9 +18,92 @@
       "maxWidth": 2048,
       "maxHeight": 8192,
       "padding": 2
+    },
+    "defenses": {
+      "id": "iron-pass-defenses",
+      "maxWidth": 2048,
+      "maxHeight": 8192,
+      "padding": 2
     }
   },
   "assets": [
+    {
+      "id": "building.turret-base",
+      "atlas": "defenses",
+      "source": "structures/defenses/turret_base.png",
+      "frameWidth": 256,
+      "frameHeight": 256,
+      "sourceColumns": 8,
+      "directions": ["south"],
+      "states": {
+        "construction": 4,
+        "complete": 4,
+        "idle": 1
+      },
+      "runtime": true
+    },
+    {
+      "id": "building.turret-head",
+      "atlas": "defenses",
+      "source": "structures/defenses/turret_head.png",
+      "frameWidth": 256,
+      "frameHeight": 256,
+      "sourceColumns": 8,
+      "directions": [
+        "e",
+        "ese",
+        "se",
+        "sse",
+        "s",
+        "ssw",
+        "sw",
+        "wsw",
+        "w",
+        "wnw",
+        "nw",
+        "nnw",
+        "n",
+        "nne",
+        "ne",
+        "ene"
+      ],
+      "states": {
+        "idle": 1,
+        "fire": 2
+      },
+      "runtime": true
+    },
+    {
+      "id": "building.concrete-wall",
+      "atlas": "defenses",
+      "source": "structures/defenses/concrete_wall.png",
+      "frameWidth": 256,
+      "frameHeight": 256,
+      "sourceColumns": 8,
+      "directions": [
+        "mask-00",
+        "mask-01",
+        "mask-02",
+        "mask-03",
+        "mask-04",
+        "mask-05",
+        "mask-06",
+        "mask-07",
+        "mask-08",
+        "mask-09",
+        "mask-10",
+        "mask-11",
+        "mask-12",
+        "mask-13",
+        "mask-14",
+        "mask-15"
+      ],
+      "states": {
+        "construction": 4,
+        "idle": 1
+      },
+      "runtime": true
+    },
     {
       "id": "building.construction-yard",
       "atlas": "structures",
@@ -114,6 +197,67 @@
         "idle": 1,
         "move": 8,
         "fire": 2
+      },
+      "runtime": true
+    },
+    {
+      "id": "unit.engineer",
+      "atlas": "infantry",
+      "source": "units/infantry/engineer.png",
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "directions": [
+        "e",
+        "ese",
+        "se",
+        "sse",
+        "s",
+        "ssw",
+        "sw",
+        "wsw",
+        "w",
+        "wnw",
+        "nw",
+        "nnw",
+        "n",
+        "nne",
+        "ne",
+        "ene"
+      ],
+      "states": {
+        "idle": 1,
+        "move": 8
+      },
+      "runtime": true
+    },
+    {
+      "id": "unit.medic",
+      "atlas": "infantry",
+      "source": "units/infantry/medic.png",
+      "frameWidth": 128,
+      "frameHeight": 128,
+      "directions": [
+        "e",
+        "ese",
+        "se",
+        "sse",
+        "s",
+        "ssw",
+        "sw",
+        "wsw",
+        "w",
+        "wnw",
+        "nw",
+        "nnw",
+        "n",
+        "nne",
+        "ne",
+        "ene"
+      ],
+      "states": {
+        "idle": 1,
+        "move": 8,
+        "heal": 4
       },
       "runtime": true
     },

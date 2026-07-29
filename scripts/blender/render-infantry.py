@@ -1,7 +1,8 @@
-"""Build and render the Iron Doctrine Rifleman source asset.
+"""Build and render an Iron Doctrine infantry source asset.
 
 Run with:
   blender --background --python scripts/blender/render-infantry.py -- \
+    --role rifleman \
     --blend assets-src/units/infantry/rifleman.blend \
     --frames-dir /tmp/iron-doctrine-rifleman-frames
 """
@@ -37,18 +38,19 @@ DIRECTIONS = (
     "ene",
 )
 
-STATE_STEPS = {
-    "idle": 1,
-    "move": 8,
-    "fire": 2,
+STATE_STEPS_BY_ROLE = {
+    "rifleman": {"idle": 1, "move": 8, "fire": 2},
+    "engineer": {"idle": 1, "move": 8},
+    "medic": {"idle": 1, "move": 8, "heal": 4},
 }
 
 
 def arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--role", choices=STATE_STEPS_BY_ROLE, default="rifleman")
     parser.add_argument("--blend", required=True)
     parser.add_argument("--frames-dir", required=True)
-    parser.add_argument("--states", default=",".join(STATE_STEPS))
+    parser.add_argument("--states")
     return parser.parse_args(sys.argv[sys.argv.index("--") + 1 :])
 
 
@@ -202,11 +204,21 @@ def sphere(name, location, scale, value):
     return obj
 
 
-def build_rifleman():
-    uniform = material("Uniform - field olive cloth", (0.16, 0.2, 0.095, 1), variation=0.12)
+def build_infantry(role: str):
+    uniform_color = {
+        "rifleman": (0.16, 0.2, 0.095, 1),
+        "engineer": (0.18, 0.17, 0.095, 1),
+        "medic": (0.24, 0.25, 0.17, 1),
+    }[role]
+    uniform_light_color = {
+        "rifleman": (0.26, 0.29, 0.14, 1),
+        "engineer": (0.29, 0.25, 0.13, 1),
+        "medic": (0.38, 0.38, 0.25, 1),
+    }[role]
+    uniform = material("Uniform - field cloth", uniform_color, variation=0.12)
     uniform_light = material(
         "Uniform - sun-faded cloth",
-        (0.26, 0.29, 0.14, 1),
+        uniform_light_color,
         variation=0.1,
     )
     helmet = material(
@@ -238,8 +250,28 @@ def build_rifleman():
         roughness=0.82,
         variation=0.05,
     )
+    medic_canvas = material(
+        "Medic canvas",
+        (0.68, 0.66, 0.5, 1),
+        roughness=0.9,
+        variation=0.08,
+    )
+    medic_red = material(
+        "Medic marking",
+        (0.48, 0.035, 0.025, 1),
+        roughness=0.78,
+        variation=0.04,
+    )
+    engineer_copper = material(
+        "Engineer tool copper",
+        (0.34, 0.16, 0.055, 1),
+        metallic=0.34,
+        roughness=0.6,
+        variation=0.08,
+    )
 
-    root = bpy.data.objects.new("Rifleman - Iron Pass", None)
+    role_name = role.capitalize()
+    root = bpy.data.objects.new(f"{role_name} - Iron Pass", None)
     bpy.context.collection.objects.link(root)
     upper = bpy.data.objects.new("Upper body", None)
     bpy.context.collection.objects.link(upper)
@@ -285,7 +317,13 @@ def build_rifleman():
         box("Chest webbing", (0.235, 0, 1.13), (0.055, 0.33, 0.24), webbing, 0.012),
         box("Left ammunition pouch", (0.27, -0.1, 1.03), (0.09, 0.12, 0.16), webbing, 0.01),
         box("Right ammunition pouch", (0.27, 0.1, 1.03), (0.09, 0.12, 0.16), webbing, 0.01),
-        box("Backpack", (-0.255, 0, 1.08), (0.17, 0.34, 0.4), webbing, 0.025),
+        box(
+            "Backpack",
+            (-0.255, 0, 1.08),
+            (0.2 if role != "rifleman" else 0.17, 0.38, 0.44),
+            medic_canvas if role == "medic" else webbing,
+            0.025,
+        ),
         sphere("Head", (0.03, 0, 1.47), (0.145, 0.135, 0.17), skin),
         cylinder_between(
             "Helmet brim",
@@ -314,28 +352,133 @@ def build_rifleman():
     for obj in upper_parts:
         parent_to(obj, upper)
 
-    weapon_parts = [
-        box("Rifle stock", (0.46, -0.11, 1.03), (0.64, 0.09, 0.12), wood, 0.025),
-        box("Rifle receiver", (0.68, -0.11, 1.04), (0.28, 0.1, 0.11), steel, 0.02),
-        cylinder_between(
-            "Rifle barrel",
-            (0.78, -0.11, 1.04),
-            (1.38, -0.11, 1.04),
-            0.035,
-            steel,
-            vertices=8,
-        ),
-        cylinder_between(
-            "Forward arm",
-            (0.06, -0.2, 1.21),
-            (0.58, -0.13, 1.03),
-            0.065,
-            uniform,
-        ),
-        sphere("Forward hand", (0.59, -0.13, 1.03), (0.08, 0.07, 0.07), skin),
-    ]
+    if role == "medic":
+        weapon_parts = [
+            box(
+                "Field injector",
+                (0.58, -0.11, 1.04),
+                (0.48, 0.08, 0.09),
+                medic_canvas,
+                0.018,
+            ),
+            cylinder_between(
+                "Injector nozzle",
+                (0.79, -0.11, 1.04),
+                (1.12, -0.11, 1.04),
+                0.022,
+                steel,
+                vertices=8,
+            ),
+            box("Injector red band", (0.61, -0.11, 1.04), (0.08, 0.095, 0.105), medic_red, 0.01),
+            cylinder_between(
+                "Forward arm",
+                (0.06, -0.2, 1.21),
+                (0.54, -0.13, 1.03),
+                0.065,
+                uniform,
+            ),
+            sphere("Forward hand", (0.55, -0.13, 1.03), (0.08, 0.07, 0.07), skin),
+        ]
+    elif role == "engineer":
+        weapon_parts = [
+            box(
+                "Powered cutter handle",
+                (0.43, -0.11, 1.03),
+                (0.46, 0.1, 0.12),
+                engineer_copper,
+                0.025,
+            ),
+            box(
+                "Powered cutter motor",
+                (0.69, -0.11, 1.04),
+                (0.24, 0.2, 0.2),
+                engineer_copper,
+                0.025,
+            ),
+            box(
+                "Upper cutter jaw",
+                (0.88, -0.17, 1.1),
+                (0.34, 0.055, 0.06),
+                steel,
+                0.012,
+                rotation=(0, -0.12, -0.2),
+            ),
+            box(
+                "Lower cutter jaw",
+                (0.88, -0.05, 0.98),
+                (0.34, 0.055, 0.06),
+                steel,
+                0.012,
+                rotation=(0, 0.12, 0.2),
+            ),
+            cylinder_between(
+                "Forward arm",
+                (0.06, -0.2, 1.21),
+                (0.48, -0.13, 1.03),
+                0.065,
+                uniform,
+            ),
+            sphere("Forward hand", (0.49, -0.13, 1.03), (0.08, 0.07, 0.07), skin),
+        ]
+    else:
+        weapon_parts = [
+            box(
+                "Rifle stock",
+                (0.46, -0.11, 1.03),
+                (0.64, 0.09, 0.12),
+                wood,
+                0.025,
+            ),
+            box("Rifle receiver", (0.68, -0.11, 1.04), (0.28, 0.1, 0.11), steel, 0.02),
+            cylinder_between(
+                "Rifle barrel",
+                (0.78, -0.11, 1.04),
+                (1.38, -0.11, 1.04),
+                0.035,
+                steel,
+                vertices=8,
+            ),
+            cylinder_between(
+                "Forward arm",
+                (0.06, -0.2, 1.21),
+                (0.58, -0.13, 1.03),
+                0.065,
+                uniform,
+            ),
+            sphere("Forward hand", (0.59, -0.13, 1.03), (0.08, 0.07, 0.07), skin),
+        ]
     for obj in weapon_parts:
         parent_to(obj, weapon_rig)
+
+    if role == "engineer":
+        engineer_parts = [
+            box(
+                "Tool roll",
+                (-0.39, 0, 1.0),
+                (0.13, 0.42, 0.18),
+                engineer_copper,
+                0.02,
+            ),
+            cylinder_between(
+                "Holstered wrench",
+                (-0.39, 0.16, 0.92),
+                (-0.39, 0.16, 1.34),
+                0.035,
+                steel,
+                vertices=8,
+            ),
+        ]
+        for obj in engineer_parts:
+            parent_to(obj, upper)
+    elif role == "medic":
+        medic_parts = [
+            box("Backpack vertical mark", (-0.37, 0, 1.08), (0.025, 0.08, 0.28), medic_red, 0.005),
+            box("Backpack horizontal mark", (-0.37, 0, 1.08), (0.025, 0.27, 0.08), medic_red, 0.005),
+            box("Helmet vertical mark", (0.0, -0.192, 1.63), (0.08, 0.018, 0.18), medic_red, 0.004),
+            box("Helmet horizontal mark", (0.0, -0.194, 1.63), (0.2, 0.018, 0.065), medic_red, 0.004),
+        ]
+        for obj in medic_parts:
+            parent_to(obj, upper)
 
     return {
         "root": root,
@@ -364,7 +507,7 @@ def pose_leg(rig, side: str, foot_x: float, lift: float, knee_bias: float) -> No
     orient_between(rig[f"{side}_shin"], knee, ankle)
 
 
-def pose_rifleman(rig, state: str, step: int) -> None:
+def pose_infantry(rig, state: str, step: int) -> None:
     rig["upper"].location = (0, 0, 0)
     rig["upper"].rotation_euler = (0, 0, 0)
     rig["weapon_rig"].location = (0, 0, 0)
@@ -392,6 +535,12 @@ def pose_rifleman(rig, state: str, step: int) -> None:
         recoil = 0.12 if step == 0 else 0.045
         rig["weapon_rig"].location.x = -recoil
         rig["upper"].location.x = -recoil * 0.08
+    elif state == "heal":
+        reach = (0.0, 0.08, 0.14, 0.06)[step]
+        lift = (0.0, 0.035, 0.065, 0.03)[step]
+        rig["weapon_rig"].location = (reach, 0, lift)
+        rig["weapon_rig"].rotation_euler.y = (-0.02, -0.09, -0.16, -0.07)[step]
+        rig["upper"].location.x = reach * 0.08
 
 
 def look_at(obj, target=(0, 0, 0.8)):
@@ -454,14 +603,18 @@ def configure_scene():
 
 def main():
     args = arguments()
-    requested_states = tuple(state.strip() for state in args.states.split(",") if state.strip())
-    unknown_states = set(requested_states) - set(STATE_STEPS)
+    state_steps = STATE_STEPS_BY_ROLE[args.role]
+    states_argument = args.states or ",".join(state_steps)
+    requested_states = tuple(
+        state.strip() for state in states_argument.split(",") if state.strip()
+    )
+    unknown_states = set(requested_states) - set(state_steps)
     if unknown_states:
         raise ValueError(f"Unknown render states: {sorted(unknown_states)}")
     bpy.ops.object.select_all(action="SELECT")
     bpy.ops.object.delete(use_global=False)
 
-    rig = build_rifleman()
+    rig = build_infantry(args.role)
     configure_scene()
 
     blend_path = Path(args.blend).resolve()
@@ -473,10 +626,10 @@ def main():
     scene = bpy.context.scene
     frame_index = 0
     for state in requested_states:
-        steps = STATE_STEPS[state]
+        steps = state_steps[state]
         for direction_index, direction in enumerate(DIRECTIONS):
             for step in range(steps):
-                pose_rifleman(rig, state, step)
+                pose_infantry(rig, state, step)
                 rig["root"].rotation_euler.z = -direction_index * (2 * math.pi / len(DIRECTIONS))
                 scene.render.filepath = str(
                     frames_dir / f"{frame_index:03d}-{state}-{direction}-{step:02d}.png"

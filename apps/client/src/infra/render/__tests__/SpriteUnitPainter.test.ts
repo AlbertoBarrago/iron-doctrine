@@ -2,7 +2,9 @@ import { type Sprite, Texture } from 'pixi.js';
 import { describe, expect, it } from 'vitest';
 import {
   SpriteUnitPainter,
+  engineerFrame,
   harvesterFrame,
+  medicFrame,
   riflemanFrame,
   scoutFrame,
   stableTankDirection,
@@ -27,6 +29,8 @@ describe('tank sprite direction', () => {
     expect(riflemanFrame(Math.PI / 8)).toBe('unit.rifleman.idle.ese.0');
     expect(riflemanFrame(Math.PI / 8, 'move', 7)).toBe('unit.rifleman.move.ese.7');
     expect(riflemanFrame(Math.PI / 8, 'fire', 1)).toBe('unit.rifleman.fire.ese.1');
+    expect(engineerFrame(Math.PI / 8, 'move', 7)).toBe('unit.engineer.move.ese.7');
+    expect(medicFrame(Math.PI / 8, 'heal', 3)).toBe('unit.medic.heal.ese.3');
     expect(scoutFrame(Math.PI / 8)).toBe('unit.scout.idle.ese.0');
     expect(scoutFrame(Math.PI / 8, 'move', 3)).toBe('unit.scout.move.ese.3');
     expect(harvesterFrame(Math.PI / 8, 'idle-loaded')).toBe('unit.harvester.idle-loaded.ese.0');
@@ -177,6 +181,28 @@ describe('tank sprite direction', () => {
     for (let step = 0; step < 8; step++) {
       expect(requested).toContain(`unit.rifleman.move.e.${step}`);
     }
+  });
+
+  it('uses authored support infantry states without inventing Engineer work', () => {
+    const requested: string[] = [];
+    const painter = new SpriteUnitPainter({
+      texture: (frameId: string) => {
+        requested.push(frameId);
+        return Texture.EMPTY;
+      },
+    } as never);
+    const engineer = { id: 21, unitType: 'engineer', angle: 0 };
+    const medic = { id: 22, unitType: 'medic', angle: 0, healingTarget: 7 };
+
+    painter.draw(engineer as never, 100, 80, 8, 1);
+    painter.draw(engineer as never, 100, 80, 8, 1.08, { moving: true });
+    painter.draw(medic as never, 120, 80, 8, 1);
+    painter.draw(medic as never, 120, 80, 8, 1.1);
+
+    expect(requested).toContain('unit.engineer.idle.e.0');
+    expect(requested.some((frame) => frame.startsWith('unit.engineer.move.e.'))).toBe(true);
+    expect(requested.some((frame) => frame.startsWith('unit.medic.heal.e.'))).toBe(true);
+    expect(requested.some((frame) => frame.includes('engineer.work'))).toBe(false);
   });
 
   it('plays all four Scout wheel poses at the authored cadence', () => {
