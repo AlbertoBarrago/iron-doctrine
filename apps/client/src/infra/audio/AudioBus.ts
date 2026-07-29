@@ -98,6 +98,7 @@ export class AudioBus {
   }
 
   play(kind: SoundKind): void {
+    if (this.paused) return;
     const ctx = this.ensure();
     if (!ctx || !this.sfxGain) return;
     if (ctx.state === 'suspended') void ctx.resume();

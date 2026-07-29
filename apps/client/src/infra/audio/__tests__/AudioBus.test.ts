@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   AMBIENT_PHRASE_SECONDS,
   AMBIENT_PULSE_SECONDS,
+  AudioBus,
   ambientChord,
   busGain,
   musicGain,
@@ -31,6 +32,30 @@ describe('audio volume', () => {
     expect(musicGain(0.4, false, false)).toBeCloseTo(0.064);
     expect(musicGain(0.4, false, true)).toBe(0);
     expect(musicGain(0.4, true, false)).toBe(0);
+  });
+
+  it('does not initialize or play gameplay effects while paused', () => {
+    const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'AudioContext');
+    let initializations = 0;
+    class FakeAudioContext {
+      constructor() {
+        initializations++;
+      }
+    }
+    Object.defineProperty(globalThis, 'AudioContext', {
+      configurable: true,
+      value: FakeAudioContext,
+    });
+
+    try {
+      const bus = new AudioBus();
+      bus.setPaused(true);
+      bus.play('cannon');
+      expect(initializations).toBe(0);
+    } finally {
+      if (descriptor) Object.defineProperty(globalThis, 'AudioContext', descriptor);
+      else Reflect.deleteProperty(globalThis, 'AudioContext');
+    }
   });
 
   it('cycles through a stable ambient chord progression', () => {

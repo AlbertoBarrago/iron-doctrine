@@ -23,10 +23,12 @@ import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron
 import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import { ParticleSystem } from './Particles.js';
+import { PresentationClock } from './PresentationClock.js';
 import { TerrainPainter } from './TerrainPainter.js';
 import { AmbientLifePainter } from './AmbientLifePainter.js';
 import { drawGroundSelection, drawGroundShadow, drawUnit } from './UnitPainter.js';
 import { SpriteBuildingPainter } from './SpriteBuildingPainter.js';
+import { servicingConstructionYards } from './BuildingAnimationState.js';
 import { SpriteUnitPainter } from './SpriteUnitPainter.js';
 import { ProductionAssetLoader } from '../assets/AssetLoader.js';
 import {
@@ -93,6 +95,7 @@ export class GameRenderer {
   private readonly bridge = new SimBridge();
   private readonly particles: ParticleSystem;
   private readonly audio = new AudioBus();
+  private readonly presentationClock = new PresentationClock();
   private activeMap: MapDef | null = null;
   private mission: SkirmishConfig['mission'] = 'skirmish';
   private aiActivationTick = 0;
@@ -389,6 +392,7 @@ export class GameRenderer {
   setPaused(paused: boolean): void {
     if (paused) this.bridge.pause();
     else this.bridge.start();
+    this.presentationClock.setPaused(paused);
     this.audio.setPaused(paused);
   }
 
@@ -492,6 +496,7 @@ export class GameRenderer {
 
   private render(): void {
     const dtMs = this.app.ticker.deltaMS;
+    this.presentationClock.tick();
     this.updateFps(dtMs);
     this.updatePan(dtMs);
 
@@ -501,7 +506,7 @@ export class GameRenderer {
     this.units.clear();
     this.spriteBuildings.beginFrame();
     this.spriteUnits.beginFrame();
-    this.particles.update(dtMs / 1000);
+    this.particles.update(this.presentationClock.delta / 1000);
     if (prev && curr) {
       const alpha = Math.min(1, (performance.now() - at) / SIM_DT_MS);
       this.ambientLife.draw(this.camera, (curr.tick + alpha) / SIM_HZ);
@@ -641,13 +646,14 @@ export class GameRenderer {
   private drawEntities(prev: Snapshot, curr: Snapshot, alpha: number): void {
     const prevById = new Map<number, EntitySnapshot>();
     for (const e of prev.entities) prevById.set(e.id, e);
-    const animationTime = performance.now() / 1000;
+    const animationTime = this.presentationClock.time / 1000;
     const wallKeys = new Set(
       curr.entities
         .filter((entity) => entity.buildingType === 'concrete_wall')
         .map((entity) => wallKey(entity.owner, entity.x, entity.y)),
     );
     const wallStep = this.activeMap?.cellSize ?? 1;
+    const servicingYards = servicingConstructionYards(curr.entities);
 
     for (const e of curr.entities) {
       const p = prevById.get(e.id) ?? e;
@@ -689,6 +695,8 @@ export class GameRenderer {
           : 1;
         const spriteRendered = this.spriteBuildings.draw(e, sx, sy, s, {
           constructionProgress,
+          presentationTime: animationTime,
+          servicing: servicingYards.has(e.id),
           tint: spriteFactionTint(color),
         });
         if (!spriteRendered) {
@@ -919,7 +927,7 @@ export class GameRenderer {
   private drawCommandFeedback(): void {
     const feedback = this.commandFeedback;
     if (!feedback) return;
-    const frame = commandFeedbackFrame(feedback, performance.now());
+    const frame = commandFeedbackFrame(feedback, this.presentationClock.time);
     if (!frame) {
       this.commandFeedback = null;
       return;
@@ -959,7 +967,7 @@ export class GameRenderer {
       kind,
       worldX: world.wx,
       worldY: world.wy,
-      startedAt: performance.now(),
+      startedAt: this.presentationClock.time,
     };
   }
 
@@ -995,7 +1003,7 @@ export class GameRenderer {
     );
     const x = centre.x + Math.cos(angle) * scale;
     const y = centre.y + Math.sin(angle) * scale;
-    const pulse = 1 + Math.sin(performance.now() / 140) * 0.16;
+    const pulse = 1 + Math.sin(this.presentationClock.time / 140) * 0.16;
     const size = 13 * pulse;
 
     this.overlay
