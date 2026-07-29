@@ -540,6 +540,8 @@ Each is an independently testable module with a clear port/interface.
   update the containing scene transform instead of clearing and rebuilding Pixi `Graphics` every
   frame. Render textures remain an option only after profiling because they trade draw work for GPU
   memory.
+- **Camera boundary:** the minimum zoom derives from viewport and map dimensions, preventing normal
+  navigation from revealing the presentation exterior beyond the authored battlefield.
 - **Culling:** viewport frustum cull sprites; skip fog cells outside view.
 - **LOD:** distant/zoomed-out units drawn as simplified sprites or icon quads; disable per-unit health bars beyond a zoom threshold.
 - **Snapshot transfer:** `SharedArrayBuffer` ring buffer (double-buffered) when cross-origin isolation is available; else transferable `ArrayBuffer` (zero-copy) with structured-clone fallback.

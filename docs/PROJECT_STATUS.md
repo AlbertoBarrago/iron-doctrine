@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 264 automated tests;
+- 266 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -54,6 +54,8 @@ The validated source of truth is `main`. At this checkpoint the repository passe
 - Control groups are local presentation state: `Ctrl+1…9` assigns owned units, `1…9` recalls,
   a quick second recall centers the camera, and destroyed units are pruned automatically.
 - Mouse controls keep contextual orders on RMB, camera drag on MMB and cursor-anchored zoom.
+- Camera zoom-out uses the current battlefield and viewport dimensions as a dynamic floor, so
+  normal navigation never exposes the rectangular exterior around a built-in map.
 - The procedural 2.5D art direction uses shared military-industrial materials, compact shadows and restrained faction accents.
 - Map environment metadata is presentation-only, backwards-compatible and versioned independently
   from authoritative simulation state.
@@ -151,10 +153,9 @@ The first static environment slice is implemented:
 Still pending: combat cover bonuses, authored interactive props, ambient animals, distant
 aircraft and the rare commander-profile easter eggs.
 
-Latest playtest feedback: concentrating every remain on rock formations looks artificial.
-The next environment pass should scatter shell casings, bones and small debris across traversable
-ground at low density, while reserving large wrecks and obstacle-like silhouettes for blocked
-terrain so collision remains immediately readable.
+The latest environment readability pass scatters shell casings and bones across traversable ground
+at low deterministic density, excluding resource and spawn cells. Large wrecks and obstacle-like
+silhouettes remain reserved for blocked terrain so collision stays immediately readable.
 
 ### Cosmetic easter eggs
 
@@ -180,7 +181,7 @@ terrain so collision remains immediately readable.
 
 All 51 test files now live in local `__tests__` directories beside their owning modules.
 Cross-system engine harnesses remain grouped under `application/__tests__`; the move changed
-only file locations and relative imports. The current full baseline is 264 passing tests.
+only file locations and relative imports. The current full baseline is 266 passing tests.
 
 ### Campaign production
 
