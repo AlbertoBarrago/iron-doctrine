@@ -1,6 +1,6 @@
 import type { EntitySnapshot } from '@iron/engine';
 import type { Graphics } from 'pixi.js';
-import { MATERIAL, shadeColor } from './renderStyle.js';
+import { materialRamp, MATERIAL, shadeColor } from './renderStyle.js';
 
 export interface WallConnections {
   north: boolean;
@@ -111,6 +111,15 @@ function drawFoundation(graphics: Graphics, x: number, y: number, size: number):
     .fill({ color: MATERIAL.concreteDark })
     .stroke({ width: 2, color: MATERIAL.shadow });
   graphics
+    .moveTo(x - size * 0.94, y - size * 0.92)
+    .lineTo(x + size * 0.92, y - size * 0.92)
+    .lineTo(x + size * 0.92, y + size * 0.88)
+    .stroke({ width: Math.max(1, size * 0.055), color: MATERIAL.concreteLight, alpha: 0.5 });
+  graphics
+    .moveTo(x - size * 0.94, y + size * 0.92)
+    .lineTo(x + size * 0.96, y + size * 0.92)
+    .stroke({ width: Math.max(2, size * 0.09), color: MATERIAL.shadow, alpha: 0.75 });
+  graphics
     .moveTo(x - size * 0.9, y + size * 0.72)
     .lineTo(x + size * 0.9, y + size * 0.72)
     .stroke({ width: Math.max(2, size * 0.08), color: 0x353c37 });
@@ -135,10 +144,12 @@ function drawConstructionYard(
   alpha: number,
   animationTime: number,
 ): void {
+  const ramp = materialRamp(color);
   graphics
     .rect(x - size * 0.72, y - size * 0.7, size * 1.44, size * 1.4)
     .fill({ color: shadeColor(color, 0.62), alpha })
     .stroke({ width: 2, color: 0x090c0a });
+  drawRoofEdge(graphics, x, y - size * 0.7, size * 0.72, ramp.edge, alpha);
   graphics
     .rect(x - size * 0.55, y - size * 0.5, size * 0.62, size)
     .fill({ color: 0x242c27, alpha })
@@ -159,6 +170,7 @@ function drawConstructionYard(
   graphics
     .circle(x + size * 0.62, hookY, size * 0.08)
     .stroke({ width: Math.max(1.5, size * 0.045), color: MATERIAL.amber, alpha });
+  drawHazardStripe(graphics, x - size * 0.5, y + size * 0.58, size * 0.58, alpha);
   drawRoofPanel(graphics, x - size * 0.22, y - size * 0.38, size * 0.5, size * 0.22, alpha);
 }
 
@@ -171,10 +183,12 @@ function drawPowerPlant(
   alpha: number,
   animationTime: number,
 ): void {
+  const ramp = materialRamp(color);
   graphics
     .rect(x - size * 0.72, y - size * 0.55, size * 1.44, size * 1.12)
     .fill({ color: shadeColor(color, 0.72), alpha })
     .stroke({ width: 2, color: 0x080b09 });
+  drawRoofEdge(graphics, x, y - size * 0.55, size * 0.72, ramp.edge, alpha);
   const pulse = 0.72 + (Math.sin(animationTime * 4) + 1) * 0.14;
   for (const dx of [-0.38, 0.38]) {
     graphics
@@ -206,10 +220,12 @@ function drawBarracks(
   color: number,
   alpha: number,
 ): void {
+  const ramp = materialRamp(color);
   graphics
     .rect(x - size * 0.74, y - size * 0.7, size * 1.48, size * 1.4)
     .fill({ color: shadeColor(color, 0.7), alpha })
     .stroke({ width: 2, color: 0x080b09 });
+  drawRoofEdge(graphics, x, y - size * 0.7, size * 0.74, ramp.edge, alpha);
   graphics
     .moveTo(x - size * 0.78, y - size * 0.7)
     .lineTo(x, y - size)
@@ -234,10 +250,12 @@ function drawFactory(
   alpha: number,
   animationTime: number,
 ): void {
+  const ramp = materialRamp(color);
   graphics
     .rect(x - size * 0.82, y - size * 0.68, size * 1.64, size * 1.36)
     .fill({ color: shadeColor(color, 0.6), alpha })
     .stroke({ width: 2, color: 0x080b09 });
+  drawRoofEdge(graphics, x, y - size * 0.68, size * 0.82, ramp.edge, alpha);
   graphics
     .rect(x - size * 0.6, y - size * 0.42, size * 1.2, size * 0.86)
     .fill({ color: 0x111713, alpha })
@@ -257,6 +275,7 @@ function drawFactory(
   graphics
     .rect(x - size * 0.74, y - size * 0.86, size * 0.28, size * 0.35)
     .fill({ color: 0x4f5951, alpha });
+  drawHazardStripe(graphics, x, y + size * 0.53, size * 0.74, alpha);
 }
 
 function drawTurret(
@@ -335,4 +354,39 @@ function drawConstructionScaffold(
     .moveTo(right, top)
     .lineTo(left, y + size * 0.78)
     .stroke({ width: Math.max(1, size * 0.045), color: MATERIAL.copper, alpha: 0.88 });
+}
+
+function drawRoofEdge(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  halfWidth: number,
+  color: number,
+  alpha: number,
+): void {
+  graphics
+    .moveTo(x - halfWidth, y)
+    .lineTo(x + halfWidth, y)
+    .stroke({ width: Math.max(1, halfWidth * 0.055), color, alpha: alpha * 0.78 });
+}
+
+function drawHazardStripe(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  halfWidth: number,
+  alpha: number,
+): void {
+  graphics
+    .moveTo(x - halfWidth, y)
+    .lineTo(x + halfWidth, y)
+    .stroke({ width: Math.max(2, halfWidth * 0.16), color: MATERIAL.armorDark, alpha });
+  const step = (halfWidth * 2) / 6;
+  for (let index = 0; index < 6; index += 2) {
+    const start = x - halfWidth + index * step;
+    graphics
+      .moveTo(start, y)
+      .lineTo(Math.min(start + step, x + halfWidth), y)
+      .stroke({ width: Math.max(1, halfWidth * 0.08), color: MATERIAL.amber, alpha });
+  }
 }

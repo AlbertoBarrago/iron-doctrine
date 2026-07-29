@@ -1,10 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { engineerToolMotion, infantryMotion, shadeColor } from '../renderStyle.js';
+import {
+  engineerToolMotion,
+  infantryMotion,
+  materialRamp,
+  shadeColor,
+} from '../renderStyle.js';
 
 describe('battlefield render style', () => {
   it('shades every channel and clamps highlights', () => {
     expect(shadeColor(0x204060, 0.5)).toBe(0x102030);
     expect(shadeColor(0xe0f0ff, 2)).toBe(0xffffff);
+  });
+
+  it('builds a stable four-step material ramp from a faction color', () => {
+    const ramp = materialRamp(0x607050);
+    expect(ramp).toEqual({
+      shadow: 0x2e3626,
+      base: 0x4b573e,
+      light: 0x687956,
+      edge: 0x81966b,
+    });
   });
 
   it('keeps idle infantry stable and applies firing recoil independently', () => {

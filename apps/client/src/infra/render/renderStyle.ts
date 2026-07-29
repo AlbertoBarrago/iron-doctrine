@@ -1,15 +1,26 @@
 export const MATERIAL = {
-  armorDark: 0x151a17,
-  armorMid: 0x303832,
-  armorLight: 0x687068,
-  concreteDark: 0x242a26,
-  concrete: 0x59615a,
-  copper: 0x9a6034,
-  amber: 0xe0b34b,
+  armorDark: 0x121713,
+  armorMid: 0x343d35,
+  armorLight: 0x7b8477,
+  steelEdge: 0xaab09e,
+  concreteDark: 0x272923,
+  concrete: 0x66685c,
+  concreteLight: 0x909080,
+  copper: 0x9b6038,
+  amber: 0xe2b44a,
   factionRed: 0x8f3429,
-  glass: 0x223833,
+  glass: 0x1c3533,
+  dust: 0xa58c62,
+  smoke: 0x3b403a,
   shadow: 0x070908,
 } as const;
+
+export interface MaterialRamp {
+  shadow: number;
+  base: number;
+  light: number;
+  edge: number;
+}
 
 export interface InfantryMotion {
   gait: number;
@@ -27,6 +38,15 @@ export function shadeColor(color: number, factor: number): number {
   const green = clampChannel(((color >> 8) & 0xff) * factor);
   const blue = clampChannel((color & 0xff) * factor);
   return (red << 16) | (green << 8) | blue;
+}
+
+export function materialRamp(color: number): MaterialRamp {
+  return {
+    shadow: shadeColor(color, 0.48),
+    base: shadeColor(color, 0.78),
+    light: shadeColor(color, 1.08),
+    edge: shadeColor(color, 1.34),
+  };
 }
 
 export function infantryMotion(

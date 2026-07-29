@@ -1,6 +1,12 @@
 import type { Graphics } from 'pixi.js';
 import type { EntitySnapshot } from '@iron/engine';
-import { engineerToolMotion, infantryMotion, MATERIAL, shadeColor } from './renderStyle.js';
+import {
+  engineerToolMotion,
+  infantryMotion,
+  materialRamp,
+  MATERIAL,
+  shadeColor,
+} from './renderStyle.js';
 
 interface Point {
   x: number;
@@ -61,6 +67,7 @@ function drawScout(
   angle: number,
   color: number,
 ): void {
+  const ramp = materialRamp(color);
   for (const side of [-1, 1]) {
     for (const offset of [-0.52, 0.48]) {
       const wheel = localToScreen(sx, sy, angle, radius * offset, radius * side * 0.72);
@@ -78,7 +85,17 @@ function drawScout(
     { x: radius * 0.55, y: radius * 0.58 },
     { x: -radius * 0.88, y: radius * 0.58 },
   ]);
-  graphics.fill({ color }).stroke({ width: 1.25, color: MATERIAL.armorDark });
+  graphics.fill({ color: ramp.base }).stroke({ width: 1.25, color: MATERIAL.armorDark });
+
+  const bonnet = localToScreen(sx, sy, angle, radius * 0.52, 0);
+  polygon(graphics, bonnet.x, bonnet.y, angle, [
+    { x: -radius * 0.18, y: -radius * 0.5 },
+    { x: radius * 0.34, y: -radius * 0.38 },
+    { x: radius * 0.5, y: 0 },
+    { x: radius * 0.34, y: radius * 0.38 },
+    { x: -radius * 0.18, y: radius * 0.5 },
+  ]);
+  graphics.fill({ color: ramp.light }).stroke({ width: 1, color: ramp.shadow });
 
   const cabin = localToScreen(sx, sy, angle, radius * 0.12, 0);
   polygon(graphics, cabin.x, cabin.y, angle, [
@@ -88,6 +105,10 @@ function drawScout(
     { x: -radius * 0.35, y: radius * 0.4 },
   ]);
   graphics.fill({ color: MATERIAL.glass }).stroke({ width: 1, color: shadeColor(color, 0.55) });
+  const windscreenGlint = localToScreen(sx, sy, angle, radius * 0.24, -radius * 0.24);
+  graphics
+    .circle(windscreenGlint.x, windscreenGlint.y, Math.max(1, radius * 0.07))
+    .fill({ color: 0xb6d0bd, alpha: 0.7 });
 
   const antennaBase = localToScreen(sx, sy, angle, -radius * 0.48, radius * 0.28);
   const antennaTip = localToScreen(sx, sy, angle, -radius * 0.82, radius * 0.7);
@@ -119,6 +140,7 @@ function drawTank(
   angle: number,
   color: number,
 ): void {
+  const ramp = materialRamp(color);
   polygon(graphics, sx, sy, angle, [
     { x: -radius * 0.9, y: -radius * 0.88 },
     { x: radius * 0.75, y: -radius * 0.88 },
@@ -143,7 +165,7 @@ function drawTank(
     { x: radius * 0.72, y: radius * 0.58 },
     { x: -radius * 0.82, y: radius * 0.58 },
   ]);
-  graphics.fill({ color }).stroke({ width: 1.5, color: 0x080b08 });
+  graphics.fill({ color: ramp.base }).stroke({ width: 1.5, color: 0x080b08 });
 
   polygon(graphics, sx, sy, angle, [
     { x: -radius * 0.68, y: -radius * 0.46 },
@@ -152,7 +174,23 @@ function drawTank(
     { x: radius * 0.5, y: radius * 0.46 },
     { x: -radius * 0.68, y: radius * 0.46 },
   ]);
-  graphics.fill({ color: shadeColor(color, 1.08) }).stroke({ width: 1, color: MATERIAL.armorDark });
+  graphics.fill({ color: ramp.light }).stroke({ width: 1, color: MATERIAL.armorDark });
+
+  const glacis = localToScreen(sx, sy, angle, radius * 0.52, 0);
+  graphics
+    .moveTo(
+      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, -radius * 0.18, -radius * 0.42)),
+    )
+    .lineTo(
+      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, radius * 0.32, -radius * 0.22)),
+    )
+    .lineTo(
+      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, radius * 0.32, radius * 0.22)),
+    )
+    .lineTo(
+      ...pointTuple(localToScreen(glacis.x, glacis.y, angle, -radius * 0.18, radius * 0.42)),
+    )
+    .stroke({ width: Math.max(1, radius * 0.08), color: ramp.edge, alpha: 0.75 });
 
   const turret = localToScreen(sx, sy, angle, radius * 0.08, 0);
   graphics
@@ -178,6 +216,16 @@ function drawTank(
       radius * 0.12,
     )
     .fill({ color: MATERIAL.factionRed });
+
+  for (const side of [-1, 1]) {
+    for (const offset of [-0.58, -0.18, 0.22, 0.62]) {
+      const wheel = localToScreen(sx, sy, angle, radius * offset, radius * side * 0.67);
+      graphics
+        .circle(wheel.x, wheel.y, Math.max(1, radius * 0.095))
+        .fill({ color: MATERIAL.armorMid })
+        .stroke({ width: 1, color: MATERIAL.shadow });
+    }
+  }
 }
 
 function drawHarvester(
@@ -190,6 +238,7 @@ function drawHarvester(
   color: number,
   animationTime: number,
 ): void {
+  const ramp = materialRamp(color);
   const cargoRatio = entity.cargo ? entity.cargo.amount / entity.cargo.capacity : 0;
   const gathering = entity.cargo?.phase === 'gathering';
   const depositing = entity.cargo?.phase === 'depositing';
@@ -204,7 +253,7 @@ function drawHarvester(
     { x: radius * 0.7, y: radius * 0.7 },
     { x: -radius, y: radius * 0.7 },
   ]);
-  graphics.fill({ color }).stroke({ width: 1.5, color: 0x090c09 });
+  graphics.fill({ color: ramp.base }).stroke({ width: 1.5, color: 0x090c09 });
 
   polygon(graphics, sx, sy, angle, [
     { x: -radius * 0.86, y: -radius * 0.5 },
@@ -237,7 +286,12 @@ function drawHarvester(
     { x: radius * 0.76, y: radius * 0.34 },
     { x: radius * 0.28, y: radius * 0.48 },
   ]);
-  graphics.fill({ color: 0x99a18b }).stroke({ width: 1, color: 0x111812 });
+  graphics.fill({ color: ramp.light }).stroke({ width: 1, color: 0x111812 });
+  const cabinGlint = localToScreen(sx, sy, angle, radius * 0.58, -radius * 0.22);
+  graphics
+    .moveTo(cabinGlint.x - radius * 0.12, cabinGlint.y)
+    .lineTo(cabinGlint.x + radius * 0.12, cabinGlint.y)
+    .stroke({ width: Math.max(1, radius * 0.06), color: MATERIAL.steelEdge, alpha: 0.72 });
 
   const scoopLeft = localToScreen(sx, sy, angle, radius * 1.22 + scoopTravel, -radius * 0.72);
   const scoopTip = localToScreen(sx, sy, angle, radius * 1.45 + scoopTravel, 0);
@@ -287,6 +341,7 @@ function drawInfantry(
     presentation.moving,
     presentation.firing,
   );
+  const ramp = materialRamp(color);
   const bob = radius * motion.bob;
   const bodyX = sx + Math.cos(angle) * bob;
   const bodyY = sy + Math.sin(angle) * bob;
@@ -320,7 +375,7 @@ function drawInfantry(
     { x: -radius * 0.42, y: radius * 0.42 },
   ]);
   graphics
-    .fill({ color: shadeColor(color, role === 'engineer' ? 0.83 : 0.92) })
+    .fill({ color: role === 'engineer' ? ramp.base : ramp.light })
     .stroke({ width: 1.25, color: 0x080b08 });
 
   const leftShoulder = localToScreen(bodyX, bodyY, angle, radius * 0.12, -radius * 0.58);
@@ -332,6 +387,15 @@ function drawInfantry(
     .circle(head.x, head.y, radius * 0.3)
     .fill({ color: shadeColor(color, 1.16) })
     .stroke({ width: 1, color: 0x080b08 });
+  const chestLight = localToScreen(bodyX, bodyY, angle, radius * 0.18, -radius * 0.22);
+  graphics
+    .moveTo(chestLight.x, chestLight.y)
+    .lineTo(
+      ...pointTuple(
+        localToScreen(bodyX, bodyY, angle, radius * 0.36, -radius * 0.08),
+      ),
+    )
+    .stroke({ width: Math.max(1, radius * 0.08), color: ramp.edge, alpha: 0.65 });
   const helmetBandStart = localToScreen(bodyX, bodyY, angle, radius * 0.6, -radius * 0.27);
   const helmetBandEnd = localToScreen(bodyX, bodyY, angle, radius * 0.6, radius * 0.27);
   graphics
@@ -436,4 +500,8 @@ function localToScreen(sx: number, sy: number, angle: number, x: number, y: numb
     x: sx + x * cos - y * sin,
     y: sy + x * sin + y * cos,
   };
+}
+
+function pointTuple(point: Point): [number, number] {
+  return [point.x, point.y];
 }
