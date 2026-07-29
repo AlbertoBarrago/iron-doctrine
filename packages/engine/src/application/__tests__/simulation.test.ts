@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Simulation } from '../simulation.js';
-import { Position, Movement, UnitType } from '../../domain/components/index.js';
+import { Facing, Position, Movement, UnitType } from '../../domain/components/index.js';
 import * as fp from '../../domain/math/fixed.js';
 import type { EntityId } from '@iron/shared';
 
@@ -35,6 +35,23 @@ describe('Simulation', () => {
     const pos = sim.world.get(e, Position)!;
     expect(fp.toFloat(pos.x)).toBeCloseTo(10, 2);
     expect(sim.world.get(e, Movement)!.target).toBeNull(); // order cleared on arrival
+  });
+
+  it('keeps the selected direction after arriving in a single step', () => {
+    const sim = new Simulation({ seed: 1 });
+    const e = spawnAndReturnId(sim, 'rifleman', 0, 0);
+    sim.enqueue({
+      type: 'move',
+      entities: [e],
+      target: { x: fp.FP.ZERO, y: fp.fromFloat(0.1) },
+    });
+
+    sim.step();
+
+    expect(sim.world.get(e, Movement)!.target).toBeNull();
+    const facing = sim.world.get(e, Facing)!.dir;
+    expect(facing.x).toBe(fp.FP.ZERO);
+    expect(facing.y).toBeGreaterThan(fp.FP.ZERO);
   });
 
   it('stop command clears the movement target', () => {

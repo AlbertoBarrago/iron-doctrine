@@ -32,6 +32,9 @@ export const MovementSystem: System = {
       const distSq = v2.lenSq(toTarget);
       const step = fp.mul(move.speed, ctx.dt);
       const stepSq = fp.mul(step, step);
+      const dir = distSq === fp.FP.ZERO ? null : v2.normalize(toTarget);
+
+      if (dir && world.has(e, Facing)) world.add(e, Facing, { dir });
 
       if (distSq <= ARRIVE_EPS_SQ || distSq <= stepSq) {
         // Reached this waypoint: snap onto it.
@@ -46,9 +49,8 @@ export const MovementSystem: System = {
         continue;
       }
 
-      const dir = v2.normalize(toTarget);
+      if (!dir) continue;
       world.add(e, Position, v2.add(pos, v2.scale(dir, step)));
-      if (world.has(e, Facing)) world.add(e, Facing, { dir });
     }
   },
 };

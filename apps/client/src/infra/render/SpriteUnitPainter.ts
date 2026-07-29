@@ -50,6 +50,7 @@ interface DirectionalSpriteState {
 interface SpritePresentation {
   moving?: boolean;
   firing?: boolean;
+  engaged?: boolean;
 }
 
 export function tankDirection(angle: number): SpriteDirection {
@@ -149,9 +150,14 @@ export class SpriteUnitPainter {
         state.actionStartedAt = null;
       }
     }
-    if (visualState === 'idle' && presentation.moving) {
-      visualState = 'move';
-      step = Math.floor((animationTime + entity.id * 0.031) / movementFrameSeconds) % 2;
+    if (visualState === 'idle') {
+      if (unitType === 'rifleman' && presentation.engaged) {
+        visualState = 'fire';
+        step = 1;
+      } else if (presentation.moving) {
+        visualState = 'move';
+        step = Math.floor((animationTime + entity.id * 0.031) / movementFrameSeconds) % 2;
+      }
     }
 
     const nextDirection = stableTankDirection(entity.angle, state.direction);

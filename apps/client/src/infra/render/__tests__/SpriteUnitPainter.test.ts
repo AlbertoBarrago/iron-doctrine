@@ -64,7 +64,7 @@ describe('tank sprite direction', () => {
     expect(requested).toContain('unit.tank.recoil.e.1');
   });
 
-  it('selects authored Rifleman movement and fire frames', () => {
+  it('selects authored Rifleman movement and holds its fire stance while engaged', () => {
     const requested: string[] = [];
     const painter = new SpriteUnitPainter({
       texture: (frameId: string) => {
@@ -75,12 +75,14 @@ describe('tank sprite direction', () => {
     const rifleman = { id: 11, unitType: 'rifleman', angle: 0 };
 
     painter.draw(rifleman as never, 100, 80, 8, 1, { moving: true });
-    painter.draw(rifleman as never, 100, 80, 8, 1.01, { firing: true });
-    painter.draw(rifleman as never, 100, 80, 8, 1.08, { firing: false });
+    painter.draw(rifleman as never, 100, 80, 8, 1.01, { firing: true, engaged: true });
+    painter.draw(rifleman as never, 100, 80, 8, 1.08, { firing: false, engaged: true });
+    painter.draw(rifleman as never, 100, 80, 8, 1.3, { firing: false, engaged: true });
 
     expect(requested.some((frame) => frame.startsWith('unit.rifleman.move.e.'))).toBe(true);
     expect(requested).toContain('unit.rifleman.fire.e.0');
     expect(requested).toContain('unit.rifleman.fire.e.1');
+    expect(requested.at(-1)).toBe('unit.rifleman.fire.e.1');
   });
 
   it('leaves tanks to the procedural fallback while the atlas is unavailable', () => {

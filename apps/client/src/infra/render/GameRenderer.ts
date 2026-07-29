@@ -706,9 +706,11 @@ export class GameRenderer {
       const moving = Math.hypot(e.x - p.x, e.y - p.y) > 0.001;
       const firing =
         e.weaponCooldownLeft !== undefined && e.weaponCooldownLeft > (p.weaponCooldownLeft ?? 0);
+      const engaged = e.unitType === 'rifleman' && e.attackTarget !== undefined && !moving;
       const spriteRendered = this.spriteUnits.draw(e, sx, sy, r, animationTime, {
         moving,
         firing,
+        engaged,
       });
       if (spriteRendered) {
         drawGroundShadow(this.unitUnderlay, sx, sy, r, e.unitType === 'rifleman' ? 0.72 : 1);
