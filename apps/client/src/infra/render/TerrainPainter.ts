@@ -9,6 +9,7 @@ import { PIXELS_PER_UNIT, type Camera } from './camera.js';
 
 const CHUNK_CELLS = 16;
 const GROUND_TILE_CELLS = 2;
+const MACRO_PATCH_CELLS = 8;
 
 interface TerrainPalette {
   base: number;
@@ -51,6 +52,13 @@ export interface TerrainSample {
   scale: number;
 }
 
+export interface TerrainMacroSample {
+  groundIndex: 0 | 1 | 2 | 3;
+  rotation: number;
+  scale: number;
+  soil: boolean;
+}
+
 export type WarRemains = 'none' | 'shells' | 'bones' | 'wreckage';
 
 export interface TerrainFeature {
@@ -72,6 +80,16 @@ export function terrainSample(seed: number, x: number, y: number): TerrainSample
       detailRoll < 2 ? 'stone' : detailRoll < 4 ? 'scrub' : detailRoll === 4 ? 'soil' : 'none',
     rotation: (((hash >>> 13) & 255) / 255) * Math.PI * 2,
     scale: 0.72 + (((hash >>> 21) & 31) / 31) * 0.46,
+  };
+}
+
+export function terrainMacroSample(seed: number, x: number, y: number): TerrainMacroSample {
+  const hash = terrainHash(seed ^ 0x2c1b3c6d, x, y);
+  return {
+    groundIndex: ((hash >>> 3) & 3) as TerrainMacroSample['groundIndex'],
+    rotation: (((hash >>> 8) & 255) / 255) * Math.PI,
+    scale: 0.82 + (((hash >>> 17) & 63) / 63) * 0.5,
+    soil: ((hash >>> 25) & 7) === 0,
   };
 }
 
@@ -121,7 +139,20 @@ export class TerrainPainter {
     const base = new Graphics()
       .rect(left, top, map.width * cellPixels, map.height * cellPixels)
       .fill({ color: palette.base });
-    this.container.addChild(base);
+    const macroGround = new Graphics();
+    for (let y = -MACRO_PATCH_CELLS / 2; y < map.height; y += MACRO_PATCH_CELLS) {
+      for (let x = -MACRO_PATCH_CELLS / 2; x < map.width; x += MACRO_PATCH_CELLS) {
+        drawMacroPatch(
+          macroGround,
+          left + (x + MACRO_PATCH_CELLS / 2) * cellPixels,
+          top + (y + MACRO_PATCH_CELLS / 2) * cellPixels,
+          MACRO_PATCH_CELLS * cellPixels,
+          palette,
+          terrainMacroSample(environment.seed, x, y),
+        );
+      }
+    }
+    this.container.addChild(base, macroGround);
 
     const blocked = new Set(map.blocked.map(([x, y]) => `${x}:${y}`));
     const reserved = new Set([
@@ -144,7 +175,7 @@ export class TerrainPainter {
             const height = Math.min(GROUND_TILE_CELLS, map.height - y) * cellPixels;
             ground
               .rect(left + x * cellPixels, top + y * cellPixels, width + 1, height + 1)
-              .fill({ color: palette.ground[sample.groundIndex], alpha: 0.7 });
+              .fill({ color: palette.ground[sample.groundIndex], alpha: 0.34 });
           }
         }
 
@@ -155,6 +186,14 @@ export class TerrainPainter {
             if (blocked.has(`${x}:${y}`)) {
               const rockSample = terrainSample(environment.seed ^ 0x51f15e, x, y);
               const remainsSample = warRemainsSample(environment.seed, x, y, true);
+              drawRockFoot(
+                details,
+                screenX + cellPixels / 2,
+                screenY + cellPixels / 2,
+                cellPixels,
+                palette,
+                rockSample,
+              );
               drawCliffCell(cliffs, screenX, screenY, cellPixels, palette, rockSample);
               drawWarRemains(
                 remains,
@@ -246,6 +285,64 @@ export function terrainFeature(remains: WarRemains, blocked: boolean): TerrainFe
   return null;
 }
 
+function drawMacroPatch(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  palette: TerrainPalette,
+  sample: TerrainMacroSample,
+): void {
+  const width = size * sample.scale;
+  const height = size * (0.42 + sample.scale * 0.16);
+  const cos = Math.cos(sample.rotation);
+  const sin = Math.sin(sample.rotation);
+  graphics
+    .ellipse(x, y, width, height)
+    .fill({ color: palette.ground[sample.groundIndex], alpha: 0.38 });
+  if (sample.soil) {
+    graphics
+      .ellipse(x + cos * size * 0.16, y + sin * size * 0.16, width * 0.5, height * 0.42)
+      .fill({ color: palette.soil, alpha: 0.19 });
+  }
+  for (const offset of [-0.18, 0.18]) {
+    const startX = x - cos * width * 0.48 - sin * height * offset;
+    const startY = y - sin * width * 0.48 + cos * height * offset;
+    const endX = x + cos * width * 0.48 - sin * height * offset;
+    const endY = y + sin * width * 0.48 + cos * height * offset;
+    graphics
+      .moveTo(startX, startY)
+      .lineTo(endX, endY)
+      .stroke({ width: Math.max(1, size * 0.008), color: palette.stoneLight, alpha: 0.08 });
+  }
+}
+
+function drawRockFoot(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  palette: TerrainPalette,
+  sample: TerrainSample,
+): void {
+  const cos = Math.cos(sample.rotation);
+  const sin = Math.sin(sample.rotation);
+  graphics
+    .ellipse(x + size * 0.04, y + size * 0.11, size * 0.62, size * 0.52)
+    .fill({ color: palette.soil, alpha: 0.34 })
+    .ellipse(x + size * 0.09, y + size * 0.16, size * 0.56, size * 0.43)
+    .fill({ color: palette.cliffShadow, alpha: 0.24 });
+  for (const offset of [-0.34, 0.31]) {
+    graphics
+      .circle(
+        x + cos * size * offset - sin * size * 0.38,
+        y + sin * size * offset + cos * size * 0.38,
+        size * 0.08,
+      )
+      .fill({ color: palette.stone, alpha: 0.62 });
+  }
+}
+
 function drawDetail(
   graphics: Graphics,
   x: number,
@@ -335,20 +432,24 @@ function drawWarRemains(
   const propY = y + sin * size * 0.34;
   if (remains === 'shells') {
     for (let index = -2; index <= 2; index++) {
+      const spread = index * size * 0.11;
+      const shellX = propX + cos * spread - sin * Math.sin(index * 2.1) * size * 0.12;
+      const shellY = propY + sin * spread + cos * Math.sin(index * 2.1) * size * 0.12;
       graphics
-        .rect(
-          propX + cos * index * size * 0.12 - size * 0.045,
-          propY + sin * index * size * 0.12,
-          size * 0.09,
-          size * 0.27,
-        )
-        .fill({ color: 0xc09a4b })
-        .stroke({ width: 1, color: 0x332d20 });
+        .ellipse(shellX + size * 0.03, shellY + size * 0.04, size * 0.07, size * 0.16)
+        .fill({ color: 0x1d1c17, alpha: 0.38 })
+        .moveTo(shellX - cos * size * 0.13, shellY - sin * size * 0.13)
+        .lineTo(shellX + cos * size * 0.13, shellY + sin * size * 0.13)
+        .stroke({ width: Math.max(1.2, size * 0.07), color: 0xc09a4b })
+        .circle(shellX - cos * size * 0.13, shellY - sin * size * 0.13, size * 0.045)
+        .fill({ color: 0x6d562e });
     }
     return;
   }
   if (remains === 'bones') {
     graphics
+      .ellipse(propX + size * 0.06, propY + size * 0.08, size * 0.58, size * 0.4)
+      .fill({ color: 0x28261f, alpha: 0.18 })
       .moveTo(propX - size * 0.38, propY - size * 0.28)
       .lineTo(propX + size * 0.36, propY + size * 0.3)
       .moveTo(propX - size * 0.34, propY + size * 0.3)
@@ -362,6 +463,10 @@ function drawWarRemains(
     return;
   }
   graphics
+    .ellipse(propX + size * 0.08, propY + size * 0.12, size * 0.95, size * 0.62)
+    .fill({ color: 0x171914, alpha: 0.32 })
+    .ellipse(propX - size * 0.08, propY, size * 0.7, size * 0.48)
+    .stroke({ width: Math.max(2, size * 0.12), color: 0x39301f, alpha: 0.46 })
     .moveTo(propX - size * 0.78, propY + size * 0.18)
     .lineTo(propX - size * 0.28, propY - size * 0.32)
     .lineTo(propX + size * 0.72, propY - size * 0.18)

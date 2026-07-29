@@ -3,6 +3,7 @@ import { createEmptyMap } from '@iron/shared';
 import {
   mapEnvironment,
   terrainFeature,
+  terrainMacroSample,
   terrainSample,
   warRemainsSample,
 } from '../TerrainPainter.js';
@@ -11,6 +12,19 @@ describe('terrain presentation', () => {
   it('produces stable cosmetic details from a seed and coordinates', () => {
     expect(terrainSample(1979, 12, 37)).toEqual(terrainSample(1979, 12, 37));
     expect(terrainSample(1979, 12, 37)).not.toEqual(terrainSample(1980, 12, 37));
+  });
+
+  it('builds stable broad terrain patches without leaving supported ranges', () => {
+    const samples = Array.from({ length: 64 }, (_, index) =>
+      terrainMacroSample(1979, (index % 8) * 8, Math.floor(index / 8) * 8),
+    );
+    expect(samples).toEqual(
+      Array.from({ length: 64 }, (_, index) =>
+        terrainMacroSample(1979, (index % 8) * 8, Math.floor(index / 8) * 8),
+      ),
+    );
+    expect(new Set(samples.map((sample) => sample.groundIndex)).size).toBeGreaterThan(2);
+    expect(samples.every((sample) => sample.scale >= 0.82 && sample.scale <= 1.32)).toBe(true);
   });
 
   it('falls back to the backwards-compatible environment', () => {
