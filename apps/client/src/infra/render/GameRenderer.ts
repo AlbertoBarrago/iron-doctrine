@@ -100,6 +100,9 @@ export class GameRenderer {
     pointerId: number;
   } | null = null;
   private commandFeedback: CommandFeedback | null = null;
+  private terrainTooltip: HTMLDivElement | null = null;
+  private terrainTooltipTitle: HTMLElement | null = null;
+  private terrainTooltipCopy: HTMLElement | null = null;
 
   private minimapCtx: CanvasRenderingContext2D | null = null;
   private minimapFrame = 0;
@@ -174,6 +177,7 @@ export class GameRenderer {
     }
     this.ready = true;
     this.container.appendChild(this.app.canvas);
+    this.createTerrainTooltip();
 
     this.terrain.build(config.map);
     this.ambientLife.build(config.map, presentation.chickenEasterEgg);
@@ -1064,6 +1068,7 @@ export class GameRenderer {
     canvas.addEventListener('pointercancel', () => this.cancelPointerGesture());
     canvas.addEventListener('pointerleave', () => {
       if (!this.cameraDrag) this.navigationPointer = null;
+      this.hideTerrainTooltip();
     });
     canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
     canvas.addEventListener('wheel', (e) => {
@@ -1117,6 +1122,7 @@ export class GameRenderer {
     this.placementPointer = point;
     this.navigationPointer = point;
     if (this.cameraDrag) {
+      this.hideTerrainTooltip();
       const dx = point.x - this.cameraDrag.x;
       const dy = point.y - this.cameraDrag.y;
       this.camera.panByScreenDelta(dx, dy);
@@ -1125,6 +1131,7 @@ export class GameRenderer {
       return;
     }
     this.updatePointerCursor(point.x, point.y);
+    this.updateTerrainTooltip(point.x, point.y);
     if (this.dragStart) this.dragNow = point;
   }
 
@@ -1455,6 +1462,53 @@ export class GameRenderer {
             : 'pointer';
   }
 
+  private createTerrainTooltip(): void {
+    const tooltip = document.createElement('div');
+    tooltip.className = 'terrain-tooltip';
+    tooltip.setAttribute('role', 'tooltip');
+    tooltip.hidden = true;
+    const title = document.createElement('strong');
+    const copy = document.createElement('span');
+    tooltip.append(title, copy);
+    this.container.appendChild(tooltip);
+    this.terrainTooltip = tooltip;
+    this.terrainTooltipTitle = title;
+    this.terrainTooltipCopy = copy;
+  }
+
+  private updateTerrainTooltip(sx: number, sy: number): void {
+    const tooltip = this.terrainTooltip;
+    if (!tooltip || this.placingBuilding || this.dragStart || this.entityAt(sx, sy)) {
+      this.hideTerrainTooltip();
+      return;
+    }
+    const { wx, wy } = this.camera.screenToWorld(sx, sy);
+    const feature = this.terrain.featureAt(wx, wy);
+    if (!feature) {
+      this.hideTerrainTooltip();
+      return;
+    }
+    this.terrainTooltipTitle!.textContent = feature.label;
+    this.terrainTooltipCopy!.textContent = feature.description;
+    tooltip.style.left = `${Math.max(8, Math.min(sx + 16, this.container.clientWidth - 256))}px`;
+    tooltip.style.top = `${Math.max(8, Math.min(sy + 18, this.container.clientHeight - 78))}px`;
+    tooltip.hidden = false;
+  }
+
+  private hideTerrainTooltip(): void {
+    if (this.terrainTooltip) this.terrainTooltip.hidden = true;
+  }
+
+  private entityAt(sx: number, sy: number): boolean {
+    const snapshot = this.bridge.latest.curr;
+    if (!snapshot) return false;
+    return snapshot.entities.some((entity) => {
+      const screen = this.camera.worldToScreen(entity.x, entity.y);
+      const radius = entity.radius * this.camera.scale * (entity.kind === 'resource' ? 2.8 : 1) + 6;
+      return (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2 <= radius ** 2;
+    });
+  }
+
   private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
     if (this.selected.size !== 1) return null;
     const selectedId = this.selected.values().next().value as number | undefined;
@@ -1616,6 +1670,8 @@ export class GameRenderer {
     this.disposed = true;
     this.bridge.dispose();
     this.audio.dispose();
+    this.terrainTooltip?.remove();
+    this.terrainTooltip = null;
     // Only destroy Pixi if init finished; otherwise start() will tear it down itself.
     if (this.ready) this.app.destroy(true, { children: true });
   }

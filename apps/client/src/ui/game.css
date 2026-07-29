@@ -52,6 +52,32 @@ kbd {
   position: absolute;
   inset: 0 314px 0 0;
 }
+.terrain-tooltip {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  width: 240px;
+  gap: 3px;
+  padding: 8px 10px;
+  color: #d8d2b6;
+  pointer-events: none;
+  background: rgba(10, 13, 9, 0.94);
+  border: 1px solid #8b7a42;
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.38);
+}
+.terrain-tooltip[hidden] {
+  display: none;
+}
+.terrain-tooltip strong {
+  color: var(--amber-light);
+  font: 800 10px/1.2 var(--body);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.terrain-tooltip span {
+  color: #bdb89e;
+  font: 9px/1.4 var(--body);
+}
 
 .steel-panel {
   color: #d8d2b6;
@@ -2604,8 +2630,7 @@ kbd {
   padding: 28px;
   color: var(--campaign-ink);
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.025), transparent 20%),
-    var(--campaign-paper);
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025), transparent 20%), var(--campaign-paper);
   border: 2px ridge #626652;
   box-shadow: 0 18px 60px #000;
 }

@@ -53,6 +53,12 @@ export interface TerrainSample {
 
 export type WarRemains = 'none' | 'shells' | 'bones' | 'wreckage';
 
+export interface TerrainFeature {
+  kind: Exclude<WarRemains, 'none'> | 'rock';
+  label: string;
+  description: string;
+}
+
 /**
  * Stable cosmetic sampling. It deliberately uses integer hashing so identical map
  * metadata produces the same battlefield without entering authoritative simulation.
@@ -73,12 +79,7 @@ export function terrainSample(seed: number, x: number, y: number): TerrainSample
  * Sparse presentation-only remains. Open ground may receive only small debris;
  * obstacle-like wreckage is reserved for blocked terrain.
  */
-export function warRemainsSample(
-  seed: number,
-  x: number,
-  y: number,
-  blocked: boolean,
-): WarRemains {
+export function warRemainsSample(seed: number, x: number, y: number, blocked: boolean): WarRemains {
   const hash = terrainHash(seed ^ 0x6d2b79f5, x, y);
   if (!blocked) {
     const openRoll = hash & 255;
@@ -103,9 +104,13 @@ export function mapEnvironment(map: MapDef): MapEnvironment {
  */
 export class TerrainPainter {
   readonly container = new Container();
+  private map: MapDef | null = null;
+  private readonly features = new Map<string, TerrainFeature>();
 
   build(map: MapDef): void {
     for (const child of this.container.removeChildren()) child.destroy();
+    this.map = map;
+    this.features.clear();
 
     const environment = mapEnvironment(map);
     const palette = PALETTES[environment.biome];
@@ -149,22 +154,17 @@ export class TerrainPainter {
             const screenY = top + y * cellPixels;
             if (blocked.has(`${x}:${y}`)) {
               const rockSample = terrainSample(environment.seed ^ 0x51f15e, x, y);
-              drawCliffCell(
-                cliffs,
-                screenX,
-                screenY,
-                cellPixels,
-                palette,
-                rockSample,
-              );
+              const remainsSample = warRemainsSample(environment.seed, x, y, true);
+              drawCliffCell(cliffs, screenX, screenY, cellPixels, palette, rockSample);
               drawWarRemains(
                 remains,
                 screenX + cellPixels / 2,
                 screenY + cellPixels / 2,
                 cellPixels,
                 rockSample,
-                warRemainsSample(environment.seed, x, y, true),
+                remainsSample,
               );
+              this.features.set(`${x}:${y}`, terrainFeature(remainsSample, true)!);
               continue;
             }
             drawDetail(
@@ -177,14 +177,17 @@ export class TerrainPainter {
             );
             if (!reserved.has(`${x}:${y}`)) {
               const detailSample = terrainSample(environment.seed ^ 0x51f15e, x, y);
+              const remainsSample = warRemainsSample(environment.seed, x, y, false);
               drawWarRemains(
                 remains,
                 screenX + cellPixels / 2,
                 screenY + cellPixels / 2,
                 cellPixels * 0.72,
                 detailSample,
-                warRemainsSample(environment.seed, x, y, false),
+                remainsSample,
               );
+              const feature = terrainFeature(remainsSample, false);
+              if (feature) this.features.set(`${x}:${y}`, feature);
             }
           }
         }
@@ -194,6 +197,14 @@ export class TerrainPainter {
     }
   }
 
+  featureAt(worldX: number, worldY: number): TerrainFeature | null {
+    if (!this.map) return null;
+    const x = Math.floor(worldX / this.map.cellSize + this.map.width / 2);
+    const y = Math.floor(worldY / this.map.cellSize + this.map.height / 2);
+    if (x < 0 || y < 0 || x >= this.map.width || y >= this.map.height) return null;
+    return this.features.get(`${x}:${y}`) ?? null;
+  }
+
   updateView(camera: Camera, width: number, height: number): void {
     this.container.scale.set(camera.zoom);
     this.container.position.set(
@@ -201,6 +212,38 @@ export class TerrainPainter {
       height / 2 - camera.y * PIXELS_PER_UNIT * camera.zoom,
     );
   }
+}
+
+export function terrainFeature(remains: WarRemains, blocked: boolean): TerrainFeature | null {
+  if (remains === 'shells') {
+    return {
+      kind: remains,
+      label: 'Spent shell casings',
+      description: 'Battlefield debris. Cosmetic only; it does not block movement.',
+    };
+  }
+  if (remains === 'bones') {
+    return {
+      kind: remains,
+      label: 'Battlefield remains',
+      description: 'Evidence of an earlier fight. Cosmetic only.',
+    };
+  }
+  if (remains === 'wreckage') {
+    return {
+      kind: remains,
+      label: 'Shattered aircraft',
+      description: 'Wreckage embedded in impassable rock terrain that can shield infantry.',
+    };
+  }
+  if (blocked) {
+    return {
+      kind: 'rock',
+      label: 'Rock formation',
+      description: 'Impassable terrain. Infantry behind it receives directional cover.',
+    };
+  }
+  return null;
 }
 
 function drawDetail(
