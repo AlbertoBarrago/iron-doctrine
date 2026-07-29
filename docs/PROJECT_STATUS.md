@@ -29,7 +29,7 @@ First Contact is a playable vertical slice:
 
 The validated source of truth is `main`. At this checkpoint the repository passes:
 
-- 310 automated tests;
+- 311 automated tests;
 - TypeScript project typecheck;
 - ESLint and Biome diagnostics;
 - production builds for client, server, engine and shared packages.
@@ -112,6 +112,14 @@ The first production vehicle slice is implemented:
 - a short crossfade and angular hysteresis keep steering transitions fluid without changing simulation;
 - a missing atlas falls back to the existing procedural painter instead of blocking a match.
 
+The second production vehicle slice is implemented:
+
+- `assets-src/vehicles/scout/scout.blend` is the editable, original Scout source;
+- exposed wheels, armored glazing, bonnet and radio mast establish its reconnaissance silhouette;
+- 16 idle facings and a four-pose wheel/suspension cycle share the tank's direction contract;
+- owner tint preserves the authored olive, rubber, glass and metal value separation;
+- runtime frame selection remains presentation-only and retains the procedural fallback.
+
 The first production infantry slice is implemented:
 
 - `assets-src/units/infantry/rifleman.blend` is the editable Rifleman source;
@@ -122,10 +130,11 @@ The first production infantry slice is implemented:
 
 Production-art refinement proceeds family by family in this order:
 
-1. complete Battle Tank damage, destruction and final gameplay-scale acceptance;
-2. extend the Rifleman infantry foundation to Engineer and Medic;
-3. replace the representative Iron Pass terrain;
-4. replace the representative industrial structures.
+1. complete the Harvester vehicle source and cargo/action states;
+2. replace the representative base structures and their operational states;
+3. replace the representative Iron Pass terrain and structure-ground transitions;
+4. complete damage, destruction and final gameplay-scale acceptance across the authored families;
+5. extend the Rifleman infantry foundation to Engineer and Medic.
 
 The current tank export covers idle, a restrained two-frame suspension cycle while moving and a
 two-frame barrel recoil triggered by authoritative weapon timing. The suspension isolates the upper

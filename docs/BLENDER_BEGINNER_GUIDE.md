@@ -23,11 +23,11 @@ deterministic WebP atlas + TypeScript frame IDs
 PixiJS renderer
 ```
 
-The authoritative sources for geometry, materials, camera, lighting and poses are
-`scripts/blender/render-battle-tank.py` and `scripts/blender/render-infantry.py`. Running either
-script rebuilds its `.blend` file from scratch. Changes made only in the Blender UI are useful for
-experimentation, but they will be overwritten by the next scripted build. Copy successful
-experiments into the Python recipe before treating them as production work.
+The authoritative sources for geometry, materials, camera, lighting and poses are the
+`scripts/blender/render-*.py` recipes for each asset. Running one rebuilds its `.blend` file from
+scratch. Changes made only in the Blender UI are useful for experimentation, but they will be
+overwritten by the next scripted build. Copy successful experiments into the Python recipe before
+treating them as production work.
 
 ## Installation
 
@@ -42,6 +42,8 @@ Open the generated source file from the repository root:
 
 ```sh
 blender assets-src/vehicles/tank/tank.blend
+# or
+blender assets-src/vehicles/scout/scout.blend
 # or
 blender assets-src/units/infantry/rifleman.blend
 ```
@@ -144,6 +146,17 @@ instead of translating the sprite. Fire briefly moves the weapon backward from a
 vertical ready stance; the runtime effect layer remains responsible for muzzle flash and
 projectiles.
 
+## The Scout scene
+
+The Scout keeps the tank's positive-X facing and camera. `Scout - Iron Pass` rotates through the
+authored directions, four wheel pivots carry rotation, and `Suspended body` carries only a few
+millimetres of lift and pitch. This separation is the core vehicle rule: wheels establish contact
+with the terrain, while the sprung mass communicates weight.
+
+At runtime the Scout is unarmed, so its sheet contains one idle frame and four movement frames per
+direction. The pale bonnet panel is the controlled owner-tint surface; weathered olive, rubber,
+glass and exposed steel retain their own value ranges.
+
 ## Production build
 
 From the repository root:
@@ -177,8 +190,20 @@ node scripts/blender/compose-infantry.mjs \
 pnpm assets:build
 ```
 
-Blender may create `tank.blend1`, a local backup of the previous file. It is not a production asset
-and must not be committed.
+For the Scout:
+
+```sh
+frames_dir="$(mktemp -d /tmp/iron-doctrine-scout-frames.XXXXXX)"
+blender --background --python scripts/blender/render-scout.py -- \
+  --blend assets-src/vehicles/scout/scout.blend \
+  --frames-dir "$frames_dir"
+node scripts/blender/compose-scout.mjs \
+  "$frames_dir" assets-src/vehicles/scout/scout.png
+pnpm assets:build
+```
+
+Blender may create a `.blend1` backup beside a previous file. It is not a production asset and must
+not be committed.
 
 Never paint individual direction frames by hand. A correction belongs in the model, material,
 camera, light or pose so every facing remains consistent and the export stays reproducible.
@@ -232,7 +257,7 @@ The render script deletes the scene and rebuilds it. Move durable changes into
 Keep `STATE_STEPS`, the composer state counts and `assets-src/manifest.json` aligned. The compiler
 rejects partial or implicit grids by design.
 
-**The game still shows the procedural tank**
+**The game still shows the procedural unit**
 
 Run `pnpm assets:build`, restart the Vite development server and check the browser console. A missing
 or invalid production atlas deliberately falls back to the procedural painter.

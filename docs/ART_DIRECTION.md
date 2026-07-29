@@ -79,7 +79,8 @@ then with material, and finally under fog.
 - Harvesters use a visible collection head and open ore storage; cargo state must read without
   relying on UI.
 - Vehicle source art targets 16 facings. Rotation must not blur or visibly distort the hull.
-- Required states: idle, moving, firing/recoil, damaged and destroyed.
+- Required states follow the archetype: idle and moving for every vehicle, firing/recoil only for
+  armed vehicles, and damaged/destroyed before final family acceptance.
 - Tracks, wheels, exhaust and dust provide motion. The whole body must not wobble.
 
 ### Infantry
@@ -188,6 +189,25 @@ The Rifleman establishes shared infantry scale, camera, palette and an eight-pos
 Engineer and Medic should reuse that foundation while remaining identifiable through equipment
 and silhouette. Authored surface values remain neutral enough for the runtime owner tint to
 distinguish factions without flattening cloth, leather and metal into one solid team color.
+
+### Scout authoring
+
+The Scout source is `assets-src/vehicles/scout/scout.blend`. It shares the tank's 192-pixel,
+16-facing camera contract, with a four-pose wheel and suspension cycle:
+
+```sh
+blender --background --python scripts/blender/render-scout.py -- \
+  --blend assets-src/vehicles/scout/scout.blend \
+  --frames-dir /tmp/iron-doctrine-scout-frames
+node scripts/blender/compose-scout.mjs \
+  /tmp/iron-doctrine-scout-frames assets-src/vehicles/scout/scout.png
+pnpm assets:build
+```
+
+The wheels remain attached to the ground-contact root while only the armored body receives a small
+suspension response. Wheel markers make rotation readable without exaggerating chassis travel.
+The radio mast, exposed running gear and forward bonnet distinguish the unarmed reconnaissance
+role before owner tint is applied.
 
 ### Authored movement rules
 
