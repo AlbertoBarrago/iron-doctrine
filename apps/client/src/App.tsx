@@ -26,6 +26,7 @@ import type { CampaignMissionId } from './game/campaign.js';
 import { useGameStore } from './state/gameStore.js';
 import type { MapDef } from '@iron/shared';
 import type { MatchMetricsSnapshot } from '@iron/engine';
+import { battleReportVictory } from './game/matchResult.js';
 import {
   evaluateAchievements,
   loadAchievementProgress,
@@ -230,21 +231,26 @@ function Game({
   }, [config.mission, match, onMissionComplete, tutorialStep]);
 
   useEffect(() => {
-    if (
-      battleReportGenerated.current ||
-      match?.status !== 'finished' ||
-      !matchMetrics
-    ) {
-      return;
-    }
+    if (battleReportGenerated.current) return;
+    const victory = battleReportVictory(
+      config.mission,
+      tutorialStep === 'complete',
+      match,
+    );
+    if (victory === null) return;
+    const metrics =
+      config.mission === 'base_foundations'
+        ? rendererRef.current?.getMatchMetrics()
+        : matchMetrics;
+    if (!metrics) return;
     battleReportGenerated.current = true;
-    const newlyUnlocked = onBattleReport(matchMetrics, match.winner === 0);
+    const newlyUnlocked = onBattleReport(metrics, victory);
     useGameStore.getState().setBattleReport({
-      metrics: matchMetrics,
-      victory: match.winner === 0,
+      metrics,
+      victory,
       newlyUnlocked,
     });
-  }, [match, matchMetrics, onBattleReport]);
+  }, [config.mission, match, matchMetrics, onBattleReport, tutorialStep]);
 
   useEffect(() => {
     rendererRef.current?.setPaused(paused);

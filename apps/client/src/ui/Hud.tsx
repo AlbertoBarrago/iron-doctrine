@@ -439,6 +439,7 @@ export function Hud(props: HudProps): JSX.Element {
             <span className="panel-kicker">FIELD COMMAND CONFIRMED</span>
             <strong className="match-dialog__title">Operation complete</strong>
             <p>Your base is operational and the next campaign operation is now available.</p>
+            {battleReport ? <BattleStatistics report={battleReport} /> : null}
             <div className="match-dialog__actions">
               <button
                 type="button"

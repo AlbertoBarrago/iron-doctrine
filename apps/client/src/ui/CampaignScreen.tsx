@@ -15,6 +15,7 @@ import {
 } from '../game/commanderProfile.js';
 import {
   ACHIEVEMENTS,
+  achievementTooltip,
   type AchievementProgress,
 } from '../game/achievements.js';
 
@@ -117,7 +118,9 @@ export function CampaignScreen({
                   <abbr
                     key={achievement.id}
                     className={unlocked ? 'is-unlocked' : ''}
-                    title={`${achievement.title}: ${achievement.description}`}
+                    data-tooltip={achievementTooltip(achievement, unlocked)}
+                    aria-label={achievementTooltip(achievement, unlocked)}
+                    tabIndex={0}
                   >
                     {achievement.title
                       .split(' ')

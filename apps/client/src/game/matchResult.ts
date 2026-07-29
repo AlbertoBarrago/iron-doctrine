@@ -9,6 +9,15 @@ export interface MatchResultActions {
   secondaryLabel: string;
 }
 
+export function battleReportVictory(
+  mission: MissionId,
+  tutorialComplete: boolean,
+  match: { status: 'setup' | 'playing' | 'finished'; winner: number | null } | null,
+): boolean | null {
+  if (mission === 'base_foundations') return tutorialComplete ? true : null;
+  return match?.status === 'finished' ? match.winner === 0 : null;
+}
+
 export function matchResultActions(mission: MissionId, winner: number | null): MatchResultActions {
   const campaignMission = mission !== 'skirmish';
   if (campaignMission && winner === 0) {

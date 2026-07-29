@@ -11,7 +11,14 @@
  * It reads snapshots but never mutates simulation state — the clean sim/render split.
  */
 import { Application, Container, Graphics } from 'pixi.js';
-import { BUILDING_STATS, UNIT_STATS, fp, type Snapshot, type EntitySnapshot } from '@iron/engine';
+import {
+  BUILDING_STATS,
+  UNIT_STATS,
+  fp,
+  type Snapshot,
+  type EntitySnapshot,
+  type MatchMetricsSnapshot,
+} from '@iron/engine';
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
 import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
@@ -103,6 +110,7 @@ export class GameRenderer {
   private fpsAccum = 0;
   private fpsFrames = 0;
   private lastUiTick = -1;
+  private latestMetrics: MatchMetricsSnapshot | null = null;
 
   constructor(private readonly container: HTMLElement) {
     this.camera = new Camera(container.clientWidth, container.clientHeight);
@@ -114,6 +122,7 @@ export class GameRenderer {
     useGameStore.getState().setControlGroups([]);
     useGameStore.getState().setMatchMetrics(null);
     useGameStore.getState().setBattleReport(null);
+    this.latestMetrics = null;
     this.activeMap = config.map;
     this.mission = config.mission;
     const missionRules = MISSION_RULES[config.mission];
@@ -319,6 +328,11 @@ export class GameRenderer {
     this.app.ticker.add(() => this.render());
   }
 
+  /** Latest authoritative telemetry, including missions without a MatchState. */
+  getMatchMetrics(): MatchMetricsSnapshot | null {
+    return this.latestMetrics ? structuredClone(this.latestMetrics) : null;
+  }
+
   /** Wire the minimap canvas; the render loop draws onto it. */
   attachMinimap(canvas: HTMLCanvasElement | null): void {
     this.minimapCtx = canvas ? canvas.getContext('2d') : null;
@@ -463,6 +477,7 @@ export class GameRenderer {
         const me = curr.players.find((p) => p.player === 0);
         if (me) store.setEconomy(me.credits, me.powerProduced, me.powerConsumed);
         store.setMatch(curr.match ?? null);
+        if (curr.metrics) this.latestMetrics = curr.metrics;
         if (curr.match?.status === 'finished' && curr.metrics) {
           store.setMatchMetrics(curr.metrics);
         }

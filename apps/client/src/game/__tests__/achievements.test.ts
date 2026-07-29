@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { MatchMetricsSnapshot } from '@iron/engine';
-import { evaluateAchievements, loadAchievementProgress } from '../achievements.js';
+import {
+  ACHIEVEMENTS,
+  achievementTooltip,
+  evaluateAchievements,
+  loadAchievementProgress,
+} from '../achievements.js';
 import type { CampaignStorage } from '../campaignProgress.js';
 
 const metrics = (overrides: Partial<MatchMetricsSnapshot> = {}): MatchMetricsSnapshot => ({
@@ -27,6 +32,12 @@ const memoryStorage = (): CampaignStorage => {
 };
 
 describe('commander achievements', () => {
+  it('describes locked and earned decorations for hover and keyboard focus', () => {
+    const cartographer = ACHIEVEMENTS[0];
+    expect(achievementTooltip(cartographer, false)).toContain('Locked — Cartographer');
+    expect(achievementTooltip(cartographer, true)).toContain('Earned — Cartographer');
+  });
+
   it('unlocks metric-based decorations idempotently', () => {
     const storage = memoryStorage();
     const report = metrics({

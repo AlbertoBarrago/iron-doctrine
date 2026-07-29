@@ -2855,6 +2855,7 @@ kbd {
   gap: 4px;
 }
 .commander-decorations abbr {
+  position: relative;
   display: grid;
   width: 25px;
   height: 25px;
@@ -2864,7 +2865,41 @@ kbd {
   background: #151a15;
   border: 1px solid #3f443b;
   border-radius: 50%;
+  cursor: help;
   font: 800 7px var(--mono);
+}
+.commander-decorations abbr::after {
+  position: absolute;
+  z-index: 10;
+  right: -1px;
+  bottom: calc(100% + 8px);
+  width: 210px;
+  padding: 8px 10px;
+  color: #d6d1ae;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  visibility: hidden;
+  content: attr(data-tooltip);
+  background: rgba(8, 12, 9, 0.97);
+  border: 1px solid #8b7a42;
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.34);
+  opacity: 0;
+  font: 9px/1.45 var(--body);
+  transform: translateY(3px);
+  transition:
+    opacity 100ms ease,
+    transform 100ms ease;
+}
+.commander-decorations abbr:hover::after,
+.commander-decorations abbr:focus-visible::after {
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+.commander-decorations abbr:focus-visible {
+  outline: 2px solid #dfc46b;
+  outline-offset: 2px;
 }
 .commander-decorations abbr.is-unlocked {
   color: #17180f;

@@ -36,6 +36,14 @@ export const ACHIEVEMENTS = [
 ] as const;
 
 export type AchievementId = (typeof ACHIEVEMENTS)[number]['id'];
+export type AchievementDefinition = (typeof ACHIEVEMENTS)[number];
+
+export function achievementTooltip(
+  achievement: AchievementDefinition,
+  unlocked: boolean,
+): string {
+  return `${unlocked ? 'Earned' : 'Locked'} — ${achievement.title}: ${achievement.description}`;
+}
 
 export interface AchievementProgress {
   version: 1;
