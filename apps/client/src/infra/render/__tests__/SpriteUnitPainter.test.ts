@@ -23,7 +23,7 @@ describe('tank sprite direction', () => {
     expect(tankFrame(Math.PI / 8, 'move', 1)).toBe('unit.tank.move.ese.1');
     expect(tankFrame(Math.PI / 8, 'recoil', 0)).toBe('unit.tank.recoil.ese.0');
     expect(riflemanFrame(Math.PI / 8)).toBe('unit.rifleman.idle.ese.0');
-    expect(riflemanFrame(Math.PI / 8, 'move', 3)).toBe('unit.rifleman.move.ese.3');
+    expect(riflemanFrame(Math.PI / 8, 'move', 7)).toBe('unit.rifleman.move.ese.7');
     expect(riflemanFrame(Math.PI / 8, 'fire', 1)).toBe('unit.rifleman.fire.ese.1');
   });
 
@@ -100,7 +100,7 @@ describe('tank sprite direction', () => {
     expect(requested.at(-1)).toBe('unit.rifleman.fire.e.1');
   });
 
-  it('plays all four Rifleman gait poses at the authored cadence', () => {
+  it('plays all eight Rifleman gait poses at the authored cadence', () => {
     const requested: string[] = [];
     const painter = new SpriteUnitPainter({
       texture: (frameId: string) => {
@@ -110,11 +110,11 @@ describe('tank sprite direction', () => {
     } as never);
     const rifleman = { id: 11, unitType: 'rifleman', angle: 0 };
 
-    for (const animationTime of [0, 0.08, 0.16, 0.23]) {
+    for (const animationTime of [0.02, 0.08, 0.14, 0.2, 0.26, 0.32, 0.38, 0.44]) {
       painter.draw(rifleman as never, 100, 80, 8, animationTime, { moving: true });
     }
 
-    for (let step = 0; step < 4; step++) {
+    for (let step = 0; step < 8; step++) {
       expect(requested).toContain(`unit.rifleman.move.e.${step}`);
     }
   });
