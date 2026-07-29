@@ -171,8 +171,21 @@ editable model.
 ## The base structure scenes
 
 The four representative base structures use a fixed, non-directional camera. Their foundations
-share one ground plane and scale reference. Idle and operational frames change only functional
-parts—crane, turbine fan, personnel door and factory bay—so silhouette remains stable.
+share one ground plane and scale reference. Unlike vehicles, their frame contract is a lifecycle:
+
+- `construction` has four cumulative stages, always registered to the final foundation;
+- `complete` is a short commissioning sequence played once;
+- `idle` is deliberately quiet;
+- `service`, `generate` and `produce` loop only while the corresponding gameplay state is active;
+- `exit` plays once when a production queue completes an item.
+
+Only functional parts move—crane, turbine fan, personnel door and factory bay—so the silhouette and
+ground contact remain stable. The runtime chooses these frames from authoritative construction,
+production and Harvester deposit state. Pausing the match also pauses these animations.
+
+The source sheets use eight 320-pixel columns. The final row may contain transparent padding cells;
+`sourceColumns` in the manifest makes that layout explicit so the compiler can reject accidental
+missing frames without rejecting intentional padding.
 
 ## Production build
 

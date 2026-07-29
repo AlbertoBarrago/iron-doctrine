@@ -132,8 +132,10 @@ The representative production base family is implemented:
 
 - Construction Yard, Power Plant, Barracks and Factory have editable Blender sources;
 - shared foundations, scale, camera and worn industrial materials keep the family coherent;
-- idle and operational frames expose function-specific machinery;
-- under-construction buildings retain the existing progress scaffold and procedural fallback.
+- construction, commissioning, idle, production and exit states form an explicit visual lifecycle;
+- the Power Plant generator and Construction Yard service crane follow authoritative gameplay state;
+- the presentation clock freezes structure animation, particles, command feedback and sound on pause;
+- missing or partial atlas families retain the procedural fallback instead of blocking a match.
 
 The Iron Pass terrain realism pass is implemented:
 
@@ -156,7 +158,7 @@ Production-art refinement proceeds family by family in this order:
 2. complete damage and destruction across the authored families;
 3. extend the Rifleman infantry foundation to Engineer and Medic;
 4. author the remaining turret, wall and resource presentation families;
-5. split the production atlas before additional frame families exceed the current texture budget.
+5. consume sequenced presentation events for effects that can occur between rendered snapshots.
 
 The current tank export covers idle, a restrained two-frame suspension cycle while moving and a
 two-frame barrel recoil triggered by authoritative weapon timing. The suspension isolates the upper
