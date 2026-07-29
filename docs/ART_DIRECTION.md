@@ -186,7 +186,8 @@ pnpm assets:build
 
 The Rifleman establishes shared infantry scale, camera, palette and an eight-pose grounded gait.
 Engineer and Medic should reuse that foundation while remaining identifiable through equipment
-and silhouette.
+and silhouette. Authored surface values remain neutral enough for the runtime owner tint to
+distinguish factions without flattening cloth, leather and metal into one solid team color.
 
 ### Authored movement rules
 
