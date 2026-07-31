@@ -10,6 +10,7 @@ import {
   type MatchMetricsSnapshot,
   type SiegeLineSnapshot,
 } from '@iron/engine';
+export { harvesterStatus } from './entityReadout.js';
 
 type ScenarioSnapshot =
   FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot | BlackDawnSnapshot;
@@ -19,7 +20,6 @@ export type TutorialMilestone =
 export type TutorialStep = TutorialMilestone | 'complete';
 export type SelectionCommand =
   'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally' | 'demolish' | 'recycle';
-type HarvesterPhase = NonNullable<EntitySnapshot['cargo']>['phase'];
 
 export interface SelectedEntitySummary {
   label: string;
@@ -33,7 +33,7 @@ export interface SelectedEntitySummary {
   hp?: number;
   maxHp?: number;
   status?: string;
-  cargo?: { amount: number; capacity: number; phase: HarvesterPhase };
+  cargo?: NonNullable<EntitySnapshot['cargo']>;
   resourceAmount?: number;
   commands: SelectionCommand[];
 }
@@ -131,23 +131,6 @@ export type CommandAvailability =
 export function commandAvailability(credits: number, cost: number): CommandAvailability {
   if (credits >= cost) return { available: true, label: 'Ready' };
   return { available: false, label: `Requires $${cost - credits} more` };
-}
-
-export function harvesterStatus(phase: HarvesterPhase): string {
-  switch (phase) {
-    case 'idle':
-      return 'Searching for ore';
-    case 'toNode':
-      return 'Moving to ore field';
-    case 'gathering':
-      return 'Harvesting ore';
-    case 'toBase':
-      return 'Returning to construction yard';
-    case 'depositing':
-      return 'Depositing ore';
-    case 'paused':
-      return 'Awaiting orders';
-  }
 }
 
 interface GameUiState {

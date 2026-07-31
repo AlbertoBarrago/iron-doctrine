@@ -56,11 +56,11 @@ import {
 import { clampMovementTarget } from './movementTarget.js';
 import { spriteFactionTint } from './renderStyle.js';
 import {
-  harvesterStatus,
   selectionCommands,
   summarizeForce,
   useGameStore,
 } from '../../state/gameStore.js';
+import { entityIsInspectable, entityReadout } from '../../state/entityReadout.js';
 import { ControlGroups } from './controlGroups.js';
 import {
   drawPersistentDamage,
@@ -186,6 +186,7 @@ export class GameRenderer {
   private placingBuilding: string | null = null;
   private placementPointer: { x: number; y: number } | null = null;
   private navigationPointer: { x: number; y: number } | null = null;
+  private hoveredEntityId: number | null = null;
   private cameraDrag: {
     x: number;
     y: number;
@@ -195,6 +196,13 @@ export class GameRenderer {
   private terrainTooltip: HTMLDivElement | null = null;
   private terrainTooltipTitle: HTMLElement | null = null;
   private terrainTooltipCopy: HTMLElement | null = null;
+  private entityReadoutElement: HTMLDivElement | null = null;
+  private entityReadoutTitle: HTMLElement | null = null;
+  private entityReadoutRole: HTMLElement | null = null;
+  private entityReadoutDetails: HTMLElement | null = null;
+  private entityReadoutMeter: HTMLDivElement | null = null;
+  private entityReadoutMeterFill: HTMLElement | null = null;
+  private entityReadoutSignature = '';
   private radioCaption: HTMLDivElement | null = null;
   private radioCaptionTimer: ReturnType<typeof setTimeout> | null = null;
   private radioSequence = 0;
@@ -274,6 +282,7 @@ export class GameRenderer {
     this.ready = true;
     this.container.appendChild(this.app.canvas);
     this.createTerrainTooltip();
+    this.createEntityReadout();
     this.createRadioCaption();
     try {
       await this.productionAssets.load();
@@ -627,7 +636,10 @@ export class GameRenderer {
         this.syncSelectionState(curr);
       }
       this.drawFog(curr);
+      this.updateEntityReadout(curr);
       if (++this.minimapFrame % 6 === 0) this.drawMinimap(curr);
+    } else {
+      this.hideEntityReadout();
     }
     this.spriteBuildings.endFrame();
     this.spriteUnits.endFrame();
@@ -1286,6 +1298,7 @@ export class GameRenderer {
     canvas.addEventListener('pointercancel', () => this.cancelPointerGesture());
     canvas.addEventListener('pointerleave', () => {
       if (!this.cameraDrag) this.navigationPointer = null;
+      this.hoveredEntityId = null;
       this.hideTerrainTooltip();
     });
     canvas.addEventListener('dblclick', (e) => this.onDoubleClick(e));
@@ -1340,6 +1353,7 @@ export class GameRenderer {
     this.placementPointer = point;
     this.navigationPointer = point;
     if (this.cameraDrag) {
+      this.hoveredEntityId = null;
       this.hideTerrainTooltip();
       const dx = point.x - this.cameraDrag.x;
       const dy = point.y - this.cameraDrag.y;
@@ -1349,6 +1363,8 @@ export class GameRenderer {
       return;
     }
     this.updatePointerCursor(point.x, point.y);
+    this.hoveredEntityId =
+      this.findInspectableEntityAt(point.x, point.y, this.bridge.latest.curr)?.id ?? null;
     this.updateTerrainTooltip(point.x, point.y);
     if (this.dragStart) this.dragNow = point;
   }
@@ -1696,6 +1712,30 @@ export class GameRenderer {
     this.terrainTooltipCopy = copy;
   }
 
+  private createEntityReadout(): void {
+    const readout = document.createElement('div');
+    readout.className = 'entity-readout';
+    readout.setAttribute('role', 'tooltip');
+    readout.hidden = true;
+    const title = document.createElement('strong');
+    const role = document.createElement('span');
+    role.className = 'entity-readout__role';
+    const details = document.createElement('span');
+    details.className = 'entity-readout__details';
+    const meter = document.createElement('div');
+    meter.className = 'entity-readout__meter';
+    const meterFill = document.createElement('i');
+    meter.appendChild(meterFill);
+    readout.append(title, role, details, meter);
+    this.container.appendChild(readout);
+    this.entityReadoutElement = readout;
+    this.entityReadoutTitle = title;
+    this.entityReadoutRole = role;
+    this.entityReadoutDetails = details;
+    this.entityReadoutMeter = meter;
+    this.entityReadoutMeterFill = meterFill;
+  }
+
   private createRadioCaption(): void {
     const caption = document.createElement('div');
     caption.className = 'radio-caption';
@@ -1724,7 +1764,7 @@ export class GameRenderer {
 
   private updateTerrainTooltip(sx: number, sy: number): void {
     const tooltip = this.terrainTooltip;
-    if (!tooltip || this.placingBuilding || this.dragStart || this.entityAt(sx, sy)) {
+    if (!tooltip || this.placingBuilding || this.dragStart || this.hoveredEntityId !== null) {
       this.hideTerrainTooltip();
       return;
     }
@@ -1745,14 +1785,118 @@ export class GameRenderer {
     if (this.terrainTooltip) this.terrainTooltip.hidden = true;
   }
 
-  private entityAt(sx: number, sy: number): boolean {
-    const snapshot = this.bridge.latest.curr;
-    if (!snapshot) return false;
-    return snapshot.entities.some((entity) => {
+  private findInspectableEntityAt(
+    sx: number,
+    sy: number,
+    snapshot: Snapshot | null,
+  ): EntitySnapshot | null {
+    if (!snapshot?.fog) return null;
+    let best: { entity: EntitySnapshot; distance: number } | null = null;
+    for (const entity of snapshot.entities) {
+      if (!entityIsInspectable(entity, snapshot.fog) || !this.pointerHitsEntity(entity, sx, sy)) {
+        continue;
+      }
       const screen = this.camera.worldToScreen(entity.x, entity.y);
-      const radius = entity.radius * this.camera.scale * (entity.kind === 'resource' ? 2.8 : 1) + 6;
-      return (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2 <= radius ** 2;
-    });
+      const distance = (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2;
+      if (!best || distance < best.distance) best = { entity, distance };
+    }
+    return best?.entity ?? null;
+  }
+
+  private updateEntityReadout(snapshot: Snapshot): void {
+    const element = this.entityReadoutElement;
+    if (!element || !snapshot.fog || this.placingBuilding || this.cameraDrag || this.dragStart) {
+      this.hideEntityReadout();
+      return;
+    }
+
+    const hoveredCandidate =
+      this.hoveredEntityId === null
+        ? null
+        : (snapshot.entities.find((entity) => entity.id === this.hoveredEntityId) ?? null);
+    const hovered =
+      hoveredCandidate &&
+      this.navigationPointer &&
+      entityIsInspectable(hoveredCandidate, snapshot.fog) &&
+      this.pointerHitsEntity(
+        hoveredCandidate,
+        this.navigationPointer.x,
+        this.navigationPointer.y,
+      )
+        ? hoveredCandidate
+        : null;
+    if (!hovered) this.hoveredEntityId = null;
+    const selectedId =
+      this.selected.size === 1
+        ? (this.selected.values().next().value as number | undefined)
+        : undefined;
+    const selected =
+      selectedId === undefined
+        ? null
+        : (snapshot.entities.find((entity) => entity.id === selectedId) ?? null);
+    const target = hovered ?? selected;
+    if (!target || !entityIsInspectable(target, snapshot.fog)) {
+      this.hideEntityReadout();
+      return;
+    }
+    const readout = entityReadout(target);
+    if (!readout) {
+      this.hideEntityReadout();
+      return;
+    }
+
+    const signature = `${target.id}:${readout.hp}:${readout.status}:${readout.cargo?.amount}:${readout.resourceAmount}`;
+    if (signature !== this.entityReadoutSignature) {
+      this.entityReadoutSignature = signature;
+      this.entityReadoutTitle!.textContent = readout.label;
+      this.entityReadoutRole!.textContent = readout.role ?? '';
+      this.entityReadoutRole!.hidden = !readout.role;
+      const metrics = [readout.status];
+      if (readout.hp !== undefined && readout.maxHp !== undefined) {
+        metrics.push(`Armor ${readout.hp}/${readout.maxHp}`);
+      }
+      if (readout.cargo) metrics.push(`Ore ${readout.cargo.amount}/${readout.cargo.capacity}`);
+      if (readout.resourceAmount !== undefined) {
+        metrics.push(`Ore remaining ${readout.resourceAmount.toLocaleString()}`);
+      }
+      this.entityReadoutDetails!.textContent = metrics.join(' · ');
+      const hasHealth = readout.hp !== undefined && readout.maxHp !== undefined;
+      this.entityReadoutMeter!.hidden = !hasHealth;
+      if (hasHealth) {
+        this.entityReadoutMeterFill!.style.width = `${Math.min(100, Math.max(0, (readout.hp! / readout.maxHp!) * 100))}%`;
+      }
+    }
+
+    const { sx, sy } = this.camera.worldToScreen(target.x, target.y);
+    const visualRadius =
+      target.radius * this.camera.scale * (target.kind === 'resource' ? 2.8 : 1);
+    if (
+      sx + visualRadius < 0 ||
+      sy + visualRadius < 0 ||
+      sx - visualRadius > this.container.clientWidth ||
+      sy - visualRadius > this.container.clientHeight
+    ) {
+      this.hideEntityReadout();
+      return;
+    }
+    const readoutHalfWidth = 112;
+    element.style.left = `${Math.max(readoutHalfWidth + 8, Math.min(sx, this.container.clientWidth - readoutHalfWidth - 8))}px`;
+    const placeBelow = sy - visualRadius < 104;
+    element.classList.toggle('is-below', placeBelow);
+    element.classList.toggle('is-hovered', hovered !== null);
+    element.style.top = `${placeBelow ? sy + visualRadius + 10 : sy - visualRadius - 10}px`;
+    element.hidden = false;
+  }
+
+  private hideEntityReadout(): void {
+    if (this.entityReadoutElement) this.entityReadoutElement.hidden = true;
+  }
+
+  private pointerHitsEntity(entity: EntitySnapshot, sx: number, sy: number): boolean {
+    const screen = this.camera.worldToScreen(entity.x, entity.y);
+    const radius =
+      entity.radius * this.camera.scale * (entity.kind === 'resource' ? 2.8 : 1) + 6;
+    return (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2 <= radius ** 2;
   }
 
   private selectedProductionBuilding(snapshot = this.bridge.latest.curr): EntitySnapshot | null {
@@ -1782,50 +1926,16 @@ export class GameRenderer {
       });
     } else {
       const entity = selected[0]!;
-      const construction = entity.construction;
-      const profile = profileFor(entity.unitType, entity.buildingType);
-      store.setSelectedEntity({
-        label:
-          profile?.label ??
-          (entity.resource ? 'Ore field' : undefined) ??
-          (entity.unitType ?? entity.buildingType ?? entity.kind).replaceAll('_', ' '),
-        ...(profile && {
-          role: profile.role,
-          description: profile.description,
-          tacticalNote: profile.tacticalNote,
-        }),
-        kind:
-          entity.kind === 'building'
-            ? 'building'
-            : entity.kind === 'resource'
-              ? 'resource'
-              : 'unit',
-        ...(entity.buildingType && { buildingType: entity.buildingType }),
-        ...(construction && {
-          constructionProgress: construction.progressTicks / construction.buildTicks,
-        }),
-        count: 1,
-        commands: selectionCommands(selected),
-        hp: entity.hp,
-        maxHp: entity.maxHp,
-        ...(entity.cargo && {
-          cargo: {
-            amount: entity.cargo.amount,
-            capacity: entity.cargo.capacity,
-            phase: entity.cargo.phase,
-          },
-        }),
-        ...(entity.resource && { resourceAmount: entity.resource.amount }),
-        status: construction
-          ? `Under construction · ${Math.round((construction.progressTicks / construction.buildTicks) * 100)}%`
-          : entity.production?.queue.length
-            ? `Producing ${entity.production.queue[0]!.replaceAll('_', ' ')}`
-            : entity.cargo
-              ? harvesterStatus(entity.cargo.phase)
-              : entity.resource
-                ? 'Resource field'
-                : 'Ready',
-      });
+      const readout = entityReadout(entity);
+      store.setSelectedEntity(
+        readout
+          ? {
+              ...readout,
+              count: 1,
+              commands: selectionCommands(selected),
+            }
+          : null,
+      );
     }
     const building = this.selectedProductionBuilding(snapshot);
     store.setSelectedProduction(
@@ -1922,6 +2032,8 @@ export class GameRenderer {
     this.radioCaption = null;
     this.terrainTooltip?.remove();
     this.terrainTooltip = null;
+    this.entityReadoutElement?.remove();
+    this.entityReadoutElement = null;
     // Only destroy Pixi if init finished; otherwise start() will tear it down itself.
     if (this.ready) this.app.destroy(true, { children: true });
   }

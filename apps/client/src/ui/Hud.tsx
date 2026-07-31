@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import { SIM_HZ } from '@iron/shared';
 import {
@@ -213,28 +213,7 @@ export function Hud(props: HudProps): JSX.Element {
           onRecallGroup={props.onRecallControlGroup}
         />
 
-        <section className="field-directive">
-          <span>!</span>
-          <div>
-            <small>PRIMARY MISSION</small>
-            <strong>{scenario?.objective ?? tutorial.title}</strong>
-            <p>{tutorial.instruction}</p>
-          </div>
-        </section>
-
         {props.mission === 'base_foundations' ? <TutorialChecklist current={tutorialStep} /> : null}
-
-        {selectedEntity ? (
-          <SelectionCard entity={selectedEntity} />
-        ) : (
-          <div className="panel-empty panel-empty--selection">
-            <span className="panel-empty__icon">⌖</span>
-            <div>
-              <strong>Patrol ready</strong>
-              <small>Select units on the battlefield.</small>
-            </div>
-          </div>
-        )}
 
         <section className="command-workspace">
           <div className="command-tabs" role="tablist" aria-label="Command sections">
@@ -700,66 +679,6 @@ function ForceRoster({
       ) : (
         <small className="force-roster__hint">Ctrl + 1…9 assigns selected units</small>
       )}
-    </section>
-  );
-}
-
-function SelectionCard({ entity }: { entity: SelectedEntitySummary }): JSX.Element {
-  const health = entity.maxHp && entity.hp !== undefined ? (entity.hp / entity.maxHp) * 100 : null;
-  return (
-    <section className="selection-card steel-panel">
-      <span className="panel-kicker">TACTICAL READOUT</span>
-      <strong>{entity.label}</strong>
-      {entity.role ? <span className="selection-card__role">{entity.role}</span> : null}
-      {entity.description ? (
-        <p className="selection-card__description">{entity.description}</p>
-      ) : null}
-      {health !== null ? (
-        <>
-          <div className="selection-card__meta">
-            <span>ARMOR</span>
-            <span>
-              {entity.hp} / {entity.maxHp}
-            </span>
-          </div>
-          <div className="meter meter--health">
-            <div style={{ width: `${health}%` }} />
-          </div>
-        </>
-      ) : null}
-      {entity.cargo ? (
-        <>
-          <div className="selection-card__meta selection-card__meta--cargo">
-            <span>ORE CARGO</span>
-            <span>
-              {entity.cargo.amount} / {entity.cargo.capacity}
-            </span>
-          </div>
-          <div
-            className="meter meter--cargo"
-            style={
-              {
-                '--cargo-fill': `${(entity.cargo.amount / entity.cargo.capacity) * 100}%`,
-              } as CSSProperties
-            }
-          />
-        </>
-      ) : null}
-      {entity.resourceAmount !== undefined ? (
-        <div className="selection-card__meta selection-card__meta--cargo">
-          <span>ORE REMAINING</span>
-          <span>{entity.resourceAmount.toLocaleString()}</span>
-        </div>
-      ) : null}
-      {entity.status ? (
-        <div className="selection-card__status">
-          <i />
-          {entity.status}
-        </div>
-      ) : null}
-      {entity.tacticalNote ? (
-        <p className="selection-card__tactical">{entity.tacticalNote}</p>
-      ) : null}
     </section>
   );
 }
