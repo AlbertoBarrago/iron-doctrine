@@ -310,9 +310,9 @@ function Game({
   return (
     <div className="game-shell">
       <div ref={containerRef} className="game-canvas" />
+      <Minimap onCanvas={attachMinimap} onClick={minimapClick} />
       <Hud
         mission={config.mission}
-        minimap={<Minimap onCanvas={attachMinimap} onClick={minimapClick} />}
         setupOpen={setupOpen}
         paused={manualPaused}
         audioMuted={audioMuted}

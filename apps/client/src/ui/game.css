@@ -2243,14 +2243,13 @@ kbd {
   text-transform: uppercase;
 }
 .minimap-frame {
-  position: static;
-  width: auto;
-  margin-bottom: 10px;
-  padding: 8px;
-  box-shadow: none;
-}
-.minimap-frame.is-offline {
-  display: none;
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 184px;
+  margin: 0;
+  padding: 6px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.42);
 }
 .minimap-frame canvas {
   width: 100%;
@@ -2259,22 +2258,12 @@ kbd {
 }
 
 .command-panel__resources,
-.command-panel .field-directive,
-.command-panel .minimap-frame {
+.command-panel .field-directive {
   flex: 0 0 auto;
 }
-.command-panel .field-directive,
-.command-panel .minimap-frame {
+.command-panel .field-directive {
   order: 4;
   margin-bottom: 8px;
-}
-.command-panel .minimap-frame__screen {
-  height: 136px;
-}
-.command-panel .minimap-frame canvas {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: auto;
 }
 .command-workspace {
   display: flex;
@@ -2506,9 +2495,6 @@ kbd {
   .command-panel .field-directive p {
     display: none;
   }
-  .command-panel .minimap-frame__screen {
-    height: 104px;
-  }
   .command-panel .selection-card {
     padding: 8px;
   }
@@ -2525,7 +2511,7 @@ kbd {
     grid-template-columns: 6px minmax(0, 1fr);
   }
   .minimap-frame {
-    width: auto;
+    width: 168px;
   }
   .minimap-frame canvas {
     width: 100%;

@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { BUILDING_STATS, UNIT_STATS } from '@iron/engine';
 import { SIM_HZ } from '@iron/shared';
 import {
@@ -86,7 +86,6 @@ const TUTORIAL: Record<TutorialStep, { number: string; title: string; instructio
 
 interface HudProps {
   mission: MissionId;
-  minimap: ReactNode;
   setupOpen: boolean;
   paused: boolean;
   audioMuted: boolean;
@@ -326,8 +325,6 @@ export function Hud(props: HudProps): JSX.Element {
             )}
           </div>
         </section>
-
-        {baseOperational ? props.minimap : null}
 
         <div className="command-panel__footer">
           <span>
