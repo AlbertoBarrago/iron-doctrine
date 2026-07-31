@@ -915,7 +915,7 @@ export class GameRenderer {
     }
   }
 
-  /** Draws hidden/explored fog over cells within the viewport (visible cells clear). */
+  /** Draws fog over never-explored cells within the viewport. */
   private drawFog(curr: Snapshot): void {
     this.fogGfx.clear();
     const fog = curr.fog;
@@ -962,14 +962,11 @@ export class GameRenderer {
     for (let cy = Math.max(0, min.cy); cy <= Math.min(fog.height - 1, max.cy); cy++) {
       for (let cx = Math.max(0, min.cx); cx <= Math.min(fog.width - 1, max.cx); cx++) {
         const state = fog.cells[cy * fog.width + cx]!;
-        if (state === 2) continue; // visible
+        if (state !== 0) continue;
         const wx = fog.originX + cx * fog.cellSize;
         const wy = fog.originY + cy * fog.cellSize;
         const { sx, sy } = this.camera.worldToScreen(wx, wy);
-        this.fogGfx.rect(sx, sy, size + 1, size + 1).fill({
-          color: 0x000000,
-          alpha: state === 0 ? 1 : 0.18,
-        });
+        this.fogGfx.rect(sx, sy, size + 1, size + 1).fill({ color: 0x000000 });
       }
     }
 

@@ -4,11 +4,10 @@ export type FogCorner = 'north-west' | 'north-east' | 'south-east' | 'south-west
 export const FOG_TRANSITION_BANDS = 4;
 
 const HIDDEN_EDGE_ALPHA = [0.62, 0.38, 0.21, 0.09] as const;
-const EXPLORED_EDGE_ALPHA = [0.14, 0.09, 0.05, 0.02] as const;
 
 /**
- * Returns a darker neighbouring state only. Out-of-map cells remain fully hidden,
- * so presentation smoothing can never reveal authoritative fog.
+ * Returns hidden neighbours only. Explored and currently visible cells are both
+ * known terrain, while out-of-map cells remain fully hidden.
  */
 export function fogTransitionState(
   cells: Uint8Array,
@@ -23,7 +22,7 @@ export function fogTransitionState(
     neighbourX < 0 || neighbourY < 0 || neighbourX >= width || neighbourY >= height
       ? 0
       : cells[neighbourY * width + neighbourX]!;
-  return neighbour < current ? (neighbour as Exclude<FogVisibility, 2>) : null;
+  return neighbour === 0 ? 0 : null;
 }
 
 /**
@@ -56,5 +55,5 @@ export function fogCornerTransitionState(
 
 export function fogTransitionAlpha(neighbour: Exclude<FogVisibility, 2>, band: number): number {
   if (band < 0 || band >= FOG_TRANSITION_BANDS) return 0;
-  return neighbour === 0 ? HIDDEN_EDGE_ALPHA[band]! : EXPLORED_EDGE_ALPHA[band]!;
+  return neighbour === 0 ? HIDDEN_EDGE_ALPHA[band]! : 0;
 }
