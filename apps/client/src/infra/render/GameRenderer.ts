@@ -22,6 +22,12 @@ import {
 import { asEntityId, SIM_DT_MS, SIM_HZ, type MapDef, type MapSpawn } from '@iron/shared';
 import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
+import {
+  FOG_TRANSITION_BANDS,
+  fogTransitionAlpha,
+  fogTransitionState,
+  type FogVisibility,
+} from './fogPresentation.js';
 import { ParticleSystem } from './Particles.js';
 import { PresentationClock } from './PresentationClock.js';
 import { TerrainPainter } from './TerrainPainter.js';
@@ -70,6 +76,36 @@ import { profileFor, usesContinuousPlacement } from '../../game/gameContent.js';
 
 const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
+
+type FogEdge = 'north' | 'east' | 'south' | 'west';
+
+function drawFogTransitionEdge(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  edge: FogEdge,
+  neighbour: Exclude<FogVisibility, 2>,
+): void {
+  const bandSize = size / (FOG_TRANSITION_BANDS * 2);
+  for (let band = 0; band < FOG_TRANSITION_BANDS; band++) {
+    const inset = band * bandSize;
+    const alpha = fogTransitionAlpha(neighbour, band);
+    if (edge === 'north') {
+      graphics.rect(x, y + inset, size + 1, bandSize + 1).fill({ color: 0x000000, alpha });
+    } else if (edge === 'east') {
+      graphics
+        .rect(x + size - inset - bandSize, y, bandSize + 1, size + 1)
+        .fill({ color: 0x000000, alpha });
+    } else if (edge === 'south') {
+      graphics
+        .rect(x, y + size - inset - bandSize, size + 1, bandSize + 1)
+        .fill({ color: 0x000000, alpha });
+    } else {
+      graphics.rect(x + inset, y, bandSize + 1, size + 1).fill({ color: 0x000000, alpha });
+    }
+  }
+}
 
 function mapPosition(map: MapDef, x: number, y: number): { x: fp.Fixed; y: fp.Fixed } {
   return {
@@ -898,6 +934,24 @@ export class GameRenderer {
           color: 0x000000,
           alpha: state === 0 ? 1 : 0.18,
         });
+      }
+    }
+
+    for (let cy = Math.max(0, min.cy); cy <= Math.min(fog.height - 1, max.cy); cy++) {
+      for (let cx = Math.max(0, min.cx); cx <= Math.min(fog.width - 1, max.cx); cx++) {
+        const state = fog.cells[cy * fog.width + cx]! as FogVisibility;
+        if (state === 0) continue;
+        const wx = fog.originX + cx * fog.cellSize;
+        const wy = fog.originY + cy * fog.cellSize;
+        const { sx, sy } = this.camera.worldToScreen(wx, wy);
+        const north = fogTransitionState(fog.cells, fog.width, fog.height, state, cx, cy - 1);
+        const east = fogTransitionState(fog.cells, fog.width, fog.height, state, cx + 1, cy);
+        const south = fogTransitionState(fog.cells, fog.width, fog.height, state, cx, cy + 1);
+        const west = fogTransitionState(fog.cells, fog.width, fog.height, state, cx - 1, cy);
+        if (north !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'north', north);
+        if (east !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'east', east);
+        if (south !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'south', south);
+        if (west !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'west', west);
       }
     }
   }
