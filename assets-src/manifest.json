@@ -26,6 +26,135 @@
       "padding": 2
     }
   },
+  "uiPreviews": [
+    {
+      "id": "building.concrete_wall",
+      "frames": [
+        {
+          "asset": "building.concrete-wall",
+          "state": "idle",
+          "direction": "mask-15",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "building.power_plant",
+      "frames": [
+        {
+          "asset": "building.power-plant",
+          "state": "complete",
+          "direction": "south",
+          "step": 3
+        }
+      ]
+    },
+    {
+      "id": "building.barracks",
+      "frames": [
+        {
+          "asset": "building.barracks",
+          "state": "idle",
+          "direction": "south",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "building.factory",
+      "frames": [
+        {
+          "asset": "building.factory",
+          "state": "idle",
+          "direction": "south",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "building.turret",
+      "frames": [
+        {
+          "asset": "building.turret-base",
+          "state": "idle",
+          "direction": "south",
+          "step": 0
+        },
+        {
+          "asset": "building.turret-head",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "unit.rifleman",
+      "frames": [
+        {
+          "asset": "unit.rifleman",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "unit.engineer",
+      "frames": [
+        {
+          "asset": "unit.engineer",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "unit.medic",
+      "frames": [
+        {
+          "asset": "unit.medic",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "unit.scout",
+      "frames": [
+        {
+          "asset": "unit.scout",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "unit.tank",
+      "frames": [
+        {
+          "asset": "unit.tank",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    },
+    {
+      "id": "unit.harvester",
+      "frames": [
+        {
+          "asset": "unit.harvester",
+          "state": "idle",
+          "direction": "se",
+          "step": 0
+        }
+      ]
+    }
+  ],
   "assets": [
     {
       "id": "building.turret-base",

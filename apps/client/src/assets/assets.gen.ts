@@ -21,6 +21,20 @@ export const PRODUCTION_ASSET_IDS = [
   'unit.tank',
 ] as const;
 export type ProductionAssetId = (typeof PRODUCTION_ASSET_IDS)[number];
+export const UI_ASSET_PREVIEW_URLS = {
+  'building.barracks': '/assets/generated/previews/building-barracks.webp',
+  'building.concrete_wall': '/assets/generated/previews/building-concrete-wall.webp',
+  'building.factory': '/assets/generated/previews/building-factory.webp',
+  'building.power_plant': '/assets/generated/previews/building-power-plant.webp',
+  'building.turret': '/assets/generated/previews/building-turret.webp',
+  'unit.engineer': '/assets/generated/previews/unit-engineer.webp',
+  'unit.harvester': '/assets/generated/previews/unit-harvester.webp',
+  'unit.medic': '/assets/generated/previews/unit-medic.webp',
+  'unit.rifleman': '/assets/generated/previews/unit-rifleman.webp',
+  'unit.scout': '/assets/generated/previews/unit-scout.webp',
+  'unit.tank': '/assets/generated/previews/unit-tank.webp',
+} as const;
+export type UiAssetPreviewId = keyof typeof UI_ASSET_PREVIEW_URLS;
 export const PRODUCTION_FRAME_IDS = [
   'building.concrete-wall.construction.mask-00.0',
   'building.concrete-wall.construction.mask-00.1',

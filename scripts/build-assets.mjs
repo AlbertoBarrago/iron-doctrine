@@ -7,6 +7,9 @@ import sharp from 'sharp';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, '..');
+const UI_PREVIEW_SIZE = 128;
+const UI_PREVIEW_PADDING = 6;
+const UI_PREVIEW_BACKGROUND = { r: 21, g: 23, b: 17 };
 
 export function validateManifest(value) {
   if (!value || typeof value !== 'object') throw new Error('Asset manifest must be an object');
@@ -80,7 +83,53 @@ export function validateManifest(value) {
     version: 1,
     atlases,
     assets: assets.sort((left, right) => left.id.localeCompare(right.id)),
+    uiPreviews: validateUiPreviews(value.uiPreviews, assets),
   };
+}
+
+function validateUiPreviews(value, assets) {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error('Asset manifest requires at least one UI preview');
+  }
+  const assetsById = new Map(assets.map((asset) => [asset.id, asset]));
+  const ids = new Set();
+  return value
+    .map((candidate, index) => {
+      const field = `uiPreviews[${index}]`;
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+        throw new Error(`${field} must be an object`);
+      }
+      const id = validPreviewId(candidate.id, `${field}.id`);
+      if (ids.has(id)) throw new Error(`Duplicate UI preview id: ${id}`);
+      ids.add(id);
+      if (!Array.isArray(candidate.frames) || candidate.frames.length === 0) {
+        throw new Error(`${field}.frames requires at least one frame`);
+      }
+      const frames = candidate.frames.map((frame, frameIndex) => {
+        const frameField = `${field}.frames[${frameIndex}]`;
+        if (!frame || typeof frame !== 'object' || Array.isArray(frame)) {
+          throw new Error(`${frameField} must be an object`);
+        }
+        const assetId = validId(frame.asset, `${frameField}.asset`);
+        const asset = assetsById.get(assetId);
+        if (!asset) throw new Error(`${frameField}.asset references unknown asset: ${assetId}`);
+        const state = validId(frame.state, `${frameField}.state`);
+        if (!Object.hasOwn(asset.states, state)) {
+          throw new Error(`${frameField}.state references unknown state: ${state}`);
+        }
+        const direction = validId(frame.direction, `${frameField}.direction`);
+        if (!asset.directions.includes(direction)) {
+          throw new Error(`${frameField}.direction references unknown direction: ${direction}`);
+        }
+        const step = nonNegativeInteger(frame.step, `${frameField}.step`);
+        if (step >= asset.states[state]) {
+          throw new Error(`${frameField}.step exceeds state frame count`);
+        }
+        return { asset: assetId, state, direction, step };
+      });
+      return { id, frames };
+    })
+    .sort((left, right) => left.id.localeCompare(right.id));
 }
 
 export function describeFrames(asset, imageWidth, imageHeight) {
@@ -246,9 +295,16 @@ export async function buildAssets({ rootDir = DEFAULT_ROOT } = {}) {
     });
   }
 
+  const previews = await buildUiPreviews({
+    previews: manifest.uiPreviews,
+    describedFrames,
+    sourceImages,
+    publicDir,
+  });
+
   await writeFile(
     generatedModule,
-    await format(generatedTypescript(manifest, builds), {
+    await format(generatedTypescript(manifest, builds, previews), {
       ...prettierConfig,
       parser: 'typescript',
     }),
@@ -262,7 +318,76 @@ export async function buildAssets({ rootDir = DEFAULT_ROOT } = {}) {
       height,
     })),
     frameCount: builds.reduce((total, build) => total + build.frameCount, 0),
+    previewCount: previews.length,
   };
+}
+
+async function buildUiPreviews({ previews, describedFrames, sourceImages, publicDir }) {
+  const framesById = new Map(
+    [...describedFrames.values()].flat().map((frame) => [frame.id, frame]),
+  );
+  const previewDir = path.join(publicDir, 'previews');
+  await mkdir(previewDir, { recursive: true });
+
+  return Promise.all(
+    previews.map(async (preview) => {
+      const layers = await Promise.all(
+        preview.frames.map(async (selection) => {
+          const frameId = `${selection.asset}.${selection.state}.${selection.direction}.${selection.step}`;
+          const frame = framesById.get(frameId);
+          if (!frame) throw new Error(`${preview.id}: missing source frame ${frameId}`);
+          return {
+            input: await sharp(sourceImages.get(frame.assetId))
+              .ensureAlpha()
+              .extract({
+                left: frame.sourceX,
+                top: frame.sourceY,
+                width: frame.width,
+                height: frame.height,
+              })
+              .png()
+              .toBuffer(),
+            width: frame.width,
+            height: frame.height,
+          };
+        }),
+      );
+      const [{ width, height }] = layers;
+      if (layers.some((layer) => layer.width !== width || layer.height !== height)) {
+        throw new Error(`${preview.id}: layered frames must share dimensions`);
+      }
+      const fileName = `${preview.id.replaceAll('.', '-').replaceAll('_', '-')}.webp`;
+      const composed =
+        layers.length === 1
+          ? layers[0].input
+          : await sharp(layers[0].input)
+              .composite(layers.slice(1).map(({ input }) => ({ input, left: 0, top: 0 })))
+              .png()
+              .toBuffer();
+      await sharp(composed)
+        .trim()
+        .flatten({ background: UI_PREVIEW_BACKGROUND })
+        .resize(
+          UI_PREVIEW_SIZE - UI_PREVIEW_PADDING * 2,
+          UI_PREVIEW_SIZE - UI_PREVIEW_PADDING * 2,
+          {
+            fit: 'contain',
+            kernel: sharp.kernel.lanczos3,
+            background: UI_PREVIEW_BACKGROUND,
+          },
+        )
+        .extend({
+          top: UI_PREVIEW_PADDING,
+          bottom: UI_PREVIEW_PADDING,
+          left: UI_PREVIEW_PADDING,
+          right: UI_PREVIEW_PADDING,
+          background: UI_PREVIEW_BACKGROUND,
+        })
+        .webp({ lossless: true, effort: 6 })
+        .toFile(path.join(previewDir, fileName));
+      return { id: preview.id, url: `/assets/generated/previews/${fileName}` };
+    }),
+  );
 }
 
 function pixiSpritesheet(assets, packed, imageName) {
@@ -307,7 +432,7 @@ function pixiSpritesheet(assets, packed, imageName) {
   };
 }
 
-function generatedTypescript(manifest, builds) {
+function generatedTypescript(manifest, builds, previews) {
   const runtimeIds = manifest.assets.filter((asset) => asset.runtime).map((asset) => asset.id);
   const atlasUrls = builds.map((build) => `/assets/generated/${build.jsonName}`);
   const frameIds = builds.flatMap((build) => build.packed.frames.map((frame) => frame.id));
@@ -315,6 +440,8 @@ function generatedTypescript(manifest, builds) {
 export const PRODUCTION_ATLAS_URLS = ${JSON.stringify(atlasUrls, null, 2)} as const;
 export const PRODUCTION_ASSET_IDS = ${JSON.stringify(runtimeIds, null, 2)} as const;
 export type ProductionAssetId = (typeof PRODUCTION_ASSET_IDS)[number];
+export const UI_ASSET_PREVIEW_URLS = ${JSON.stringify(Object.fromEntries(previews.map((preview) => [preview.id, preview.url])), null, 2)} as const;
+export type UiAssetPreviewId = keyof typeof UI_ASSET_PREVIEW_URLS;
 export const PRODUCTION_FRAME_IDS = ${JSON.stringify(frameIds, null, 2)} as const;
 export type ProductionFrameId = (typeof PRODUCTION_FRAME_IDS)[number];
 `;
@@ -350,6 +477,13 @@ function validId(value, field) {
   return value;
 }
 
+function validPreviewId(value, field) {
+  if (typeof value !== 'string' || !/^(building|unit)\.[a-z][a-z0-9_]*$/.test(value)) {
+    throw new Error(`${field} must identify a building or unit UI asset`);
+  }
+  return value;
+}
+
 function safeSource(value, field) {
   if (
     typeof value !== 'string' ||
@@ -381,4 +515,5 @@ if (path.resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) {
       `[assets] ${atlas.atlasId}: ${atlas.frameCount} frames, ${atlas.width}x${atlas.height}\n`,
     );
   }
+  process.stdout.write(`[assets] ${result.previewCount} UI previews\n`);
 }

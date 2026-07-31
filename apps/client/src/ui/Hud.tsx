@@ -21,6 +21,7 @@ import { matchResultActions, type MatchResultAction } from '../game/matchResult.
 import type { MissionId } from '../game/skirmishConfig.js';
 import { ACHIEVEMENTS, type AchievementId } from '../game/achievements.js';
 import { analyzeBattle } from '../game/battleAnalysis.js';
+import { UI_ASSET_PREVIEW_URLS, type UiAssetPreviewId } from '../assets/assets.gen.js';
 
 const BUILDABLE_STRUCTURES = [
   {
@@ -286,7 +287,11 @@ export function Hud(props: HudProps): JSX.Element {
                       onClick={() => props.onPlaceBuilding(id)}
                       title={`${profile.description} ${profile.tacticalNote} ${availability.label}.`}
                     >
-                      <span className="command-button__icon">{buildingSymbol(id)}</span>
+                      <AssetPreview
+                        className="command-button__icon"
+                        id={`building.${id}`}
+                        label={profile.label}
+                      />
                       <span className="command-button__copy">
                         <strong>{profile.label}</strong>
                         <small>{profile.description}</small>
@@ -604,7 +609,11 @@ function ProductionPanel({
               onClick={() => onQueue(unit)}
               title={`${profile?.description ?? humanize(unit)} ${profile?.tacticalNote ?? ''}`}
             >
-              <span className="unit-button__icon">{unitSymbol(unit)}</span>
+              <AssetPreview
+                className="unit-button__icon"
+                id={`unit.${unit}`}
+                label={profile?.label ?? humanize(unit)}
+              />
               <span className="unit-button__copy">
                 <strong>{profile?.label ?? humanize(unit)}</strong>
                 <small className="unit-button__role">{profile?.role}</small>
@@ -1079,13 +1088,20 @@ function SetupOverlay({
 }
 
 const humanize = (value: string): string => value.replaceAll('_', ' ');
-const buildingSymbol = (building: string): string =>
-  ({
-    concrete_wall: '╬',
-    power_plant: 'ϟ',
-    barracks: '▥',
-    factory: '▣',
-    turret: '⌖',
-  })[building] ?? '■';
-const unitSymbol = (unit: string): string =>
-  ({ rifleman: '▲', engineer: '◇', scout: '▱', tank: '▰', harvester: '⬢' })[unit] ?? '●';
+
+function AssetPreview({
+  className,
+  id,
+  label,
+}: {
+  className: string;
+  id: string;
+  label: string;
+}): JSX.Element {
+  const url = UI_ASSET_PREVIEW_URLS[id as UiAssetPreviewId];
+  return (
+    <span className={className} aria-hidden="true">
+      {url ? <img src={url} alt="" /> : <span>{label.slice(0, 2).toUpperCase()}</span>}
+    </span>
+  );
+}

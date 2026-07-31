@@ -16,11 +16,19 @@ const atlases = {
   vehicles: { id: 'iron-pass-vehicles', maxWidth: 256, maxHeight: 8192, padding: 2 },
 };
 
+const uiPreviews = [
+  {
+    id: 'unit.tank',
+    frames: [{ asset: 'unit.tank', state: 'idle', direction: 'south', step: 0 }],
+  },
+];
+
 describe('production asset compiler', () => {
   it('normalizes and sorts a valid manifest', () => {
     const manifest = validateManifest({
       version: 1,
       atlases,
+      uiPreviews,
       assets: [asset],
     });
     expect(manifest.assets[0]).toEqual(asset);
@@ -32,6 +40,7 @@ describe('production asset compiler', () => {
       validateManifest({
         version: 1,
         atlases,
+        uiPreviews,
         assets: [asset, asset],
       }),
     ).toThrow('Duplicate asset id');
@@ -39,6 +48,7 @@ describe('production asset compiler', () => {
       validateManifest({
         version: 1,
         atlases,
+        uiPreviews,
         assets: [{ ...asset, source: '../tank.png' }],
       }),
     ).toThrow('must stay inside assets-src');
@@ -52,6 +62,7 @@ describe('production asset compiler', () => {
           vehicles: atlases.vehicles,
           infantry: { ...atlases.vehicles },
         },
+        uiPreviews,
         assets: [asset],
       }),
     ).toThrow('Duplicate atlas id');
@@ -59,6 +70,7 @@ describe('production asset compiler', () => {
       validateManifest({
         version: 1,
         atlases,
+        uiPreviews,
         assets: [{ ...asset, atlas: 'missing' }],
       }),
     ).toThrow('references unknown atlas');
@@ -68,6 +80,7 @@ describe('production asset compiler', () => {
         atlases: {
           vehicles: { ...atlases.vehicles, maxHeight: 8193 },
         },
+        uiPreviews,
         assets: [asset],
       }),
     ).toThrow('must not exceed 8192');
@@ -77,6 +90,7 @@ describe('production asset compiler', () => {
         atlases: {
           vehicles: { ...atlases.vehicles, maxWidth: 8193 },
         },
+        uiPreviews,
         assets: [asset],
       }),
     ).toThrow('must not exceed 8192');
@@ -110,10 +124,40 @@ describe('production asset compiler', () => {
     const manifest = validateManifest({
       version: 1,
       atlases,
+      uiPreviews,
       assets: [{ ...asset, states: { idle: 1, move: 2, fire: 2 } }],
     });
 
     expect(Object.keys(manifest.assets[0].states)).toEqual(['idle', 'move', 'fire']);
+  });
+
+  it('validates representative UI frames against their source asset contract', () => {
+    expect(() =>
+      validateManifest({
+        version: 1,
+        atlases,
+        uiPreviews: [
+          {
+            id: 'unit.tank',
+            frames: [{ asset: 'unit.tank', state: 'missing', direction: 'south', step: 0 }],
+          },
+        ],
+        assets: [asset],
+      }),
+    ).toThrow('references unknown state');
+    expect(() =>
+      validateManifest({
+        version: 1,
+        atlases,
+        uiPreviews: [
+          {
+            id: 'unit.tank',
+            frames: [{ asset: 'unit.tank', state: 'idle', direction: 'south', step: 1 }],
+          },
+        ],
+        assets: [asset],
+      }),
+    ).toThrow('exceeds state frame count');
   });
 
   it('keeps adaptive defense masks inside each declared animation state', () => {
