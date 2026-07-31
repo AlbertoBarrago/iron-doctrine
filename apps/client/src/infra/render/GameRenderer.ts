@@ -24,8 +24,10 @@ import { Camera, edgePanDirection } from './camera.js';
 import { minimapTerrainColor } from './minimapFog.js';
 import {
   FOG_TRANSITION_BANDS,
+  fogCornerTransitionState,
   fogTransitionAlpha,
   fogTransitionState,
+  type FogCorner,
   type FogVisibility,
 } from './fogPresentation.js';
 import { ParticleSystem } from './Particles.js';
@@ -78,6 +80,12 @@ const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
 
 type FogEdge = 'north' | 'east' | 'south' | 'west';
+const FOG_CORNERS: readonly FogCorner[] = [
+  'north-west',
+  'north-east',
+  'south-east',
+  'south-west',
+];
 
 function drawFogTransitionEdge(
   graphics: Graphics,
@@ -104,6 +112,34 @@ function drawFogTransitionEdge(
     } else {
       graphics.rect(x + inset, y, bandSize + 1, size + 1).fill({ color: 0x000000, alpha });
     }
+  }
+}
+
+function drawFogTransitionCorner(
+  graphics: Graphics,
+  x: number,
+  y: number,
+  size: number,
+  corner: FogCorner,
+  neighbour: Exclude<FogVisibility, 2>,
+): void {
+  const centreX = corner.endsWith('west') ? x : x + size;
+  const centreY = corner.startsWith('north') ? y : y + size;
+  let startAngle = 0;
+  if (corner === 'north-east') startAngle = Math.PI / 2;
+  else if (corner === 'south-east') startAngle = Math.PI;
+  else if (corner === 'south-west') startAngle = Math.PI * 1.5;
+  const endAngle = startAngle + Math.PI / 2;
+  const maxRadius = size * 0.68;
+
+  for (let band = FOG_TRANSITION_BANDS - 1; band >= 0; band--) {
+    const radius = maxRadius * ((band + 1) / FOG_TRANSITION_BANDS);
+    graphics
+      .moveTo(centreX, centreY)
+      .arc(centreX, centreY, radius, startAngle, endAngle)
+      .lineTo(centreX, centreY)
+      .closePath()
+      .fill({ color: 0x000000, alpha: fogTransitionAlpha(neighbour, band) });
   }
 }
 
@@ -952,6 +988,20 @@ export class GameRenderer {
         if (east !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'east', east);
         if (south !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'south', south);
         if (west !== null) drawFogTransitionEdge(this.fogGfx, sx, sy, size, 'west', west);
+        for (const corner of FOG_CORNERS) {
+          const transition = fogCornerTransitionState(
+            fog.cells,
+            fog.width,
+            fog.height,
+            state,
+            cx,
+            cy,
+            corner,
+          );
+          if (transition !== null) {
+            drawFogTransitionCorner(this.fogGfx, sx, sy, size, corner, transition);
+          }
+        }
       }
     }
   }

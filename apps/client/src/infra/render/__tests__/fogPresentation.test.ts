@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FOG_TRANSITION_BANDS,
+  fogCornerTransitionState,
   fogTransitionAlpha,
   fogTransitionState,
 } from '../fogPresentation.js';
@@ -17,6 +18,17 @@ describe('battlefield fog presentation', () => {
   it('treats positions outside the map as fully hidden', () => {
     expect(fogTransitionState(cells, 3, 3, 2, -1, 1)).toBe(0);
     expect(fogTransitionState(cells, 3, 3, 1, 3, 1)).toBe(0);
+  });
+
+  it('rounds diagonal contacts and corners without scalloping straight edges', () => {
+    const diagonalContact = new Uint8Array([0, 2, 2, 2]);
+    const straightEdge = new Uint8Array([0, 0, 2, 2]);
+    const concaveCorner = new Uint8Array([0, 0, 0, 2]);
+
+    expect(fogCornerTransitionState(diagonalContact, 2, 2, 2, 1, 1, 'north-west')).toBe(0);
+    expect(fogCornerTransitionState(straightEdge, 2, 2, 2, 1, 1, 'north-west')).toBeNull();
+    expect(fogCornerTransitionState(concaveCorner, 2, 2, 2, 1, 1, 'north-west')).toBe(0);
+    expect(fogCornerTransitionState(concaveCorner, 2, 2, 0, 0, 0, 'south-east')).toBeNull();
   });
 
   it('fades monotonically into known terrain without weakening hidden edges', () => {
