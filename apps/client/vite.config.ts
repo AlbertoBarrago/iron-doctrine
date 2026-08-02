@@ -6,6 +6,7 @@ export default defineConfig({
   plugins: [
     {
       name: 'iron-production-assets',
+      apply: 'build',
       async buildStart() {
         await buildAssets();
       },
