@@ -1,9 +1,37 @@
 export type FogVisibility = 0 | 1 | 2;
 export type FogCorner = 'north-west' | 'north-east' | 'south-east' | 'south-west';
+export type FogTextureMark = 'none' | 'forward-slash' | 'back-slash';
+
+export interface FogTextureSample {
+  color: number;
+  mark: FogTextureMark;
+  offset: number;
+}
 
 export const FOG_TRANSITION_BANDS = 4;
 
 const HIDDEN_EDGE_ALPHA = [0.62, 0.38, 0.21, 0.09] as const;
+const HIDDEN_TEXTURE_COLORS = [0x020403, 0x030605, 0x040706, 0x050805] as const;
+
+/**
+ * Stable presentation-only variation for unexplored cells. Full-opacity colors keep
+ * terrain concealed while sparse marks prevent the fog from reading as empty canvas.
+ */
+export function fogTextureSample(seed: number, x: number, y: number): FogTextureSample {
+  let hash = seed | 0;
+  hash ^= Math.imul(x, 0x1f123bb5);
+  hash ^= Math.imul(y, 0x5f356495);
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash = Math.imul(hash ^ (hash >>> 16), 0x45d9f3b);
+  hash = (hash ^ (hash >>> 16)) >>> 0;
+  const markRoll = (hash >>> 5) & 15;
+
+  return {
+    color: HIDDEN_TEXTURE_COLORS[hash & 3]!,
+    mark: markRoll === 0 ? 'forward-slash' : markRoll === 1 ? 'back-slash' : 'none',
+    offset: ((hash >>> 12) & 255) / 255,
+  };
+}
 
 /**
  * Returns hidden neighbours only. Explored and currently visible cells are both
