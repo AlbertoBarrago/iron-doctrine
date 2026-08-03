@@ -2375,6 +2375,20 @@ kbd {
   grid-column: 1 / -1;
   align-items: flex-start;
 }
+.quick-orders__weapons {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+}
+.quick-orders__weapons .command-button__copy strong {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
 @media (max-height: 820px) {
   .command-panel__masthead {
     margin-bottom: 7px;
