@@ -104,6 +104,7 @@ interface HudProps {
   onCancelPlacement(): void;
   onGather(): void;
   onStop(): void;
+  onSwitchWeapon(index: number): void;
   onRecallControlGroup(slot: number): void;
   onRemoveBuilding(recycle: boolean): void;
   onRestart(): void;
@@ -240,6 +241,7 @@ export function Hud(props: HudProps): JSX.Element {
                   entity={selectedEntity}
                   onGather={props.onGather}
                   onStop={props.onStop}
+                  onSwitchWeapon={props.onSwitchWeapon}
                   onRemove={(action) => setPendingRemoval(action)}
                 />
               ) : (
@@ -687,11 +689,13 @@ function OrdersPanel({
   entity,
   onGather,
   onStop,
+  onSwitchWeapon,
   onRemove,
 }: {
   entity: SelectedEntitySummary;
   onGather(): void;
   onStop(): void;
+  onSwitchWeapon(index: number): void;
   onRemove(action: 'demolish' | 'recycle'): void;
 }): JSX.Element {
   const operationalCommands = entity.commands.filter(
@@ -699,6 +703,9 @@ function OrdersPanel({
   );
   return (
     <div className="quick-orders">
+      {entity.weaponLoadout ? (
+        <WeaponBar loadout={entity.weaponLoadout} onSwitch={onSwitchWeapon} />
+      ) : null}
       {entity.kind === 'resource' ? (
         <WorkspaceEmpty
           title="Ore field"
@@ -741,6 +748,38 @@ function OrdersPanel({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * Silent Extraction only: manual weapon switching for the operative's loadout.
+ * Rendered above the standard orders list whenever the selected unit carries a
+ * `WeaponLoadout` (see `entityReadout`/`EntitySnapshot.weaponLoadout`).
+ */
+function WeaponBar({
+  loadout,
+  onSwitch,
+}: {
+  loadout: NonNullable<SelectedEntitySummary['weaponLoadout']>;
+  onSwitch(index: number): void;
+}): JSX.Element {
+  return (
+    <div className="quick-orders__weapons" role="group" aria-label="Weapon loadout">
+      {loadout.weapons.map((weapon, index) => (
+        <button
+          type="button"
+          key={weapon.id}
+          className={`command-button${index === loadout.activeIndex ? ' command-button--active' : ''}`}
+          onClick={() => onSwitch(index)}
+          title={`${humanize(weapon.id)} · ${weapon.damage} dmg · range ${weapon.range}`}
+        >
+          <kbd>{index + 1}</kbd>
+          <span className="command-button__copy">
+            <strong>{humanize(weapon.id)}</strong>
+          </span>
+        </button>
+      ))}
     </div>
   );
 }

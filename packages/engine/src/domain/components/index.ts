@@ -231,6 +231,83 @@ export const Construction = defineComponent<ConstructionData>('Construction', ()
   buildTicks: 1,
 }));
 
+/**
+ * A single weapon profile inside a {@link WeaponLoadoutData}. Shape mirrors
+ * {@link WeaponData} plus an optional splash radius so the combat system can treat a
+ * loadout slot exactly like a standalone `Weapon` component (same fire/cooldown code
+ * path), only sourced from the active slot instead of a fixed component.
+ */
+export interface WeaponProfileData {
+  /** Stable identifier for UI/tests (e.g. 'knife', 'sidearm', 'demo_charge'). */
+  id: string;
+  damage: number;
+  range: fp.Fixed;
+  cooldownTicks: number;
+  cooldownLeft: number;
+  projectileSpeed: fp.Fixed;
+  /** >0 applies splash damage to other Health-bearing entities within this radius. */
+  areaRadius: fp.Fixed;
+}
+
+/**
+ * Multi-weapon loadout for units that can manually switch their active weapon
+ * (currently only the `operative`). The CombatSystem reads range/damage/cooldown from
+ * `weapons[activeIndex]` instead of a fixed `Weapon` component when this is present.
+ */
+export interface WeaponLoadoutData {
+  weapons: WeaponProfileData[];
+  activeIndex: number;
+}
+export const WeaponLoadout = defineComponent<WeaponLoadoutData>('WeaponLoadout', () => ({
+  weapons: [],
+  activeIndex: 0,
+}));
+
+/**
+ * A planted explosive charge counting down to detonation. On expiry the
+ * DemolitionSystem zeroes the carrying entity's HP so the existing HealthSystem reaps
+ * it and clears its NavGrid footprint through the normal destruction path.
+ */
+export interface PlantedChargeData {
+  fuseTicksLeft: number;
+  planterPlayer: number;
+}
+export const PlantedCharge = defineComponent<PlantedChargeData>('PlantedCharge', () => ({
+  fuseTicksLeft: 90,
+  planterPlayer: 0,
+}));
+
+/**
+ * An armed hostile trap. While `armed`, any Health-bearing entity that steps inside
+ * `triggerRadius` sets it off: everyone within `radius` takes `damage`. Disarming
+ * (see {@link DisarmingData}) sets `armed` to false before that happens.
+ */
+export interface TrapData {
+  armed: boolean;
+  damage: number;
+  radius: fp.Fixed;
+  triggerRadius: fp.Fixed;
+}
+export const Trap = defineComponent<TrapData>('Trap', () => ({
+  armed: true,
+  damage: 60,
+  radius: fp.fromInt(3),
+  triggerRadius: fp.fromInt(1),
+}));
+
+/**
+ * In-progress disarm action: the operative must stay within range of `target` and
+ * stationary for `ticksLeft` ticks. Any movement order cancels it (see CommandSystem).
+ */
+export interface DisarmingData {
+  target: number;
+  ticksLeft: number;
+}
+export const Disarming = defineComponent<DisarmingData>('Disarming', () => ({
+  target: -1,
+  ticksLeft: 0,
+}));
+
 /** In-flight projectile heading toward a target position, carrying damage + owner. */
 export interface ProjectileData {
   target: number;

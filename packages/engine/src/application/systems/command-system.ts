@@ -22,6 +22,10 @@ import {
   Selectable,
   Building,
   UnitType,
+  WeaponLoadout,
+  PlantedCharge,
+  Trap,
+  Disarming,
 } from '../../domain/components/index.js';
 import { spawnUnit, UNIT_STATS } from '../../domain/archetypes/units.js';
 import {
@@ -216,6 +220,61 @@ export function createCommandSystem(
             world.destroyEntity(cmd.building);
             break;
           }
+          case 'switchWeapon': {
+            const loadout = world.get(cmd.entity, WeaponLoadout);
+            if (loadout && cmd.index >= 0 && cmd.index < loadout.weapons.length) {
+              loadout.activeIndex = cmd.index;
+            }
+            break;
+          }
+          case 'plantBomb': {
+            const planterPos = world.get(cmd.entity, Position);
+            const targetPos = world.get(cmd.target, Position);
+            const loadout = world.get(cmd.entity, WeaponLoadout);
+            const demoCharge = loadout?.weapons.find((w) => w.id === 'demo_charge');
+            const owner = world.get(cmd.entity, Owner);
+            if (
+              planterPos &&
+              targetPos &&
+              demoCharge &&
+              owner &&
+              world.has(cmd.target, Building) &&
+              !world.has(cmd.target, PlantedCharge) &&
+              fp.add(
+                fp.mul(fp.sub(planterPos.x, targetPos.x), fp.sub(planterPos.x, targetPos.x)),
+                fp.mul(fp.sub(planterPos.y, targetPos.y), fp.sub(planterPos.y, targetPos.y)),
+              ) <= fp.mul(demoCharge.range, demoCharge.range)
+            ) {
+              world.add(cmd.target, PlantedCharge, {
+                fuseTicksLeft: cmd.fuseTicks ?? 90,
+                planterPlayer: owner.player,
+              });
+            }
+            break;
+          }
+          case 'disarmTrap': {
+            const planterPos = world.get(cmd.entity, Position);
+            const targetPos = world.get(cmd.target, Position);
+            const trap = world.get(cmd.target, Trap);
+            if (
+              planterPos &&
+              targetPos &&
+              trap &&
+              trap.armed &&
+              fp.add(
+                fp.mul(fp.sub(planterPos.x, targetPos.x), fp.sub(planterPos.x, targetPos.x)),
+                fp.mul(fp.sub(planterPos.y, targetPos.y), fp.sub(planterPos.y, targetPos.y)),
+              ) <= fp.mul(trap.triggerRadius, trap.triggerRadius)
+            ) {
+              // Stationary requirement is enforced by the DisarmingSystem, which
+              // cancels this the moment a move/attack/stop order (or drift out of
+              // range) is issued — mirroring how `attack`/`gather` cancel Harvest above.
+              const move = world.get(cmd.entity, Movement);
+              if (move) move.target = null;
+              world.add(cmd.entity, Disarming, { target: cmd.target as number, ticksLeft: 60 });
+            }
+            break;
+          }
         }
       }
     },
@@ -281,7 +340,9 @@ function entityClearance(world: World, grid: NavGrid, entity: EntityId): number 
   return grid.clearanceForRadius(world.get(entity, Selectable)?.radius ?? fp.fromFloat(0.5));
 }
 
+/** A move/stop/attack order interrupts an in-progress trap disarm (see `disarmTrap`). */
 function pauseHarvest(world: World, entity: EntityId): void {
+  if (world.has(entity, Disarming)) world.remove(entity, Disarming);
   const harvest = world.get(entity, Harvest);
   if (!harvest) return;
   harvest.phase = 'paused';

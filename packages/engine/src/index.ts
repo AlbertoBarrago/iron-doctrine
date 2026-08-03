@@ -117,6 +117,12 @@ export type {
   BlackDawnPhase,
   BlackDawnSnapshot,
 } from './application/scenario/black-dawn.js';
+export { SilentExtractionState } from './application/scenario/silent-extraction.js';
+export type {
+  SilentExtractionConfig,
+  SilentExtractionPhase,
+  SilentExtractionSnapshot,
+} from './application/scenario/silent-extraction.js';
 export { buildSnapshot, hashState } from './application/snapshot.js';
 export type {
   Snapshot,

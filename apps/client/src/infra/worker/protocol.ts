@@ -6,6 +6,7 @@ import type {
   FirstContactConfig,
   IronPassConfig,
   SiegeLineConfig,
+  SilentExtractionConfig,
   Snapshot,
 } from '@iron/engine';
 import type { MapDef } from '@iron/shared';
@@ -21,6 +22,7 @@ export interface InitConfig {
   ironPass?: IronPassConfig;
   siegeLine?: SiegeLineConfig;
   blackDawn?: BlackDawnConfig;
+  silentExtraction?: SilentExtractionConfig;
   map?: MapDef;
 }
 

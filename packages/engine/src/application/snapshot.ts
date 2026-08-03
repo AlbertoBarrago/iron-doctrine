@@ -22,6 +22,8 @@ import {
   ResourceCarrier,
   Harvest,
   Healing,
+  WeaponLoadout,
+  Trap,
 } from '../domain/components/index.js';
 import { UNIT_STATS } from '../domain/archetypes/units.js';
 import * as fp from '../domain/math/fixed.js';
@@ -30,9 +32,15 @@ import type { FirstContactSnapshot } from './scenario/first-contact.js';
 import type { IronPassSnapshot } from './scenario/iron-pass.js';
 import type { SiegeLineSnapshot } from './scenario/siege-line.js';
 import type { BlackDawnSnapshot } from './scenario/black-dawn.js';
+import type { SilentExtractionSnapshot } from './scenario/silent-extraction.js';
 import type { MatchMetricsSnapshot } from './match/match-metrics.js';
 
-export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource';
+export type EntityKind = 'unit' | 'projectile' | 'building' | 'resource' | 'trap';
+
+export interface WeaponLoadoutSnapshot {
+  activeIndex: number;
+  weapons: { id: string; damage: number; range: number; cooldownTicks: number }[];
+}
 
 export interface EntitySnapshot {
   id: number;
@@ -62,6 +70,10 @@ export interface EntitySnapshot {
   cargo?: CargoSnapshot;
   /** Present for finite ore fields so the UI can display the authoritative remainder. */
   resource?: ResourceSnapshot;
+  /** Present on units with a switchable multi-weapon loadout (Silent Extraction operative). */
+  weaponLoadout?: WeaponLoadoutSnapshot;
+  /** Present on trap entities (Silent Extraction); armed traps are still lethal. */
+  trapArmed?: boolean;
 }
 
 export interface ResourceSnapshot {
@@ -112,7 +124,12 @@ export interface Snapshot {
   fog?: FogSnapshot;
   match?: MatchStateSnapshot;
   metrics?: MatchMetricsSnapshot;
-  scenario?: FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot | BlackDawnSnapshot;
+  scenario?:
+    | FirstContactSnapshot
+    | IronPassSnapshot
+    | SiegeLineSnapshot
+    | BlackDawnSnapshot
+    | SilentExtractionSnapshot;
 }
 
 export function buildSnapshot(
@@ -137,13 +154,17 @@ export function buildSnapshot(
     const carrier = world.get(e, ResourceCarrier);
     const harvest = world.get(e, Harvest);
     const resource = world.get(e, ResourceNode);
+    const loadout = world.get(e, WeaponLoadout);
+    const trap = world.get(e, Trap);
     const kind: EntityKind = world.has(e, Projectile)
       ? 'projectile'
       : building
         ? 'building'
         : world.has(e, ResourceNode)
           ? 'resource'
-          : 'unit';
+          : trap
+            ? 'trap'
+            : 'unit';
     entities.push({
       id: e,
       kind,
@@ -187,6 +208,18 @@ export function buildSnapshot(
           maxAmount: resource.maxAmount ?? resource.amount,
         },
       }),
+      ...(loadout && {
+        weaponLoadout: {
+          activeIndex: loadout.activeIndex,
+          weapons: loadout.weapons.map((w) => ({
+            id: w.id,
+            damage: w.damage,
+            range: fp.toFloat(w.range),
+            cooldownTicks: w.cooldownTicks,
+          })),
+        },
+      }),
+      ...(trap && { trapArmed: trap.armed }),
     });
   }
   return { tick, entities, players };

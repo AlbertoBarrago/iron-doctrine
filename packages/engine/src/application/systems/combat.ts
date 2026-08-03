@@ -14,12 +14,15 @@ import {
   Owner,
   Health,
   Weapon,
+  WeaponLoadout,
   Attack,
   Movement,
   Building,
   Facing,
   Projectile,
   Selectable,
+  type WeaponData,
+  type WeaponProfileData,
 } from '../../domain/components/index.js';
 import type { PlayerEconomy } from '../../domain/economy/player-economy.js';
 import * as fp from '../../domain/math/fixed.js';
@@ -42,9 +45,10 @@ export function createCombatSystem(
   return {
     name: 'CombatSystem',
     update(world: World): void {
-      const armed = world.query(Weapon, Position, Owner, Attack);
+      const armed = world.query(Position, Owner, Attack);
       for (const e of armed) {
-        const weapon = world.get(e, Weapon)!;
+        const weapon = activeWeapon(world, e);
+        if (!weapon) continue;
         if (weapon.cooldownLeft > 0) weapon.cooldownLeft--;
 
         const pos = world.get(e, Position)!;
@@ -112,6 +116,18 @@ export function createCombatSystem(
   };
 }
 
+/**
+ * Resolves the weapon stats an armed entity currently fires with: a `WeaponLoadout`'s
+ * active slot takes priority (operative), falling back to the fixed `Weapon`
+ * component every other armed unit uses. Returns the live component/array-element
+ * reference so `cooldownLeft` mutations persist.
+ */
+function activeWeapon(world: World, e: EntityId): WeaponData | WeaponProfileData | null {
+  const loadout = world.get(e, WeaponLoadout);
+  if (loadout) return loadout.weapons[loadout.activeIndex] ?? null;
+  return world.get(e, Weapon) ?? null;
+}
+
 function isLivingEnemy(world: World, target: EntityId, myPlayer: number): boolean {
   if (!world.isAlive(target)) return false;
   const owner = world.get(target, Owner);
@@ -147,11 +163,42 @@ function acquire(
   return best;
 }
 
+/**
+ * Splash for AoE weapons (currently only the operative's demo_charge): every other
+ * Health-bearing entity within `radius` of the impact takes the same base damage,
+ * regardless of team — an explosive doesn't discriminate — so it can also destroy
+ * neutral/hostile structures like the Silent Extraction obstacle wall.
+ */
+function splashDamage(
+  world: World,
+  shooter: EntityId,
+  primaryTarget: EntityId,
+  center: v2.Vec2,
+  damage: number,
+  radius: fp.Fixed,
+  metrics?: MatchMetrics,
+): void {
+  const radiusSq = fp.mul(radius, radius);
+  for (const other of world.query(Position, Health)) {
+    if (other === primaryTarget) continue;
+    const health = world.get(other, Health)!;
+    if (health.hp <= 0) continue;
+    const pos = world.get(other, Position)!;
+    if (v2.distSq(center, pos) > radiusSq) continue;
+    const applied = Math.min(health.hp, damage);
+    const otherOwner = world.get(other, Owner);
+    if (otherOwner) {
+      metrics?.recordDamage(world.get(shooter, Owner)!.player, otherOwner.player, other, applied);
+    }
+    health.hp -= applied;
+  }
+}
+
 function fire(
   world: World,
   shooter: EntityId,
   target: EntityId,
-  weapon: { damage: number; projectileSpeed: fp.Fixed },
+  weapon: { damage: number; projectileSpeed: fp.Fixed; areaRadius?: fp.Fixed },
   from: v2.Vec2,
   metrics?: MatchMetrics,
   cover?: BattlefieldCover,
@@ -171,6 +218,9 @@ function fire(
         damage,
       );
       health.hp -= appliedDamage;
+      if (weapon.areaRadius && weapon.areaRadius > fp.FP.ZERO) {
+        splashDamage(world, shooter, target, targetPos, weapon.damage, weapon.areaRadius, metrics);
+      }
     }
     return;
   }

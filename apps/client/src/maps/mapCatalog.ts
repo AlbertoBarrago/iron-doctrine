@@ -189,6 +189,34 @@ export const BLACK_DAWN_MAP: MapDef = {
   ],
 };
 
+function silentExtractionBlocked(): Array<[number, number]> {
+  const cells: Array<[number, number]> = [];
+  cells.push(...ellipseFormation(48, 48, 6, 4));
+  cells.push(...ellipseFormation(70, 20, 4, 3));
+  cells.push(...ellipseFormation(26, 76, 4, 3));
+  return cells;
+}
+
+export const SILENT_EXTRACTION_MAP: MapDef = {
+  format: 'iron-doctrine.map',
+  version: 1,
+  name: 'Ashfall Corridor',
+  width: 96,
+  height: 96,
+  cellSize: 1,
+  environment: {
+    version: MAP_ENVIRONMENT_VERSION,
+    biome: 'temperate',
+    seed: 2311,
+  },
+  blocked: silentExtractionBlocked(),
+  resources: [],
+  spawns: [
+    { player: 0, x: 10, y: 86 },
+    { player: 1, x: 86, y: 10 },
+  ],
+};
+
 export function loadMapCatalog(storage: MapStorage): MapCatalogEntry[] {
   return [
     { id: 'built-in:iron-dawn', source: 'built-in', map: DEFAULT_MAP },

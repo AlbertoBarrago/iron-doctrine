@@ -48,6 +48,16 @@ export const BUILDING_STATS: Readonly<Record<string, BuildingStats>> = {
     buildTicks: 30,
     power: 0,
   },
+  // Silent Extraction only: the holding cage the prisoner is locked inside. Attackable
+  // like any other building with Health — destroying it is the "located" phase's win
+  // condition, at which point the scenario frees the prisoner nearby.
+  cage: {
+    hp: 150,
+    footprint: 1,
+    cost: 0,
+    buildTicks: 0,
+    power: 0,
+  },
   construction_yard: {
     hp: 1500,
     footprint: 3,

@@ -19,6 +19,10 @@ import type { FirstContactConfig, FirstContactPhase } from '../scenario/first-co
 import type { IronPassConfig, IronPassPhase } from '../scenario/iron-pass.js';
 import type { SiegeLineConfig, SiegeLinePhase } from '../scenario/siege-line.js';
 import type { BlackDawnConfig, BlackDawnPhase } from '../scenario/black-dawn.js';
+import type {
+  SilentExtractionConfig,
+  SilentExtractionPhase,
+} from '../scenario/silent-extraction.js';
 import type { MatchMetricsState } from '../match/match-metrics.js';
 
 interface ComponentBlock {
@@ -61,6 +65,10 @@ export interface SaveState {
   blackDawn?: {
     config: BlackDawnConfig;
     state: { phase: BlackDawnPhase };
+  };
+  silentExtraction?: {
+    config: SilentExtractionConfig;
+    state: { phase: SilentExtractionPhase; prisonerEntity: number };
   };
 }
 
@@ -122,6 +130,12 @@ export function saveSimulation(
         state: sim.blackDawn.serialize(),
       },
     }),
+    ...(sim.silentExtraction && {
+      silentExtraction: {
+        config: sim.silentExtraction.config,
+        state: sim.silentExtraction.serialize(),
+      },
+    }),
   };
 }
 
@@ -145,6 +159,7 @@ export function loadSimulation(save: SaveState): Simulation {
     ...(save.ironPass && { ironPass: save.ironPass.config }),
     ...(save.siegeLine && { siegeLine: save.siegeLine.config }),
     ...(save.blackDawn && { blackDawn: save.blackDawn.config }),
+    ...(save.silentExtraction && { silentExtraction: save.silentExtraction.config }),
   });
 
   sim.world.entities.restore(save.entityManager);
@@ -167,6 +182,9 @@ export function loadSimulation(save: SaveState): Simulation {
   if (save.ironPass && sim.ironPass) sim.ironPass.restore(save.ironPass.state);
   if (save.siegeLine && sim.siegeLine) sim.siegeLine.restore(save.siegeLine.state);
   if (save.blackDawn && sim.blackDawn) sim.blackDawn.restore(save.blackDawn.state);
+  if (save.silentExtraction && sim.silentExtraction) {
+    sim.silentExtraction.restore(save.silentExtraction.state);
+  }
   return sim;
 }
 

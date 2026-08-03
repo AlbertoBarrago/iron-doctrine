@@ -19,6 +19,7 @@ import {
   ResourceCarrier,
   Harvest,
   Healing,
+  WeaponLoadout,
 } from '../components/index.js';
 import * as fp from '../math/fixed.js';
 import { zero, type Vec2 } from '../math/vec2.js';
@@ -110,7 +111,55 @@ export const UNIT_STATS: Readonly<Record<string, UnitStats>> = {
     cost: 1400,
     buildTicks: 180,
   },
+  // Guest unit for the "Silent Extraction" campaign scenario only — not producible from any
+  // structure (cost 0, buildTicks 0). Higher HP and speed reflect a lone special operator.
+  // No single `weapon` entry: the operative carries a manually switchable WeaponLoadout
+  // (see OPERATIVE_WEAPONS below) instead of a fixed Weapon component.
+  operative: {
+    hp: 220,
+    movementClass: 'infantry',
+    speed: 5,
+    radius: 0.5,
+    vision: 9,
+    cost: 0,
+    buildTicks: 0,
+  },
+  // Scenario-only NPC: disarmed, slow, escorted rather than commanded in combat.
+  prisoner: {
+    hp: 40,
+    movementClass: 'infantry',
+    speed: 2,
+    radius: 0.5,
+    vision: 4,
+    cost: 0,
+    buildTicks: 0,
+  },
 };
+
+export interface WeaponProfileStats extends WeaponStats {
+  id: string;
+  /** World-unit splash radius; 0 = single-target hit (the default for every other weapon). */
+  areaRadius?: number;
+}
+
+/**
+ * Silent Extraction only: the operative's manual weapon loadout. Modeled as a
+ * standalone table (rather than an entry on `UnitStats.weapon`) because it is a list
+ * of switchable profiles instead of one fixed weapon — see `WeaponLoadout` component.
+ *
+ * - knife: near-instant melee finisher, short cooldown, no reach.
+ * - sidearm: the operative's default ranged option, comparable to a rifleman's rifle.
+ * - demo_charge: thrown explosive with area damage that also destroys structures;
+ *   modeled as an instant-hit AoE (projectileSpeed 0) rather than a travelling
+ *   projectile with splash, keeping the existing single-target Projectile system
+ *   untouched — consistent with the knife/sidearm instant-hit convention already used
+ *   for infantry weapons in this codebase.
+ */
+export const OPERATIVE_WEAPONS: readonly WeaponProfileStats[] = [
+  { id: 'knife', damage: 60, range: 1, cooldownTicks: 8, projectileSpeed: 0 },
+  { id: 'sidearm', damage: 15, range: 6, cooldownTicks: 14, projectileSpeed: 0 },
+  { id: 'demo_charge', damage: 45, range: 8, cooldownTicks: 90, projectileSpeed: 0, areaRadius: 3 },
+];
 
 export function spawnUnit(world: World, unit: string, player: number, at: Vec2): EntityId {
   const stats = UNIT_STATS[unit];
@@ -134,6 +183,22 @@ export function spawnUnit(world: World, unit: string, player: number, at: Vec2):
       cooldownTicks: stats.weapon.cooldownTicks,
       cooldownLeft: 0,
       projectileSpeed: fp.fromInt(stats.weapon.projectileSpeed),
+    });
+    world.add(e, Attack, { target: -1, chase: false, formationIndex: 0 });
+  }
+
+  if (unit === 'operative') {
+    world.add(e, WeaponLoadout, {
+      weapons: OPERATIVE_WEAPONS.map((profile) => ({
+        id: profile.id,
+        damage: profile.damage,
+        range: fp.fromInt(profile.range),
+        cooldownTicks: profile.cooldownTicks,
+        cooldownLeft: 0,
+        projectileSpeed: fp.fromInt(profile.projectileSpeed),
+        areaRadius: fp.fromInt(profile.areaRadius ?? 0),
+      })),
+      activeIndex: 0,
     });
     world.add(e, Attack, { target: -1, chase: false, formationIndex: 0 });
   }

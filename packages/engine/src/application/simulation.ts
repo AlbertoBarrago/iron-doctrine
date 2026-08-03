@@ -17,6 +17,8 @@ import { createVehicleCrushSystem } from './systems/vehicle-crush.js';
 import { createCombatSystem } from './systems/combat.js';
 import { createProjectileSystem } from './systems/projectile.js';
 import { createHealthSystem } from './systems/health.js';
+import { DemolitionSystem } from './systems/demolition-system.js';
+import { TrapSystem, DisarmingSystem } from './systems/trap-system.js';
 import { HealingSystem } from './systems/healing-system.js';
 import { createResourceSystem } from './systems/resource-system.js';
 import { createEnergySystem } from './systems/energy-system.js';
@@ -51,6 +53,11 @@ import {
   BlackDawnState,
   type BlackDawnConfig,
 } from './scenario/black-dawn.js';
+import {
+  createSilentExtractionSystem,
+  SilentExtractionState,
+  type SilentExtractionConfig,
+} from './scenario/silent-extraction.js';
 import { BattlefieldCover } from './combat/battlefield-cover.js';
 
 export interface SimulationConfig {
@@ -77,6 +84,8 @@ export interface SimulationConfig {
   siegeLine?: SiegeLineConfig;
   /** Optional scripted last stand triggered once the hostile command is critically damaged. */
   blackDawn?: BlackDawnConfig;
+  /** Optional single-operator infiltration/rescue scenario (Silent Extraction). */
+  silentExtraction?: SilentExtractionConfig;
 }
 
 interface Deps {
@@ -92,6 +101,7 @@ interface Deps {
   ironPass: IronPassState | null;
   siegeLine: SiegeLineState | null;
   blackDawn: BlackDawnState | null;
+  silentExtraction: SilentExtractionState | null;
   metrics: MatchMetrics;
   cover: BattlefieldCover;
 }
@@ -104,6 +114,9 @@ const defaultSystems = (d: Deps): System[] => [
   ...(d.ironPass ? [createIronPassSystem(d.ironPass)] : []),
   ...(d.siegeLine ? [createSiegeLineSystem(d.siegeLine)] : []),
   ...(d.blackDawn ? [createBlackDawnSystem(d.blackDawn)] : []),
+  ...(d.silentExtraction
+    ? [createSilentExtractionSystem(d.silentExtraction, d.grid, d.economy)]
+    : []),
   createAISystem(
     d.aiPlayers,
     d.bus,
@@ -124,6 +137,9 @@ const defaultSystems = (d: Deps): System[] => [
   createCombatSystem(d.economy, d.metrics, d.cover),
   createProjectileSystem(d.metrics, d.cover),
   HealingSystem,
+  TrapSystem,
+  DisarmingSystem,
+  DemolitionSystem,
   createHealthSystem(d.grid, d.metrics),
   ...(d.match
     ? [
@@ -150,6 +166,7 @@ export class Simulation {
   readonly ironPass: IronPassState | null;
   readonly siegeLine: SiegeLineState | null;
   readonly blackDawn: BlackDawnState | null;
+  readonly silentExtraction: SilentExtractionState | null;
   readonly metrics = new MatchMetrics();
   readonly cover: BattlefieldCover;
   private readonly scheduler = new Scheduler();
@@ -169,6 +186,9 @@ export class Simulation {
     this.ironPass = config.ironPass ? new IronPassState(config.ironPass) : null;
     this.siegeLine = config.siegeLine ? new SiegeLineState(config.siegeLine) : null;
     this.blackDawn = config.blackDawn ? new BlackDawnState(config.blackDawn) : null;
+    this.silentExtraction = config.silentExtraction
+      ? new SilentExtractionState(config.silentExtraction)
+      : null;
     if (config.startingCredits) {
       for (const [player, amount] of Object.entries(config.startingCredits)) {
         this.economy.addCredits(Number(player), amount);
@@ -192,6 +212,7 @@ export class Simulation {
       ironPass: this.ironPass,
       siegeLine: this.siegeLine,
       blackDawn: this.blackDawn,
+      silentExtraction: this.silentExtraction,
       metrics: this.metrics,
       cover: this.cover,
     });
@@ -228,6 +249,15 @@ export class Simulation {
       );
       this.match.finish(winner ?? null);
     }
+    if (this.silentExtraction?.phase === 'failed' && this.match) {
+      const winner = this.match.players.find(
+        (player) => player !== asPlayerId(this.silentExtraction!.config.player),
+      );
+      this.match.finish(winner ?? null);
+    }
+    if (this.silentExtraction?.phase === 'extracted' && this.match) {
+      this.match.finish(asPlayerId(this.silentExtraction.config.player));
+    }
     this.currentTick++;
   }
 
@@ -248,6 +278,7 @@ export class Simulation {
     else if (this.ironPass) snap.scenario = this.ironPass.snapshot();
     else if (this.siegeLine) snap.scenario = this.siegeLine.snapshot();
     else if (this.blackDawn) snap.scenario = this.blackDawn.snapshot();
+    else if (this.silentExtraction) snap.scenario = this.silentExtraction.snapshot();
     snap.fog = {
       width: this.fog.width,
       height: this.fog.height,
