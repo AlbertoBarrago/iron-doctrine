@@ -205,6 +205,8 @@ export class GameRenderer {
   private entityReadoutMeterFill: HTMLElement | null = null;
   private entityReadoutSignature = '';
   private extractionLabel: Text | null = null;
+  private readonly trapLabels = new Map<number, Text>();
+  private readonly trapLabelsSeenThisFrame = new Set<number>();
   private radioCaption: HTMLDivElement | null = null;
   private radioCaptionTimer: ReturnType<typeof setTimeout> | null = null;
   private radioSequence = 0;
@@ -788,6 +790,7 @@ export class GameRenderer {
     const prevById = new Map<number, EntitySnapshot>();
     for (const e of prev.entities) prevById.set(e.id, e);
     const animationTime = this.presentationClock.time / 1000;
+    this.trapLabelsSeenThisFrame.clear();
     const wallKeys = new Set(
       curr.entities
         .filter((entity) => entity.buildingType === 'concrete_wall')
@@ -834,6 +837,11 @@ export class GameRenderer {
           animationTime,
           amount < (p.resource?.amount ?? amount),
         );
+        continue;
+      }
+
+      if (e.kind === 'trap') {
+        this.drawTrapMarker(e.id, sx, sy, e.trapArmed ?? false, animationTime);
         continue;
       }
 
@@ -930,6 +938,66 @@ export class GameRenderer {
       drawPersistentDamage(this.units, sx, sy, r, persistentDamage);
       if (e.cargo) this.drawCargoBar(e, sx, sy, r);
     }
+    for (const [id, label] of this.trapLabels) {
+      if (this.trapLabelsSeenThisFrame.has(id)) continue;
+      label.destroy();
+      this.trapLabels.delete(id);
+    }
+  }
+
+  /**
+   * Silent Extraction: traps had no on-screen presence at all — right-clicking a
+   * disarm target only worked if you already knew one was there. Draws an
+   * unmistakable spiked marker (pulsing red while armed, dim grey with a strike-through
+   * once disarmed) plus a short label so the purpose is obvious at a glance.
+   */
+  private drawTrapMarker(id: number, sx: number, sy: number, armed: boolean, animationTime: number): void {
+    this.trapLabelsSeenThisFrame.add(id);
+    const size = Math.max(10, this.camera.scale * 0.9);
+    const pulse = armed ? 0.65 + Math.sin(animationTime * 6 + id) * 0.35 : 1;
+    const color = armed ? 0xd1443a : 0x6c7568;
+    this.units
+      .circle(sx, sy, size)
+      .fill({ color: 0x14100c, alpha: 0.85 })
+      .stroke({ width: 2, color, alpha: pulse });
+    for (let i = 0; i < 5; i++) {
+      const a = (Math.PI * 2 * i) / 5 - Math.PI / 2;
+      const inner = size * 0.35;
+      const outer = size * 0.85;
+      this.units
+        .moveTo(sx + Math.cos(a) * inner, sy + Math.sin(a) * inner)
+        .lineTo(sx + Math.cos(a) * outer, sy + Math.sin(a) * outer)
+        .stroke({ width: 2, color, alpha: pulse });
+    }
+    if (!armed) {
+      this.units
+        .moveTo(sx - size * 0.6, sy - size * 0.6)
+        .lineTo(sx + size * 0.6, sy + size * 0.6)
+        .stroke({ width: 2, color: 0x9fb36b, alpha: 0.9 });
+    }
+    let label = this.trapLabels.get(id);
+    if (!label) {
+      label = new Text({
+        text: armed ? 'MINE' : 'DISARMED',
+        style: {
+          fill: armed ? 0xe28a7a : 0x9fb36b,
+          fontFamily: 'monospace',
+          fontSize: 10,
+          fontWeight: '700',
+          letterSpacing: 1,
+        },
+      });
+      label.anchor.set(0.5, 0);
+      this.app.stage.addChild(label);
+      this.trapLabels.set(id, label);
+    }
+    if (label.text !== (armed ? 'MINE' : 'DISARMED')) {
+      label.text = armed ? 'MINE' : 'DISARMED';
+      label.style.fill = armed ? 0xe28a7a : 0x9fb36b;
+    }
+    label.visible = true;
+    label.x = sx;
+    label.y = sy + size + 3;
   }
 
   private presentationFiring(
