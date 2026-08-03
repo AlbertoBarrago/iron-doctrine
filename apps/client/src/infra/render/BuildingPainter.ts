@@ -48,6 +48,9 @@ export function drawBuilding(
     case 'turret':
       drawTurret(graphics, x, y, size, factionColor, alpha, entity.angle);
       break;
+    case 'cage':
+      drawCage(graphics, x, y, size, alpha);
+      break;
     default:
       graphics
         .rect(x - size * 0.82, y - size * 0.82, size * 1.64, size * 1.64)
@@ -301,6 +304,27 @@ function drawTurret(
     .moveTo(x, y)
     .lineTo(barrelX, barrelY)
     .stroke({ width: Math.max(3, size * 0.18), color: 0x111713, alpha });
+}
+
+/**
+ * Silent Extraction only: the prisoner's holding cage. Distinct from every other
+ * structure — a rusty amber cell block with visible bars — so it reads as "destroy
+ * this to free her" rather than as a generic hostile building.
+ */
+function drawCage(graphics: Graphics, x: number, y: number, size: number, alpha: number): void {
+  const cageColor = 0x8a6a3a;
+  graphics
+    .rect(x - size * 0.82, y - size * 0.82, size * 1.64, size * 1.64)
+    .fill({ color: shadeColor(cageColor, 0.5), alpha })
+    .stroke({ width: 2, color: 0x2a1d0c, alpha });
+  const bars = 4;
+  for (let i = 0; i < bars; i++) {
+    const bx = x - size * 0.6 + (i / (bars - 1)) * size * 1.2;
+    graphics
+      .moveTo(bx, y - size * 0.7)
+      .lineTo(bx, y + size * 0.7)
+      .stroke({ width: Math.max(2, size * 0.12), color: cageColor, alpha });
+  }
 }
 
 function drawFactionMark(

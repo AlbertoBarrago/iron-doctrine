@@ -10,7 +10,7 @@
  *
  * It reads snapshots but never mutates simulation state — the clean sim/render split.
  */
-import { Application, Container, Graphics } from 'pixi.js';
+import { Application, Container, Graphics, Text } from 'pixi.js';
 import {
   BUILDING_STATS,
   UNIT_STATS,
@@ -72,6 +72,7 @@ import {
   ironPassLayout,
   MISSION_RULES,
   siegeLineLayout,
+  silentExtractionLayout,
   type SkirmishConfig,
 } from '../../game/skirmishConfig.js';
 import { profileFor, usesContinuousPlacement } from '../../game/gameContent.js';
@@ -203,6 +204,7 @@ export class GameRenderer {
   private entityReadoutMeter: HTMLDivElement | null = null;
   private entityReadoutMeterFill: HTMLElement | null = null;
   private entityReadoutSignature = '';
+  private extractionLabel: Text | null = null;
   private radioCaption: HTMLDivElement | null = null;
   private radioCaptionTimer: ReturnType<typeof setTimeout> | null = null;
   private radioSequence = 0;
@@ -265,6 +267,26 @@ export class GameRenderer {
       ? mapPosition(config.map, siegeLine.targetAt.x, siegeLine.targetAt.y)
       : null;
     const blackDawn = missionRules.scenario === 'finale';
+    const silentExtraction =
+      missionRules.scenario === 'infiltration' ? silentExtractionLayout(config.map) : null;
+    const prisonerAt = silentExtraction
+      ? mapPosition(config.map, silentExtraction.prisonerAt.x, silentExtraction.prisonerAt.y)
+      : null;
+    const extractionAt = silentExtraction
+      ? mapPosition(config.map, silentExtraction.extractionAt.x, silentExtraction.extractionAt.y)
+      : null;
+    const obstacleAt = silentExtraction
+      ? mapPosition(config.map, silentExtraction.obstacleAt.x, silentExtraction.obstacleAt.y)
+      : null;
+    const trapPositions = silentExtraction
+      ? silentExtraction.trapPositions.map((trap) => mapPosition(config.map, trap.x, trap.y))
+      : null;
+    const patrolPositions = silentExtraction
+      ? silentExtraction.patrolPositions.map((patrol) => mapPosition(config.map, patrol.x, patrol.y))
+      : null;
+    const basePerimeter = silentExtraction
+      ? silentExtraction.basePerimeter.map((wall) => mapPosition(config.map, wall.x, wall.y))
+      : null;
     const enemyBase = mapPosition(config.map, enemySpawn.x, enemySpawn.y);
 
     await this.app.init({
@@ -364,6 +386,19 @@ export class GameRenderer {
             },
           }
         : {}),
+      ...(prisonerAt && extractionAt
+        ? {
+            silentExtraction: {
+              player: 0,
+              prisonerAt,
+              extractionAt,
+              ...(obstacleAt ? { obstacleAt } : {}),
+              ...(trapPositions ? { trapPositions } : {}),
+              ...(patrolPositions ? { patrolPositions } : {}),
+              ...(basePerimeter ? { basePerimeter } : {}),
+            },
+          }
+        : {}),
     });
     this.bridge.start();
     this.audio.requestAmbient();
@@ -415,6 +450,16 @@ export class GameRenderer {
           at: mapPosition(config.map, position.x, position.y),
         });
       }
+    }
+
+    if (silentExtraction) {
+      // Silent Extraction fields a single guest unit — no economy, no squad.
+      this.bridge.command({
+        type: 'spawnUnit',
+        unit: 'operative',
+        player: 0,
+        at: humanBase,
+      });
     }
 
     if (missionRules.enemyEnabled) {
@@ -904,6 +949,11 @@ export class GameRenderer {
 
   private drawScenarioSite(curr: Snapshot): void {
     const scenario = curr.scenario;
+    if (scenario && 'extractionAt' in scenario) {
+      this.drawExtractionSite(scenario);
+    } else if (this.extractionLabel) {
+      this.extractionLabel.visible = false;
+    }
     if (!scenario || !('recoveryAt' in scenario) || scenario.phase === 'operational') return;
     const { sx, sy } = this.camera.worldToScreen(scenario.recoveryAt.x, scenario.recoveryAt.y);
     const size = Math.max(16, this.camera.scale * 1.5);
@@ -925,6 +975,53 @@ export class GameRenderer {
         .rect(sx - size, sy + size + 5, size * 2 * scenario.progress, 4)
         .fill({ color: 0x78d46a });
     }
+  }
+
+  /**
+   * Silent Extraction: the extraction point used to have no dedicated marker at all —
+   * players had to infer it from the objective panel. Draws an unmistakable dashed
+   * ring plus an "EXTRACTION" label, pulsing green once escorting (the point is "hot"
+   * and worth running toward) and dim grey/dashed-only before that (not yet relevant).
+   */
+  private drawExtractionSite(scenario: { extractionAt: { x: number; y: number }; phase: string }): void {
+    const { sx, sy } = this.camera.worldToScreen(scenario.extractionAt.x, scenario.extractionAt.y);
+    const active = scenario.phase === 'escorting' || scenario.phase === 'extracted';
+    const pulse = active ? 0.75 + Math.sin(this.presentationClock.time / 220) * 0.25 : 0.4;
+    const color = active ? 0x4be09a : 0x6c7a72;
+    const baseRadius = Math.max(18, this.camera.scale * 1.8);
+    const radius = active ? baseRadius * (0.94 + pulse * 0.08) : baseRadius;
+
+    const segments = 16;
+    for (let i = 0; i < segments; i += 2) {
+      const startAngle = (i / segments) * Math.PI * 2;
+      const endAngle = ((i + 1) / segments) * Math.PI * 2;
+      this.overlay
+        .moveTo(sx + Math.cos(startAngle) * radius, sy + Math.sin(startAngle) * radius)
+        .arc(sx, sy, radius, startAngle, endAngle)
+        .stroke({ width: 3, color, alpha: active ? pulse : 0.55 });
+    }
+    this.overlay
+      .circle(sx, sy, radius * 0.12)
+      .fill({ color, alpha: active ? pulse : 0.5 });
+
+    if (!this.extractionLabel) {
+      this.extractionLabel = new Text({
+        text: 'EXTRACTION',
+        style: {
+          fontFamily: 'monospace',
+          fontSize: 12,
+          fontWeight: 'bold',
+          fill: 0xdff5e8,
+          letterSpacing: 1,
+        },
+      });
+      this.extractionLabel.anchor.set(0.5, 0);
+      this.app.stage.addChild(this.extractionLabel);
+    }
+    this.extractionLabel.visible = true;
+    this.extractionLabel.alpha = active ? 1 : 0.6;
+    this.extractionLabel.x = sx;
+    this.extractionLabel.y = sy + radius + 4;
   }
 
   /** Draws fog over never-explored cells within the viewport. */
@@ -1601,6 +1698,39 @@ export class GameRenderer {
       return;
     }
 
+    // Silent Extraction: a lone selected operative right-clicking an armed trap
+    // starts disarming it; right-clicking the obstacle wall plants the C4 charge.
+    // Both reuse the move-order right-click gesture rather than adding dedicated
+    // buttons, mirroring how attack/gather already piggyback on right-click here.
+    if (units.length === 1 && units[0]!.unitType === 'operative' && curr) {
+      const operative = units[0]!;
+      const trap = this.findTrapAt(sx, sy, curr);
+      if (trap) {
+        this.showCommandFeedback(sx, sy, 'attack');
+        this.bridge.command({
+          type: 'disarmTrap',
+          entity: asEntityId(operative.id),
+          target: asEntityId(trap.id),
+        });
+        return;
+      }
+      const wall = curr.entities.find(
+        (entity) =>
+          entity.buildingType === 'concrete_wall' &&
+          entity.owner !== 0 &&
+          this.pointerHitsEntity(entity, sx, sy),
+      );
+      if (wall) {
+        this.showCommandFeedback(sx, sy, 'attack');
+        this.bridge.command({
+          type: 'plantBomb',
+          entity: asEntityId(operative.id),
+          target: asEntityId(wall.id),
+        });
+        return;
+      }
+    }
+
     const enemy = curr ? this.findEnemyAt(sx, sy, curr) : null;
     if (enemy) {
       const attackers = units.filter(
@@ -1655,6 +1785,31 @@ export class GameRenderer {
       }
     }
     return best?.entity ?? null;
+  }
+
+  private findTrapAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
+    let best: { entity: EntitySnapshot; distance: number } | null = null;
+    for (const entity of snapshot.entities) {
+      if (entity.kind !== 'trap' || !entity.trapArmed) continue;
+      const screen = this.camera.worldToScreen(entity.x, entity.y);
+      const distance = (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2;
+      const hitRadius = (entity.radius * this.camera.scale + 10) ** 2;
+      if (distance <= hitRadius && (!best || distance < best.distance)) {
+        best = { entity, distance };
+      }
+    }
+    return best?.entity ?? null;
+  }
+
+  /** Silent Extraction: switches the active slot of the selected operative's WeaponLoadout. */
+  switchWeapon(index: number): void {
+    const curr = this.bridge.latest.curr;
+    const operative = curr?.entities.find(
+      (entity) =>
+        this.selected.has(entity.id) && entity.unitType === 'operative' && entity.weaponLoadout,
+    );
+    if (!operative) return;
+    this.bridge.command({ type: 'switchWeapon', entity: asEntityId(operative.id), index });
   }
 
   private findEnemyAt(sx: number, sy: number, snapshot: Snapshot): EntitySnapshot | null {
@@ -1931,6 +2086,7 @@ export class GameRenderer {
         readout
           ? {
               ...readout,
+              id: entity.id,
               count: 1,
               commands: selectionCommands(selected),
             }

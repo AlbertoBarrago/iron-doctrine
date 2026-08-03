@@ -1,7 +1,12 @@
 import type { MissionId } from './skirmishConfig.js';
 
 export type CampaignMissionId =
-  'base_foundations' | 'first_contact' | 'iron_pass' | 'siege_line' | 'black_dawn';
+  | 'base_foundations'
+  | 'first_contact'
+  | 'iron_pass'
+  | 'siege_line'
+  | 'black_dawn'
+  | 'silent_extraction';
 
 export interface CampaignMission {
   id: CampaignMissionId;
@@ -138,6 +143,26 @@ export const CAMPAIGN_MISSIONS: readonly CampaignMission[] = [
     prerequisite: 'siege_line',
     runtimeMission: 'black_dawn',
     mapPosition: { x: 86, y: 20 },
+  },
+  {
+    id: 'silent_extraction',
+    operation: '06',
+    title: 'Silent Extraction',
+    region: 'Ashfall Corridor',
+    situation:
+      'A field asset captured during the stronghold assault is being held at a forward hostile ' +
+      'checkpoint. Field Command cannot risk a conventional force before she is moved or executed.',
+    objective: 'Infiltrate alone, locate the prisoner, and escort her to the extraction point.',
+    intelligence:
+      'A single operator stands the best chance of reaching the checkpoint undetected. Expect ' +
+      'roaming patrols between the infiltration line and the prisoner. The operator is not ' +
+      'expected to survive prolonged direct engagement with more than one patrol at a time.',
+    forces: ['1 Operative (special asset, not producible)'],
+    authorized: ['Operative'],
+    resources: 'No economy authorized for this operation — infiltration only',
+    prerequisite: 'black_dawn',
+    runtimeMission: 'silent_extraction',
+    mapPosition: { x: 92, y: 8 },
   },
 ];
 

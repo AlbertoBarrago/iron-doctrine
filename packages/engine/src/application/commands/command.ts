@@ -89,6 +89,36 @@ export interface RemoveBuildingCommand {
   engineer?: EntityId;
 }
 
+/** Switches the active slot of an entity's WeaponLoadout (Silent Extraction: operative). */
+export interface SwitchWeaponCommand {
+  type: 'switchWeapon';
+  entity: EntityId;
+  index: number;
+}
+
+/**
+ * Plants a timed explosive charge on a destructible target (Silent Extraction: the
+ * obstacle wall blocking an alternate route). Requires the planting entity to be
+ * within range of the target; validated and applied by the CommandSystem.
+ */
+export interface PlantBombCommand {
+  type: 'plantBomb';
+  entity: EntityId;
+  target: EntityId;
+  fuseTicks?: number;
+}
+
+/**
+ * Begins disarming an armed Trap. Requires the entity to stay within the trap's
+ * trigger radius and stationary for a number of ticks (see DisarmingSystem); any
+ * subsequent move/attack/stop order cancels it.
+ */
+export interface DisarmTrapCommand {
+  type: 'disarmTrap';
+  entity: EntityId;
+  target: EntityId;
+}
+
 export type Command =
   | MoveCommand
   | StopCommand
@@ -102,7 +132,10 @@ export type Command =
   | CancelProductionCommand
   | SetRallyCommand
   | ResearchCommand
-  | RemoveBuildingCommand;
+  | RemoveBuildingCommand
+  | SwitchWeaponCommand
+  | PlantBombCommand
+  | DisarmTrapCommand;
 
 /**
  * Buffers commands to be applied on the next tick. The Simulation drains it via the

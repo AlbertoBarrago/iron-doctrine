@@ -9,11 +9,16 @@ import {
   type MatchStateSnapshot,
   type MatchMetricsSnapshot,
   type SiegeLineSnapshot,
+  type SilentExtractionSnapshot,
 } from '@iron/engine';
 export { harvesterStatus } from './entityReadout.js';
 
 type ScenarioSnapshot =
-  FirstContactSnapshot | IronPassSnapshot | SiegeLineSnapshot | BlackDawnSnapshot;
+  | FirstContactSnapshot
+  | IronPassSnapshot
+  | SiegeLineSnapshot
+  | BlackDawnSnapshot
+  | SilentExtractionSnapshot;
 
 export type TutorialMilestone =
   'select' | 'power' | 'gather' | 'barracks' | 'produce' | 'defense';
@@ -22,11 +27,12 @@ export type SelectionCommand =
   'move' | 'attack' | 'stop' | 'gather' | 'build' | 'produce' | 'rally' | 'demolish' | 'recycle';
 
 export interface SelectedEntitySummary {
+  id?: number;
   label: string;
   role?: string;
   description?: string;
   tacticalNote?: string;
-  kind: 'unit' | 'building' | 'resource' | 'group';
+  kind: 'unit' | 'building' | 'resource' | 'group' | 'trap';
   buildingType?: string;
   constructionProgress?: number;
   count: number;
@@ -35,6 +41,7 @@ export interface SelectedEntitySummary {
   status?: string;
   cargo?: NonNullable<EntitySnapshot['cargo']>;
   resourceAmount?: number;
+  weaponLoadout?: NonNullable<EntitySnapshot['weaponLoadout']>;
   commands: SelectionCommand[];
 }
 

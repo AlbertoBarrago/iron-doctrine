@@ -9,6 +9,7 @@ import {
   BLACK_DAWN_MAP,
   IRON_PASS_MAP,
   SIEGE_LINE_MAP,
+  SILENT_EXTRACTION_MAP,
   loadMapCatalog,
 } from './maps/mapCatalog.js';
 import {
@@ -43,6 +44,7 @@ const CAMPAIGN_MAPS: Partial<Record<MissionId, MapDef>> = {
   iron_pass: IRON_PASS_MAP,
   siege_line: SIEGE_LINE_MAP,
   black_dawn: BLACK_DAWN_MAP,
+  silent_extraction: SILENT_EXTRACTION_MAP,
 };
 
 /** Campaign missions completed by winning the match rather than a bespoke condition. */
@@ -51,6 +53,7 @@ const MATCH_VICTORY_MISSIONS: ReadonlySet<CampaignMissionId> = new Set([
   'iron_pass',
   'siege_line',
   'black_dawn',
+  'silent_extraction',
 ]);
 
 /** Root: switches between the live game and the map editor. */
@@ -345,6 +348,7 @@ function Game({
         onCancelPlacement={() => rendererRef.current?.cancelBuildingPlacement()}
         onGather={() => rendererRef.current?.gatherWithSelectedHarvesters()}
         onStop={() => rendererRef.current?.stopSelectedUnits()}
+        onSwitchWeapon={(index) => rendererRef.current?.switchWeapon(index)}
         onRecallControlGroup={(slot) => rendererRef.current?.recallControlGroup(slot)}
         onRemoveBuilding={(recycle) => rendererRef.current?.removeSelectedBuilding(recycle)}
         onRestart={() => {

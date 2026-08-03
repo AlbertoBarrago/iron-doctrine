@@ -8,7 +8,7 @@ export interface EntityReadout {
   role?: string;
   description?: string;
   tacticalNote?: string;
-  kind: 'unit' | 'building' | 'resource';
+  kind: 'unit' | 'building' | 'resource' | 'trap';
   buildingType?: string;
   constructionProgress?: number;
   hp?: number;
@@ -16,6 +16,7 @@ export interface EntityReadout {
   status: string;
   cargo?: NonNullable<EntitySnapshot['cargo']>;
   resourceAmount?: number;
+  weaponLoadout?: NonNullable<EntitySnapshot['weaponLoadout']>;
 }
 
 export function harvesterStatus(phase: HarvesterPhase): string {
@@ -58,6 +59,7 @@ export function entityReadout(entity: EntitySnapshot): EntityReadout | null {
     ...(entity.maxHp > 0 && { hp: entity.hp, maxHp: entity.maxHp }),
     ...(entity.cargo && { cargo: entity.cargo }),
     ...(entity.resource && { resourceAmount: entity.resource.amount }),
+    ...(entity.weaponLoadout && { weaponLoadout: entity.weaponLoadout }),
     status:
       constructionProgress !== undefined
         ? `Under construction · ${Math.round(constructionProgress * 100)}%`

@@ -110,6 +110,11 @@ export function drawUnit(
     case 'medic':
       drawInfantry(graphics, sx, sy, radius, entity.angle, color, 'medic', presentation, entity);
       return;
+    case 'operative':
+      // Silent Extraction's guest "super soldier" — same silhouette as a rifleman but
+      // with an exaggerated head, so the lone hero unit reads as distinct on sight.
+      drawInfantry(graphics, sx, sy, radius, entity.angle, color, 'rifleman', presentation, undefined, 1.5);
+      return;
     default:
       drawInfantry(graphics, sx, sy, radius, entity.angle, color, 'rifleman', presentation);
   }
@@ -383,6 +388,8 @@ function drawInfantry(
   role: 'rifleman' | 'engineer' | 'medic',
   presentation: UnitPresentation,
   entity?: EntitySnapshot,
+  /** Scales the head circle only — used by the Silent Extraction operative to stand out. */
+  headScale = 1,
 ): void {
   const motion = infantryMotion(
     presentation.animationTime + sx * 0.013 + sy * 0.007,
@@ -432,7 +439,7 @@ function drawInfantry(
     .circle(leftShoulder.x, leftShoulder.y, radius * 0.16)
     .circle(rightShoulder.x, rightShoulder.y, radius * 0.16)
     .fill({ color: shadeColor(color, 0.62) })
-    .circle(head.x, head.y, radius * 0.3)
+    .circle(head.x, head.y, radius * 0.3 * headScale)
     .fill({ color: shadeColor(color, 1.16) })
     .stroke({ width: 1, color: 0x080b08 });
   const chestLight = localToScreen(bodyX, bodyY, angle, radius * 0.18, -radius * 0.22);

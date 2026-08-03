@@ -25,5 +25,6 @@ export function createSimulationFromInit(config: InitConfig): Simulation {
     ...(config.ironPass ? { ironPass: config.ironPass } : {}),
     ...(config.siegeLine ? { siegeLine: config.siegeLine } : {}),
     ...(config.blackDawn ? { blackDawn: config.blackDawn } : {}),
+    ...(config.silentExtraction ? { silentExtraction: config.silentExtraction } : {}),
   });
 }

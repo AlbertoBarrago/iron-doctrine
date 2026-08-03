@@ -4,9 +4,15 @@ import type { MapDef } from '@iron/shared';
 export type EnemyStartingForce = 0 | 2 | 4;
 export type GracePeriodSeconds = 120 | 180 | 300;
 export type MissionId =
-  'base_foundations' | 'first_contact' | 'iron_pass' | 'siege_line' | 'black_dawn' | 'skirmish';
+  | 'base_foundations'
+  | 'first_contact'
+  | 'iron_pass'
+  | 'siege_line'
+  | 'black_dawn'
+  | 'silent_extraction'
+  | 'skirmish';
 
-export type MissionScenario = 'none' | 'recovery' | 'ambush' | 'siege' | 'finale';
+export type MissionScenario = 'none' | 'recovery' | 'ambush' | 'siege' | 'finale' | 'infiltration';
 
 export interface MissionRules {
   playerStart: 'base' | 'patrol';
@@ -50,6 +56,13 @@ export const MISSION_RULES: Readonly<Record<MissionId, MissionRules>> = {
     playerCredits: 4000,
     enemyEnabled: true,
     scenario: 'finale',
+    matchEnabled: true,
+  },
+  silent_extraction: {
+    playerStart: 'patrol',
+    playerCredits: 0,
+    enemyEnabled: true,
+    scenario: 'infiltration',
     matchEnabled: true,
   },
   skirmish: {
@@ -169,5 +182,77 @@ export function siegeLineLayout(map: MapDef): SiegeLineLayout {
       y: clampY(staging.y + perpendicular.y * offset),
     })),
     targetAt: { x: clampX(friendly.x), y: clampY(friendly.y) },
+  };
+}
+
+export interface SilentExtractionLayout {
+  prisonerAt: { x: number; y: number };
+  extractionAt: { x: number; y: number };
+  /** Destructible wall blocking a shorter alternate route to the prisoner. */
+  obstacleAt: { x: number; y: number };
+  /** Enemy trap positions along the main infiltration route. */
+  trapPositions: { x: number; y: number }[];
+  /** Hostile rifleman patrol guarding the route to the holding cage. */
+  patrolPositions: { x: number; y: number }[];
+  /** Small cosmetic hostile perimeter (wall segments) around the holding cage. */
+  basePerimeter: { x: number; y: number }[];
+}
+
+/** Lays out the captive's holding position deep in hostile territory and a distinct
+ * extraction zone closer to the infiltration line, so escorting her out retraces a
+ * shorter, but still exposed, stretch of the route. */
+export function silentExtractionLayout(map: MapDef): SilentExtractionLayout {
+  const friendly = map.spawns.find((spawn) => spawn.player === 0);
+  const hostile = map.spawns.find((spawn) => spawn.player === 1);
+  if (!friendly || !hostile) throw new Error('Silent Extraction requires two player spawns');
+
+  const dx = hostile.x - friendly.x;
+  const dy = hostile.y - friendly.y;
+  const clampX = (x: number): number => Math.min(map.width - 2, Math.max(1, Math.round(x)));
+  const clampY = (y: number): number => Math.min(map.height - 2, Math.max(1, Math.round(y)));
+  // Perpendicular offset used to place the obstacle on a distinct alternate route,
+  // and to spread traps slightly off the direct infiltration line.
+  const length = Math.hypot(dx, dy) || 1;
+  const perpX = -dy / length;
+  const perpY = dx / length;
+  return {
+    prisonerAt: {
+      x: clampX(friendly.x + dx * 0.7),
+      y: clampY(friendly.y + dy * 0.7),
+    },
+    extractionAt: {
+      x: clampX(friendly.x + dx * 0.2),
+      y: clampY(friendly.y + dy * 0.2),
+    },
+    obstacleAt: {
+      x: clampX(friendly.x + dx * 0.45 + perpX * 6),
+      y: clampY(friendly.y + dy * 0.45 + perpY * 6),
+    },
+    trapPositions: [
+      {
+        x: clampX(friendly.x + dx * 0.35),
+        y: clampY(friendly.y + dy * 0.35),
+      },
+      {
+        x: clampX(friendly.x + dx * 0.55),
+        y: clampY(friendly.y + dy * 0.55),
+      },
+    ],
+    // Guard patrol strung out along the direct route between insertion and the cage,
+    // so the operative can no longer walk in completely unopposed.
+    patrolPositions: [0.4, 0.55, 0.85].map((fraction) => ({
+      x: clampX(friendly.x + dx * fraction + perpX * 3),
+      y: clampY(friendly.y + dy * fraction + perpY * 3),
+    })),
+    // Cosmetic wall segments around the cage to read as a small guarded compound.
+    basePerimeter: [
+      { x: 3, y: 0 },
+      { x: -3, y: 0 },
+      { x: 0, y: 3 },
+      { x: 0, y: -3 },
+    ].map((offset) => ({
+      x: clampX(friendly.x + dx * 0.7 + offset.x),
+      y: clampY(friendly.y + dy * 0.7 + offset.y),
+    })),
   };
 }

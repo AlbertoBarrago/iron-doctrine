@@ -16,13 +16,14 @@ function memoryStorage(): CampaignStorage {
 }
 
 describe('campaign', () => {
-  it('defines an ordered five-operation route', () => {
+  it('defines an ordered six-operation route', () => {
     expect(CAMPAIGN_MISSIONS.map((mission) => mission.operation)).toEqual([
       '01',
       '02',
       '03',
       '04',
       '05',
+      '06',
     ]);
     expect(campaignMission('base_foundations').runtimeMission).toBe('base_foundations');
   });
@@ -68,6 +69,21 @@ describe('campaign', () => {
     expect(
       campaignMissionStatus(blackDawn, {
         completed: ['base_foundations', 'first_contact', 'iron_pass', 'siege_line'],
+      }),
+    ).toBe('available');
+  });
+
+  it('unlocks Silent Extraction only after Black Dawn', () => {
+    const silentExtraction = campaignMission('silent_extraction');
+    expect(silentExtraction.runtimeMission).toBe('silent_extraction');
+    expect(
+      campaignMissionStatus(silentExtraction, {
+        completed: ['base_foundations', 'first_contact', 'iron_pass', 'siege_line'],
+      }),
+    ).toBe('classified');
+    expect(
+      campaignMissionStatus(silentExtraction, {
+        completed: ['base_foundations', 'first_contact', 'iron_pass', 'siege_line', 'black_dawn'],
       }),
     ).toBe('available');
   });
