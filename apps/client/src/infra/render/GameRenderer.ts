@@ -240,6 +240,8 @@ export class GameRenderer {
     useGameStore.getState().setControlGroups([]);
     useGameStore.getState().setMatchMetrics(null);
     useGameStore.getState().setBattleReport(null);
+    useGameStore.getState().setMatch(null);
+    useGameStore.getState().setScenario(null);
     this.latestMetrics = null;
     this.activeMap = config.map;
     this.mission = config.mission;
@@ -406,8 +408,6 @@ export class GameRenderer {
     this.bridge.start();
     this.audio.requestAmbient();
     useGameStore.getState().setPlaying(true);
-    useGameStore.getState().setMatch(null);
-    useGameStore.getState().setScenario(null);
     this.camera.x = fp.toFloat(humanBase.x);
     this.camera.y = fp.toFloat(humanBase.y);
     this.clampCamera();
