@@ -25,6 +25,7 @@ export interface NetworkClientEvents {
   /** Called for each confirmed tick, in strict order, ready to simulate. */
   onTick: (tick: number, commands: Array<{ player: number; cmd: WireCommand }>) => void;
   onDesync?: (tick: number) => void;
+  onDisconnect?: () => void;
 }
 
 export class NetworkClient {
@@ -38,6 +39,7 @@ export class NetworkClient {
     private readonly inputDelay = DEFAULT_INPUT_DELAY,
   ) {
     this.transport.onMessage((msg) => this.handle(msg));
+    this.transport.onDisconnect(() => this.events.onDisconnect?.());
   }
 
   join(name: string): void {

@@ -20,11 +20,18 @@ interface PendingCommand {
   cmd: WireCommand;
 }
 
+/** Ticks of state-hash history retained for desync comparison before being pruned. */
+const HASH_HISTORY_TICKS = 300;
+
 export class MatchRelay {
   private readonly players = new Map<PlayerId, MatchPlayer>();
   private readonly queued = new Map<number, PendingCommand[]>();
+  /** First-seen hash per tick, used as the reference to detect divergence. */
+  private readonly hashes = new Map<number, number>();
   private nextPlayerId = 0;
-  private currentTick = 0;
+  // Starts one below the first dispatched tick (0) so advance()'s pre-increment
+  // yields 0 on the first call instead of skipping straight to 1.
+  private currentTick = -1;
   private running = false;
 
   constructor(
@@ -61,6 +68,35 @@ export class MatchRelay {
 
   get isRunning(): boolean {
     return this.running;
+  }
+
+  /** The next tick that will be dispatched by advance(). */
+  get nextTick(): Tick {
+    return asTick(this.currentTick + 1);
+  }
+
+  /**
+   * Record a peer's reported state hash for a tick. The first hash seen for a tick
+   * becomes the reference; a later, differing hash for the same tick indicates a
+   * desync and its tick is returned (otherwise null). Old ticks are pruned so the
+   * history doesn't grow unbounded over a long match.
+   */
+  reportHash(tick: Tick, hash: number): Tick | null {
+    const key = tick as number;
+    const known = this.hashes.get(key);
+    if (known === undefined) {
+      this.hashes.set(key, hash);
+      this.pruneHashes();
+      return null;
+    }
+    return known !== hash ? tick : null;
+  }
+
+  private pruneHashes(): void {
+    const cutoff = this.currentTick - HASH_HISTORY_TICKS;
+    for (const oldTick of this.hashes.keys()) {
+      if (oldTick < cutoff) this.hashes.delete(oldTick);
+    }
   }
 
   /**

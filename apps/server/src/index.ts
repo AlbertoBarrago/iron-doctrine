@@ -7,7 +7,6 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import {
   SIM_DT_MS,
   PROTOCOL_VERSION,
-  asTick,
   decodeClient,
   encode,
   type ServerMessage,
@@ -43,22 +42,42 @@ wss.on('connection', (ws) => {
     }
     switch (msg.t) {
       case 'join':
+        if (msg.v !== PROTOCOL_VERSION) {
+          relay.removePlayer(player.id);
+          ws.close();
+          break;
+        }
         player.name = msg.name;
         if (!relay.isRunning) {
           relay.start();
-          for (const client of wss.clients) send(client, { t: 'start', startTick: asTick(0) });
+          for (const client of wss.clients) send(client, { t: 'start', startTick: relay.nextTick });
+        } else {
+          // Match already running: this player missed the initial broadcast, so
+          // bootstrap them individually at the next tick instead of one they'd
+          // never see (see relay.nextTick).
+          send(ws, { t: 'start', startTick: relay.nextTick });
         }
         break;
       case 'command':
         relay.enqueue(player.id, msg.execTick, msg.cmd);
         break;
+      case 'stateHash': {
+        const mismatchedTick = relay.reportHash(msg.tick, msg.hash);
+        if (mismatchedTick !== null) {
+          for (const client of wss.clients) send(client, { t: 'desync', tick: mismatchedTick });
+        }
+        break;
+      }
       case 'leave':
         ws.close();
         break;
     }
   });
 
-  ws.on('close', () => relay.removePlayer(player.id));
+  ws.on('close', () => {
+    relay.removePlayer(player.id);
+    for (const client of wss.clients) send(client, { t: 'playerLeft', playerId: player.id });
+  });
 });
 
 // Fixed-cadence host loop: dispatch one confirmed tick every SIM_DT_MS.

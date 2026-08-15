@@ -26,5 +26,39 @@ export type ServerMessage =
 
 export const encode = (msg: ClientMessage | ServerMessage): string => JSON.stringify(msg);
 
-export const decodeClient = (raw: string): ClientMessage => JSON.parse(raw) as ClientMessage;
+const isRecord = (v: unknown): v is Record<string, unknown> =>
+  typeof v === 'object' && v !== null;
+
+/**
+ * Structural validation of the wire envelope only — `cmd`'s per-type shape is the
+ * engine's concern (see {@link WireCommand}), not the transport's. This guards the
+ * server's relay boundary against malformed/malicious frames before they're
+ * broadcast to every other peer.
+ */
+export function isClientMessage(v: unknown): v is ClientMessage {
+  if (!isRecord(v)) return false;
+  switch (v.t) {
+    case 'join':
+      return typeof v.v === 'number' && typeof v.name === 'string';
+    case 'command':
+      return (
+        typeof v.execTick === 'number' &&
+        isRecord(v.cmd) &&
+        typeof (v.cmd as Record<string, unknown>).type === 'string'
+      );
+    case 'stateHash':
+      return typeof v.tick === 'number' && typeof v.hash === 'number';
+    case 'leave':
+      return true;
+    default:
+      return false;
+  }
+}
+
+export const decodeClient = (raw: string): ClientMessage => {
+  const parsed: unknown = JSON.parse(raw);
+  if (!isClientMessage(parsed)) throw new Error('Malformed client message');
+  return parsed;
+};
+
 export const decodeServer = (raw: string): ServerMessage => JSON.parse(raw) as ServerMessage;
