@@ -24,7 +24,9 @@ export class MatchRelay {
   private readonly players = new Map<PlayerId, MatchPlayer>();
   private readonly queued = new Map<number, PendingCommand[]>();
   private nextPlayerId = 0;
-  private currentTick = 0;
+  // Starts one below the first dispatched tick (0) so advance()'s pre-increment
+  // yields 0 on the first call instead of skipping straight to 1.
+  private currentTick = -1;
   private running = false;
 
   constructor(
