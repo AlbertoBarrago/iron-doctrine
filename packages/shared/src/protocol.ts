@@ -12,7 +12,7 @@ export interface WireCommand {
 }
 
 export type ClientMessage =
-  | { t: 'join'; v: number; name: string }
+  | { t: 'join'; v: number; name: string; password: string }
   | { t: 'command'; execTick: Tick; cmd: WireCommand }
   | { t: 'stateHash'; tick: Tick; hash: number }
   | { t: 'leave' };
@@ -22,7 +22,8 @@ export type ServerMessage =
   | { t: 'start'; startTick: Tick }
   | { t: 'tick'; tick: Tick; commands: Array<{ player: PlayerId; cmd: WireCommand }> }
   | { t: 'desync'; tick: Tick }
-  | { t: 'playerLeft'; playerId: PlayerId };
+  | { t: 'playerLeft'; playerId: PlayerId }
+  | { t: 'rejected'; reason: 'bad_password' };
 
 export const encode = (msg: ClientMessage | ServerMessage): string => JSON.stringify(msg);
 

@@ -17,6 +17,7 @@ import { MatchRelay } from './match.js';
 const PORT = Number(process.env.PORT ?? 8080);
 const SEED = Number(process.env.MATCH_SEED ?? 123456789);
 const MAP_ID = process.env.MATCH_MAP ?? 'canyon_clash';
+const MATCH_PASSWORD = process.env.MATCH_PASSWORD ?? '';
 
 const relay = new MatchRelay(SEED, MAP_ID);
 const wss = new WebSocketServer({ port: PORT });
@@ -43,6 +44,11 @@ wss.on('connection', (ws) => {
     }
     switch (msg.t) {
       case 'join':
+        if (MATCH_PASSWORD && msg.password !== MATCH_PASSWORD) {
+          send(ws, { t: 'rejected', reason: 'bad_password' });
+          ws.close();
+          return;
+        }
         player.name = msg.name;
         if (!relay.isRunning) {
           relay.start();
