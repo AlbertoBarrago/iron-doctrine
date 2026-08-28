@@ -2,22 +2,28 @@
  * Main-thread handle to the simulation worker. Owns the Worker instance, forwards
  * commands, and surfaces the latest two snapshots so the renderer can interpolate.
  */
-import type { Command, Snapshot } from '@iron/engine';
-import {
-  PresentationEventBuffer,
-  type PresentationEventEnvelope,
-} from './PresentationEvents.js';
+import type { Command } from '@iron/engine';
+import type { PresentationEventEnvelope } from './PresentationEvents.js';
+import { SnapshotBuffer, type SnapshotListener } from './SnapshotBuffer.js';
 import type { FromWorker, InitConfig, ToWorker } from './protocol.js';
 
-export type SnapshotListener = (prev: Snapshot, curr: Snapshot, receivedAt: number) => void;
+export type { SnapshotListener };
 
-export class SimBridge {
+/** Shape shared by every bridge flavor (local wall-clock, networked lockstep). */
+export interface SimBridgeLike {
+  init(config: InitConfig): void;
+  start(): void;
+  pause(): void;
+  command(cmd: Command): void;
+  onSnapshot(listener: SnapshotListener): void;
+  readonly latest: SnapshotBuffer['latest'];
+  drainPresentationEvents(): PresentationEventEnvelope[];
+  dispose(): void;
+}
+
+export class SimBridge implements SimBridgeLike {
   private readonly worker: Worker;
-  private prev: Snapshot | null = null;
-  private curr: Snapshot | null = null;
-  private lastSnapshotAt = 0;
-  private listener: SnapshotListener | null = null;
-  private readonly presentationEvents = new PresentationEventBuffer();
+  private readonly snapshots = new SnapshotBuffer();
 
   constructor() {
     this.worker = new Worker(new URL('../../sim.worker.ts', import.meta.url), {
@@ -27,15 +33,7 @@ export class SimBridge {
   }
 
   private onMessage(msg: FromWorker): void {
-    if (msg.t === 'snapshot') {
-      this.presentationEvents.append(msg.events);
-      this.prev = this.curr ?? msg.snapshot;
-      this.curr = msg.snapshot;
-      this.lastSnapshotAt = performance.now();
-      if (this.listener && this.prev && this.curr) {
-        this.listener(this.prev, this.curr, this.lastSnapshotAt);
-      }
-    }
+    if (msg.t === 'snapshot') this.snapshots.ingest(msg.snapshot, msg.events);
   }
 
   private send(msg: ToWorker): void {
@@ -43,10 +41,7 @@ export class SimBridge {
   }
 
   init(config: InitConfig): void {
-    this.presentationEvents.reset();
-    this.prev = null;
-    this.curr = null;
-    this.lastSnapshotAt = 0;
+    this.snapshots.reset();
     this.send({ t: 'init', config });
   }
 
@@ -63,15 +58,15 @@ export class SimBridge {
   }
 
   onSnapshot(listener: SnapshotListener): void {
-    this.listener = listener;
+    this.snapshots.onSnapshot(listener);
   }
 
-  get latest(): { prev: Snapshot | null; curr: Snapshot | null; at: number } {
-    return { prev: this.prev, curr: this.curr, at: this.lastSnapshotAt };
+  get latest(): SnapshotBuffer['latest'] {
+    return this.snapshots.latest;
   }
 
-  drainPresentationEvents(): PresentationEventEnvelope[] {
-    return this.presentationEvents.drain();
+  drainPresentationEvents(): ReturnType<SnapshotBuffer['drainPresentationEvents']> {
+    return this.snapshots.drainPresentationEvents();
   }
 
   dispose(): void {

@@ -1,0 +1,8 @@
+highRiskPaths:
+  - "packages/shared/src/protocol.ts"
+  - "packages/engine/src/application/simulation.ts"
+  - "packages/engine/src/application/commands/**"
+  - "apps/server/src/**"
+  - "apps/client/src/sim.worker.ts"
+  - "apps/client/src/infra/net/**"
+  - "apps/client/src/infra/worker/**"

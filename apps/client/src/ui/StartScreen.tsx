@@ -16,11 +16,13 @@ export function StartScreen({
   onStart,
   onOpenCampaign,
   onOpenEditor,
+  onOpenOnline,
 }: {
   maps: MapCatalogEntry[];
   onStart: (config: SkirmishConfig) => void;
   onOpenCampaign: () => void;
   onOpenEditor: () => void;
+  onOpenOnline: () => void;
 }): JSX.Element {
   const [screen, setScreen] = useState<MenuScreen>('main');
   const [mapId, setMapId] = useState(maps[0]?.id ?? '');
@@ -82,6 +84,10 @@ export function StartScreen({
             <button type="button" onClick={onOpenEditor}>
               <span className="main-menu__command-label">Map editor</span>
               <small className="main-menu__command-hint">Battlefield archive</small>
+            </button>
+            <button type="button" onClick={onOpenOnline}>
+              <span className="main-menu__command-label">Online match</span>
+              <small className="main-menu__command-hint">Private 1v1 session</small>
             </button>
           </nav>
         ) : (

@@ -25,12 +25,14 @@ export interface NetworkClientEvents {
   /** Called for each confirmed tick, in strict order, ready to simulate. */
   onTick: (tick: number, commands: Array<{ player: number; cmd: WireCommand }>) => void;
   onDesync?: (tick: number) => void;
+  onRejected?: (reason: 'bad_password') => void;
 }
 
 export class NetworkClient {
   private readonly coord = new LockstepCoordinator(0);
   private currentTick = 0;
   private playerId = -1;
+  private tickOverride: NetworkClientEvents['onTick'] | null = null;
 
   constructor(
     private readonly transport: Transport,
@@ -40,12 +42,17 @@ export class NetworkClient {
     this.transport.onMessage((msg) => this.handle(msg));
   }
 
-  join(name: string): void {
-    this.transport.send({ t: 'join', v: PROTOCOL_VERSION, name });
+  join(name: string, password: string): void {
+    this.transport.send({ t: 'join', v: PROTOCOL_VERSION, name, password });
   }
 
   get localPlayer(): number {
     return this.playerId;
+  }
+
+  /** Replaces the tick handler after construction, once the online game loop is ready. */
+  setOnTick(handler: NetworkClientEvents['onTick']): void {
+    this.tickOverride = handler;
   }
 
   /** Queue a local command; it will execute `inputDelay` ticks in the future. */
@@ -68,11 +75,14 @@ export class NetworkClient {
         this.coord.receive(msg.tick, msg.commands);
         for (const confirmed of this.coord.drainReady()) {
           this.currentTick = confirmed.tick;
-          this.events.onTick(confirmed.tick, confirmed.commands);
+          (this.tickOverride ?? this.events.onTick)(confirmed.tick, confirmed.commands);
         }
         break;
       case 'desync':
         this.events.onDesync?.(msg.tick);
+        break;
+      case 'rejected':
+        this.events.onRejected?.(msg.reason);
         break;
     }
   }

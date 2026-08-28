@@ -14,6 +14,7 @@ import {
 import type { FromWorker, ToWorker } from './infra/worker/protocol.js';
 
 let sim: Simulation | null = null;
+let viewTeam = 0;
 let running = false;
 let last = 0;
 let accumulator = 0;
@@ -22,6 +23,20 @@ let lastSnapshot: ReturnType<Simulation['snapshot']> | null = null;
 let nextPresentationSequence = 0;
 
 const post = (msg: FromWorker): void => self.postMessage(msg);
+
+/** Advance the simulation by exactly one tick, deriving presentation events from the diff. */
+function stepOnce(events: PresentationEventEnvelope[]): void {
+  if (!sim) return;
+  sim.step();
+  const snapshot = sim.snapshot(viewTeam);
+  if (lastSnapshot) {
+    const derived = derivePresentationEvents(lastSnapshot, snapshot, nextPresentationSequence);
+    events.push(...derived.events);
+    nextPresentationSequence = derived.nextSequence;
+  }
+  lastSnapshot = snapshot;
+  if (sim.match?.isFinished) running = false;
+}
 
 /** Fixed-step loop with catch-up cap to prevent the spiral of death. */
 function loop(now: number): void {
@@ -33,21 +48,9 @@ function loop(now: number): void {
   let steps = 0;
   const events: PresentationEventEnvelope[] = [];
   while (accumulator >= SIM_DT_MS && steps < MAX_CATCHUP_TICKS) {
-    sim.step();
-    const snapshot = sim.snapshot();
-    if (lastSnapshot) {
-      const derived = derivePresentationEvents(
-        lastSnapshot,
-        snapshot,
-        nextPresentationSequence,
-      );
-      events.push(...derived.events);
-      nextPresentationSequence = derived.nextSequence;
-    }
-    lastSnapshot = snapshot;
+    stepOnce(events);
     accumulator -= SIM_DT_MS;
     steps++;
-    if (sim.match?.isFinished) running = false;
   }
   if (steps > 0 && lastSnapshot) post({ t: 'snapshot', snapshot: lastSnapshot, events });
 
@@ -59,7 +62,8 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
   switch (msg.t) {
     case 'init': {
       sim = createSimulationFromInit(msg.config);
-      lastSnapshot = sim.snapshot();
+      viewTeam = msg.config.viewTeam ?? 0;
+      lastSnapshot = sim.snapshot(viewTeam);
       nextPresentationSequence = 0;
       post({ t: 'ready' });
       post({ t: 'snapshot', snapshot: lastSnapshot, events: [] });
@@ -79,5 +83,13 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
     case 'command':
       sim?.enqueue(msg.cmd);
       break;
+    case 'networkTick': {
+      if (!sim) break;
+      for (const cmd of msg.commands) sim.enqueue(cmd);
+      const events: PresentationEventEnvelope[] = [];
+      stepOnce(events);
+      if (lastSnapshot) post({ t: 'snapshot', snapshot: lastSnapshot, events });
+      break;
+    }
   }
 };

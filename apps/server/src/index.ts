@@ -26,6 +26,7 @@ const send = (ws: WebSocket, msg: ServerMessage): void => ws.send(encode(msg));
 
 wss.on('connection', (ws) => {
   const player = relay.addPlayer('anonymous', (raw) => ws.send(raw));
+  console.warn(`[iron-server] connection: player ${player.id} (${relay.playerCount} connected)`);
 
   send(ws, {
     t: 'welcome',
@@ -45,12 +46,15 @@ wss.on('connection', (ws) => {
     switch (msg.t) {
       case 'join':
         if (MATCH_PASSWORD && msg.password !== MATCH_PASSWORD) {
+          console.warn(`[iron-server] rejected: player ${player.id} bad password`);
           send(ws, { t: 'rejected', reason: 'bad_password' });
           ws.close();
           return;
         }
         player.name = msg.name;
-        if (!relay.isRunning) {
+        console.warn(`[iron-server] joined: player ${player.id} as "${player.name}"`);
+        if (!relay.isRunning && relay.playerCount >= 2) {
+          console.warn(`[iron-server] match starting (${relay.playerCount} players)`);
           relay.start();
           for (const client of wss.clients) send(client, { t: 'start', startTick: asTick(0) });
         }
@@ -64,7 +68,10 @@ wss.on('connection', (ws) => {
     }
   });
 
-  ws.on('close', () => relay.removePlayer(player.id));
+  ws.on('close', () => {
+    relay.removePlayer(player.id);
+    console.warn(`[iron-server] disconnected: player ${player.id} (${relay.playerCount} remaining)`);
+  });
 });
 
 // Fixed-cadence host loop: dispatch one confirmed tick every SIM_DT_MS.

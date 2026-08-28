@@ -45,7 +45,7 @@ import {
   type WallConnections,
 } from './BuildingPainter.js';
 import { drawResourceField } from './ResourcePainter.js';
-import { SimBridge } from '../worker/SimBridge.js';
+import { SimBridge, type SimBridgeLike } from '../worker/SimBridge.js';
 import { AudioBus } from '../audio/AudioBus.js';
 import { radioAcknowledgement, type RadioOrder } from '../audio/radioAcknowledgements.js';
 import {
@@ -170,7 +170,7 @@ export class GameRenderer {
   private readonly spriteUnits = new SpriteUnitPainter(this.productionAssets);
   private readonly fogGfx = new Graphics();
   private readonly overlay = new Graphics();
-  private readonly bridge = new SimBridge();
+  private readonly bridge: SimBridgeLike;
   private readonly particles: ParticleSystem;
   private readonly audio = new AudioBus();
   private readonly presentationClock = new PresentationClock();
@@ -225,9 +225,13 @@ export class GameRenderer {
   private lastUiTick = -1;
   private latestMetrics: MatchMetricsSnapshot | null = null;
 
-  constructor(private readonly container: HTMLElement) {
+  constructor(
+    private readonly container: HTMLElement,
+    bridge: SimBridgeLike = new SimBridge(),
+  ) {
     this.camera = new Camera(container.clientWidth, container.clientHeight);
     this.particles = new ParticleSystem(this.camera);
+    this.bridge = bridge;
   }
 
   async start(
@@ -244,8 +248,12 @@ export class GameRenderer {
     this.mission = config.mission;
     const missionRules = MISSION_RULES[config.mission];
     this.aiActivationTick = config.gracePeriodSeconds * SIM_HZ;
-    const humanSpawn = config.map.spawns.find((spawn) => spawn.player === 0);
-    const enemySpawn = config.map.spawns.find((spawn) => spawn.player === 1);
+    // Online: this client's own real spawn side, not always the map's authored
+    // player-0 slot — the other human's client is symmetrically "player 0" to itself.
+    const localPlayerId = config.onlinePlayerId ?? 0;
+    const remotePlayerId = localPlayerId === 0 ? 1 : 0;
+    const humanSpawn = config.map.spawns.find((spawn) => spawn.player === localPlayerId);
+    const enemySpawn = config.map.spawns.find((spawn) => spawn.player === remotePlayerId);
     if (!humanSpawn || !enemySpawn)
       throw new Error('Skirmish maps require Player 1 and Player 2 spawns');
     const humanBase = mapPosition(config.map, humanSpawn.x, humanSpawn.y);
@@ -331,18 +339,19 @@ export class GameRenderer {
     this.bridge.init({
       seed,
       map: config.map,
-      aiPlayers: !missionRules.enemyEnabled
-        ? []
-        : [
-            {
-              player: 1,
-              difficulty: config.difficulty,
-              activationTick: this.aiActivationTick,
-            },
-          ],
+      aiPlayers:
+        config.onlinePlayerId !== undefined || !missionRules.enemyEnabled
+          ? []
+          : [
+              {
+                player: 1,
+                difficulty: config.difficulty,
+                activationTick: this.aiActivationTick,
+              },
+            ],
       startingCredits: {
         0: missionRules.playerCredits,
-        1: aiCredits,
+        1: config.onlinePlayerId !== undefined ? missionRules.playerCredits : aiCredits,
       },
       startingTech: {
         0: ['infantry_doctrine', 'armor_doctrine'],
@@ -464,7 +473,9 @@ export class GameRenderer {
       });
     }
 
-    if (missionRules.enemyEnabled) {
+    // Online: the opponent is a real human whose own client spawns their base the
+    // same way (as their "player 0"/humanBase) — spawning it here too would duplicate it.
+    if (missionRules.enemyEnabled && config.onlinePlayerId === undefined) {
       this.bridge.command({
         type: 'spawnBuilding',
         building: 'construction_yard',

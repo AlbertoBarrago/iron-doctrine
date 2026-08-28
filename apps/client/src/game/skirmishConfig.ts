@@ -80,6 +80,9 @@ export interface SkirmishConfig {
   difficulty: Difficulty;
   gracePeriodSeconds: GracePeriodSeconds;
   enemyStartingForce: EnemyStartingForce;
+  /** Set when player 1 is a remote human rather than the mission's AI: this client's
+   * own server-assigned player id, used to pick the correct spawn/camera side. */
+  onlinePlayerId?: number;
 }
 
 export const DEFAULT_SKIRMISH_SETTINGS = {

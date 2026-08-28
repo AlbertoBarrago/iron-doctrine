@@ -4,6 +4,9 @@ import { Hud } from './ui/Hud.js';
 import { Minimap } from './ui/Minimap.js';
 import { MapEditor } from './editor/MapEditor.js';
 import { StartScreen } from './ui/StartScreen.js';
+import { OnlineScreen } from './ui/OnlineScreen.js';
+import type { NetworkClient } from './infra/net/NetworkClient.js';
+import { NetworkedSimBridge } from './infra/worker/NetworkedSimBridge.js';
 import { CampaignScreen } from './ui/CampaignScreen.js';
 import {
   BLACK_DAWN_MAP,
@@ -37,7 +40,13 @@ import {
 } from './game/achievements.js';
 import './ui/game.css';
 
-type Mode = 'menu' | 'campaign' | 'game' | 'editor';
+type Mode = 'menu' | 'campaign' | 'game' | 'editor' | 'online';
+
+interface OnlineMatch {
+  client: NetworkClient;
+  playerId: number;
+  seed: number;
+}
 
 /** Authored maps for missions with a fixed, hand-designed battlefield. */
 const CAMPAIGN_MAPS: Partial<Record<MissionId, MapDef>> = {
@@ -62,6 +71,7 @@ export function App(): JSX.Element {
   const [, setCatalogRevision] = useState(0);
   const [, setCampaignRevision] = useState(0);
   const [skirmish, setSkirmish] = useState<SkirmishConfig | null>(null);
+  const [onlineMatch, setOnlineMatch] = useState<OnlineMatch | null>(null);
   const [gameReturnMode, setGameReturnMode] = useState<'menu' | 'campaign'>('menu');
   const [chickenEasterEgg, setChickenEasterEgg] = useState(false);
   const maps = loadMapCatalog(localStorage);
@@ -81,6 +91,26 @@ export function App(): JSX.Element {
         }}
         onOpenCampaign={() => setMode('campaign')}
         onOpenEditor={() => setMode('editor')}
+        onOpenOnline={() => setMode('online')}
+      />
+    );
+  }
+  if (mode === 'online') {
+    return (
+      <OnlineScreen
+        onBack={() => setMode('menu')}
+        onReady={(client, playerId, seed) => {
+          // The map itself isn't negotiated yet — both peers deterministically pick
+          // the same first catalog entry, which only holds while catalogs match.
+          if (!maps[0]) return;
+          setOnlineMatch({ client, playerId, seed });
+          setSkirmish({
+            ...DEFAULT_SKIRMISH_SETTINGS,
+            map: maps[0].map,
+            onlinePlayerId: playerId,
+          });
+          setMode('game');
+        }}
       />
     );
   }
@@ -138,6 +168,7 @@ export function App(): JSX.Element {
   return (
     <Game
       config={skirmish}
+      onlineMatch={onlineMatch}
       chickenEasterEgg={chickenEasterEgg}
       onMissionComplete={(mission) => {
         if (activeCallsign) completeCampaignMission(localStorage, activeCallsign, mission);
@@ -157,6 +188,7 @@ export function App(): JSX.Element {
       }}
       onExit={() => {
         setSkirmish(null);
+        setOnlineMatch(null);
         setMode(gameReturnMode);
       }}
     />
@@ -170,12 +202,14 @@ export function App(): JSX.Element {
  */
 function Game({
   config,
+  onlineMatch,
   chickenEasterEgg,
   onMissionComplete,
   onBattleReport,
   onExit,
 }: {
   config: SkirmishConfig;
+  onlineMatch: OnlineMatch | null;
   chickenEasterEgg: boolean;
   onMissionComplete(mission: CampaignMissionId): void;
   onBattleReport(metrics: MatchMetricsSnapshot, victory: boolean): AchievementId[];
@@ -209,10 +243,13 @@ function Game({
     void session;
     const el = containerRef.current;
     if (!el || rendererRef.current) return;
-    const renderer = new GameRenderer(el);
+    const bridge = onlineMatch
+      ? new NetworkedSimBridge(onlineMatch.client, onlineMatch.playerId)
+      : undefined;
+    const renderer = new GameRenderer(el, bridge);
     rendererRef.current = renderer;
     void renderer
-      .start(config, 123456789, {
+      .start(config, onlineMatch?.seed ?? 123456789, {
         chickenEasterEgg: chickenEasterEgg && session === 0,
       })
       .then(() => {
@@ -226,7 +263,7 @@ function Game({
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, [chickenEasterEgg, config, session]);
+  }, [chickenEasterEgg, config, onlineMatch, session]);
 
   useEffect(() => {
     void session;
