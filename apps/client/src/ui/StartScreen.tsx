@@ -87,7 +87,7 @@ export function StartScreen({
             </button>
             <button type="button" onClick={onOpenOnline}>
               <span className="main-menu__command-label">Online match</span>
-              <small className="main-menu__command-hint">Private 1v1 session</small>
+              <small className="main-menu__command-hint">Private 1v1 session (WIP)</small>
             </button>
           </nav>
         ) : (

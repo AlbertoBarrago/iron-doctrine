@@ -61,6 +61,11 @@ export function OnlineScreen({
           <p>Connect to a private session</p>
         </header>
 
+        <p role="status" style={{ color: '#e4a53d', fontWeight: 600 }}>
+          ⚠ Work in progress: expect rough edges, disconnects, or matches that don't sync
+          correctly.
+        </p>
+
         {state === 'form' && (
           <form
             className="mission-setup"
