@@ -61,12 +61,13 @@ wss.on('connection', (ws) => {
           console.warn(`[iron-server] match starting (${relay.playerCount} players)`);
           relay.start();
           for (const client of wss.clients) send(client, { t: 'start', startTick: relay.nextTick });
-        } else {
+        } else if (relay.isRunning) {
           // Match already running: this player missed the initial broadcast, so
           // bootstrap them individually at the next tick instead of one they'd
           // never see (see relay.nextTick).
           send(ws, { t: 'start', startTick: relay.nextTick });
         }
+        // else: still waiting on the opponent — nothing to send yet.
         break;
       case 'command':
         relay.enqueue(player.id, msg.execTick, msg.cmd);
