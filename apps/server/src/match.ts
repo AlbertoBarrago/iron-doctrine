@@ -28,7 +28,6 @@ export class MatchRelay {
   private readonly queued = new Map<number, PendingCommand[]>();
   /** First-seen hash per tick, used as the reference to detect divergence. */
   private readonly hashes = new Map<number, number>();
-  private nextPlayerId = 0;
   // Starts one below the first dispatched tick (0) so advance()'s pre-increment
   // yields 0 on the first call instead of skipping straight to 1.
   private currentTick = -1;
@@ -39,8 +38,16 @@ export class MatchRelay {
     readonly mapId: string,
   ) {}
 
+  /**
+   * Assigns the lowest free slot (0, 1, ...), not a monotonically increasing counter —
+   * every 1v1 map only authors spawns for players 0 and 1, so a long-lived server
+   * process (many connects/disconnects) must reuse freed slots instead of handing out
+   * ever-larger ids that no map has a spawn for.
+   */
   addPlayer(name: string, send: (msg: string) => void): MatchPlayer {
-    const id = asPlayerId(this.nextPlayerId++);
+    let candidate = 0;
+    while (this.players.has(asPlayerId(candidate))) candidate++;
+    const id = asPlayerId(candidate);
     const player: MatchPlayer = { id, name, send };
     this.players.set(id, player);
     return player;
