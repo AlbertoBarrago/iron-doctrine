@@ -27,6 +27,7 @@ export interface NetworkClientEvents {
   onDesync?: (tick: number) => void;
   onRejected?: (reason: 'bad_password') => void;
   onDisconnect?: () => void;
+  onPlayerLeft?: (playerId: number) => void;
 }
 
 export class NetworkClient {
@@ -34,6 +35,7 @@ export class NetworkClient {
   private currentTick = 0;
   private playerId = -1;
   private tickOverride: NetworkClientEvents['onTick'] | null = null;
+  private playerLeftOverride: NetworkClientEvents['onPlayerLeft'] | null = null;
 
   constructor(
     private readonly transport: Transport,
@@ -55,6 +57,11 @@ export class NetworkClient {
   /** Replaces the tick handler after construction, once the online game loop is ready. */
   setOnTick(handler: NetworkClientEvents['onTick']): void {
     this.tickOverride = handler;
+  }
+
+  /** Replaces the player-left handler after construction, once the online game loop is ready. */
+  setOnPlayerLeft(handler: NonNullable<NetworkClientEvents['onPlayerLeft']>): void {
+    this.playerLeftOverride = handler;
   }
 
   /** Queue a local command; it will execute `inputDelay` ticks in the future. */
@@ -85,6 +92,9 @@ export class NetworkClient {
         break;
       case 'rejected':
         this.events.onRejected?.(msg.reason);
+        break;
+      case 'playerLeft':
+        (this.playerLeftOverride ?? this.events.onPlayerLeft)?.(msg.playerId);
         break;
     }
   }

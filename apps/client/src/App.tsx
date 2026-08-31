@@ -30,7 +30,7 @@ import {
 } from './game/commanderProfile.js';
 import type { CampaignMissionId } from './game/campaign.js';
 import { useGameStore } from './state/gameStore.js';
-import type { MapDef } from '@iron/shared';
+import { asPlayerId, type MapDef } from '@iron/shared';
 import type { MatchMetricsSnapshot } from '@iron/engine';
 import { battleReportVictory } from './game/matchResult.js';
 import {
@@ -234,6 +234,10 @@ function Game({
   });
   const completionReported = useRef(false);
   const battleReportGenerated = useRef(false);
+  // Tracks which online match already had its initial spawn commands sent, so a
+  // StrictMode dev remount (mount -> dispose -> mount) doesn't resend them and
+  // double-spawn every starting unit/building.
+  const onlineInitSentFor = useRef<NetworkClient | null>(null);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
   const matchMetrics = useGameStore((state) => state.matchMetrics);
@@ -248,10 +252,23 @@ function Game({
       : undefined;
     const renderer = new GameRenderer(el, bridge);
     rendererRef.current = renderer;
+    const sendInitialCommands =
+      !onlineMatch || onlineInitSentFor.current !== onlineMatch.client;
+    if (onlineMatch) onlineInitSentFor.current = onlineMatch.client;
+    if (onlineMatch) {
+      // The opponent disconnected: this client is remapped so "0" is always itself
+      // (see playerPerspective.ts), so it always wins by forfeit here.
+      onlineMatch.client.setOnPlayerLeft(() => {
+        useGameStore.getState().setMatch({ status: 'finished', winner: asPlayerId(0) });
+      });
+    }
     void renderer
-      .start(config, onlineMatch?.seed ?? 123456789, {
-        chickenEasterEgg: chickenEasterEgg && session === 0,
-      })
+      .start(
+        config,
+        onlineMatch?.seed ?? 123456789,
+        { chickenEasterEgg: chickenEasterEgg && session === 0 },
+        sendInitialCommands,
+      )
       .then(() => {
         renderer.attachMinimap(minimapCanvasRef.current);
         renderer.setAudioMuted(initialAudio.current.muted);

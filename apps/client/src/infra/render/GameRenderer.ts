@@ -56,11 +56,7 @@ import {
 } from './commandFeedback.js';
 import { clampMovementTarget } from './movementTarget.js';
 import { spriteFactionTint } from './renderStyle.js';
-import {
-  selectionCommands,
-  summarizeForce,
-  useGameStore,
-} from '../../state/gameStore.js';
+import { selectionCommands, summarizeForce, useGameStore } from '../../state/gameStore.js';
 import { entityIsInspectable, entityReadout } from '../../state/entityReadout.js';
 import { ControlGroups } from './controlGroups.js';
 import {
@@ -82,12 +78,7 @@ const OWNER_COLORS = [0xb0a149, 0xa9412e, 0x537a8a, 0xa46b32];
 const PAN_SPEED = 12; // world units per second at zoom 1
 
 type FogEdge = 'north' | 'east' | 'south' | 'west';
-const FOG_CORNERS: readonly FogCorner[] = [
-  'north-west',
-  'north-east',
-  'south-east',
-  'south-west',
-];
+const FOG_CORNERS: readonly FogCorner[] = ['north-west', 'north-east', 'south-east', 'south-west'];
 
 function drawFogTransitionEdge(
   graphics: Graphics,
@@ -239,6 +230,15 @@ export class GameRenderer {
     config: SkirmishConfig,
     seed = 123456789,
     presentation: { chickenEasterEgg?: boolean } = {},
+    /**
+     * Online only: StrictMode double-invokes effects in dev, creating (and disposing)
+     * a throwaway GameRenderer before the real one. For local skirmish that's harmless
+     * — the discarded worker's state just vanishes. Online, the initial spawn commands
+     * already reached the shared NetworkClient/server before disposal, so the surviving
+     * renderer must not resend them (they'll arrive again via the tick stream, applied
+     * exactly once). Callers set this to false on a known StrictMode remount.
+     */
+    sendInitialCommands = true,
   ): Promise<void> {
     useGameStore.getState().resetTutorial();
     useGameStore.getState().setControlGroups([]);
@@ -295,7 +295,9 @@ export class GameRenderer {
       ? silentExtraction.trapPositions.map((trap) => mapPosition(config.map, trap.x, trap.y))
       : null;
     const patrolPositions = silentExtraction
-      ? silentExtraction.patrolPositions.map((patrol) => mapPosition(config.map, patrol.x, patrol.y))
+      ? silentExtraction.patrolPositions.map((patrol) =>
+          mapPosition(config.map, patrol.x, patrol.y),
+        )
       : null;
     const basePerimeter = silentExtraction
       ? silentExtraction.basePerimeter.map((wall) => mapPosition(config.map, wall.x, wall.y))
@@ -421,93 +423,95 @@ export class GameRenderer {
     this.camera.y = fp.toFloat(humanBase.y);
     this.clampCamera();
 
-    for (const resource of config.map.resources) {
-      this.bridge.command({
-        type: 'spawnResource',
-        amount: resource.amount,
-        at: mapPosition(config.map, resource.x, resource.y),
-      });
-    }
-
-    if (missionRules.playerStart === 'base') {
-      this.bridge.command({
-        type: 'spawnBuilding',
-        building: 'construction_yard',
-        player: 0,
-        at: humanBase,
-      });
-      this.bridge.command({
-        type: 'spawnUnit',
-        unit: 'harvester',
-        player: 0,
-        at: offsetSpawn(config.map, humanSpawn, 3, 2),
-      });
-    }
-
-    if (firstContact) {
-      // Level 2 starts as a patrol mission before the economy layer unlocks.
-      for (let i = 0; i < 6; i++) {
+    if (sendInitialCommands) {
+      for (const resource of config.map.resources) {
         this.bridge.command({
-          type: 'spawnUnit',
-          unit: i < 2 ? 'tank' : 'rifleman',
-          player: 0,
-          at: offsetSpawn(config.map, humanSpawn, (i % 3) * 2, Math.floor(i / 3) * 2),
+          type: 'spawnResource',
+          amount: resource.amount,
+          at: mapPosition(config.map, resource.x, resource.y),
         });
       }
-      for (const position of firstContact.resistance.slice(0, 2)) {
-        this.bridge.command({
-          type: 'spawnUnit',
-          unit: 'rifleman',
-          player: 1,
-          at: mapPosition(config.map, position.x, position.y),
-        });
-      }
-    }
 
-    if (silentExtraction) {
-      // Silent Extraction fields a single guest unit — no economy, no squad.
-      this.bridge.command({
-        type: 'spawnUnit',
-        unit: 'operative',
-        player: 0,
-        at: humanBase,
-      });
-    }
-
-    // Online: the opponent is a real human whose own client spawns their base the
-    // same way (as their "player 0"/humanBase) — spawning it here too would duplicate it.
-    if (missionRules.enemyEnabled && config.onlinePlayerId === undefined) {
-      this.bridge.command({
-        type: 'spawnBuilding',
-        building: 'construction_yard',
-        player: 1,
-        at: enemyBase,
-      });
-      for (const [building, dx, dy] of [
-        ['power_plant', -5, 0],
-        ['barracks', 0, -5],
-        ['factory', -6, -6],
-      ] as const) {
+      if (missionRules.playerStart === 'base') {
         this.bridge.command({
           type: 'spawnBuilding',
-          building,
-          player: 1,
-          at: offsetSpawn(config.map, enemySpawn, dx, dy),
+          building: 'construction_yard',
+          player: 0,
+          at: humanBase,
         });
-      }
-      this.bridge.command({
-        type: 'spawnUnit',
-        unit: 'harvester',
-        player: 1,
-        at: offsetSpawn(config.map, enemySpawn, -2, -2),
-      });
-      for (let i = 0; i < config.enemyStartingForce; i++) {
         this.bridge.command({
           type: 'spawnUnit',
-          unit: i % 3 === 0 ? 'tank' : 'rifleman',
-          player: 1,
-          at: offsetSpawn(config.map, enemySpawn, -1 - (i % 3) * 2, -5 - Math.floor(i / 3) * 2),
+          unit: 'harvester',
+          player: 0,
+          at: offsetSpawn(config.map, humanSpawn, 3, 2),
         });
+      }
+
+      if (firstContact) {
+        // Level 2 starts as a patrol mission before the economy layer unlocks.
+        for (let i = 0; i < 6; i++) {
+          this.bridge.command({
+            type: 'spawnUnit',
+            unit: i < 2 ? 'tank' : 'rifleman',
+            player: 0,
+            at: offsetSpawn(config.map, humanSpawn, (i % 3) * 2, Math.floor(i / 3) * 2),
+          });
+        }
+        for (const position of firstContact.resistance.slice(0, 2)) {
+          this.bridge.command({
+            type: 'spawnUnit',
+            unit: 'rifleman',
+            player: 1,
+            at: mapPosition(config.map, position.x, position.y),
+          });
+        }
+      }
+
+      if (silentExtraction) {
+        // Silent Extraction fields a single guest unit — no economy, no squad.
+        this.bridge.command({
+          type: 'spawnUnit',
+          unit: 'operative',
+          player: 0,
+          at: humanBase,
+        });
+      }
+
+      // Online: the opponent is a real human whose own client spawns their base the
+      // same way (as their "player 0"/humanBase) — spawning it here too would duplicate it.
+      if (missionRules.enemyEnabled && config.onlinePlayerId === undefined) {
+        this.bridge.command({
+          type: 'spawnBuilding',
+          building: 'construction_yard',
+          player: 1,
+          at: enemyBase,
+        });
+        for (const [building, dx, dy] of [
+          ['power_plant', -5, 0],
+          ['barracks', 0, -5],
+          ['factory', -6, -6],
+        ] as const) {
+          this.bridge.command({
+            type: 'spawnBuilding',
+            building,
+            player: 1,
+            at: offsetSpawn(config.map, enemySpawn, dx, dy),
+          });
+        }
+        this.bridge.command({
+          type: 'spawnUnit',
+          unit: 'harvester',
+          player: 1,
+          at: offsetSpawn(config.map, enemySpawn, -2, -2),
+        });
+        for (let i = 0; i < config.enemyStartingForce; i++) {
+          this.bridge.command({
+            type: 'spawnUnit',
+            unit: i % 3 === 0 ? 'tank' : 'rifleman',
+            player: 1,
+            at: offsetSpawn(config.map, enemySpawn, -1 - (i % 3) * 2, -5 - Math.floor(i / 3) * 2),
+          });
+        }
       }
     }
 
@@ -782,11 +786,7 @@ export class GameRenderer {
             this.particles.impact(event.x, event.y, 1.2);
             this.audio.play('impact');
           } else {
-            this.particles.explosion(
-              event.x,
-              event.y,
-              event.entityKind === 'building' ? 2 : 1,
-            );
+            this.particles.explosion(event.x, event.y, event.entityKind === 'building' ? 2 : 1);
             this.audio.play('explosion');
             this.selected.delete(event.entityId);
           }
@@ -878,19 +878,10 @@ export class GameRenderer {
           wallConnections: connections,
         });
         if (!spriteRendered) {
-          drawBuilding(
-            this.units,
-            e,
-            sx,
-            sy,
-            s,
-            color,
-            connections,
-            {
-              animationTime,
-              constructionProgress,
-            },
-          );
+          drawBuilding(this.units, e, sx, sy, s, color, connections, {
+            animationTime,
+            constructionProgress,
+          });
         } else if (e.construction) {
           drawBuildingConstructionOverlay(this.units, sx, sy, s, constructionProgress);
         }
@@ -963,7 +954,13 @@ export class GameRenderer {
    * unmistakable spiked marker (pulsing red while armed, dim grey with a strike-through
    * once disarmed) plus a short label so the purpose is obvious at a glance.
    */
-  private drawTrapMarker(id: number, sx: number, sy: number, armed: boolean, animationTime: number): void {
+  private drawTrapMarker(
+    id: number,
+    sx: number,
+    sy: number,
+    armed: boolean,
+    animationTime: number,
+  ): void {
     this.trapLabelsSeenThisFrame.add(id);
     const size = Math.max(10, this.camera.scale * 0.9);
     const pulse = armed ? 0.65 + Math.sin(animationTime * 6 + id) * 0.35 : 1;
@@ -1048,9 +1045,7 @@ export class GameRenderer {
       .lineTo(sx - size * 0.55, sy + size * 0.55)
       .stroke({ width: 3, color: 0x111713 });
     if (scenario.phase === 'recovering') {
-      this.unitUnderlay
-        .rect(sx - size, sy + size + 5, size * 2, 4)
-        .fill({ color: 0x101512 });
+      this.unitUnderlay.rect(sx - size, sy + size + 5, size * 2, 4).fill({ color: 0x101512 });
       this.unitUnderlay
         .rect(sx - size, sy + size + 5, size * 2 * scenario.progress, 4)
         .fill({ color: 0x78d46a });
@@ -1063,7 +1058,10 @@ export class GameRenderer {
    * ring plus an "EXTRACTION" label, pulsing green once escorting (the point is "hot"
    * and worth running toward) and dim grey/dashed-only before that (not yet relevant).
    */
-  private drawExtractionSite(scenario: { extractionAt: { x: number; y: number }; phase: string }): void {
+  private drawExtractionSite(scenario: {
+    extractionAt: { x: number; y: number };
+    phase: string;
+  }): void {
     const { sx, sy } = this.camera.worldToScreen(scenario.extractionAt.x, scenario.extractionAt.y);
     const active = scenario.phase === 'escorting' || scenario.phase === 'extracted';
     const pulse = active ? 0.75 + Math.sin(this.presentationClock.time / 220) * 0.25 : 0.4;
@@ -1080,9 +1078,7 @@ export class GameRenderer {
         .arc(sx, sy, radius, startAngle, endAngle)
         .stroke({ width: 3, color, alpha: active ? pulse : 0.55 });
     }
-    this.overlay
-      .circle(sx, sy, radius * 0.12)
-      .fill({ color, alpha: active ? pulse : 0.5 });
+    this.overlay.circle(sx, sy, radius * 0.12).fill({ color, alpha: active ? pulse : 0.5 });
 
     if (!this.extractionLabel) {
       this.extractionLabel = new Text({
@@ -2072,11 +2068,7 @@ export class GameRenderer {
       hoveredCandidate &&
       this.navigationPointer &&
       entityIsInspectable(hoveredCandidate, snapshot.fog) &&
-      this.pointerHitsEntity(
-        hoveredCandidate,
-        this.navigationPointer.x,
-        this.navigationPointer.y,
-      )
+      this.pointerHitsEntity(hoveredCandidate, this.navigationPointer.x, this.navigationPointer.y)
         ? hoveredCandidate
         : null;
     if (!hovered) this.hoveredEntityId = null;
@@ -2122,8 +2114,7 @@ export class GameRenderer {
     }
 
     const { sx, sy } = this.camera.worldToScreen(target.x, target.y);
-    const visualRadius =
-      target.radius * this.camera.scale * (target.kind === 'resource' ? 2.8 : 1);
+    const visualRadius = target.radius * this.camera.scale * (target.kind === 'resource' ? 2.8 : 1);
     if (
       sx + visualRadius < 0 ||
       sy + visualRadius < 0 ||
@@ -2148,8 +2139,7 @@ export class GameRenderer {
 
   private pointerHitsEntity(entity: EntitySnapshot, sx: number, sy: number): boolean {
     const screen = this.camera.worldToScreen(entity.x, entity.y);
-    const radius =
-      entity.radius * this.camera.scale * (entity.kind === 'resource' ? 2.8 : 1) + 6;
+    const radius = entity.radius * this.camera.scale * (entity.kind === 'resource' ? 2.8 : 1) + 6;
     return (screen.sx - sx) ** 2 + (screen.sy - sy) ** 2 <= radius ** 2;
   }
 
