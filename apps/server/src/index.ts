@@ -11,7 +11,7 @@ import {
   encode,
   type ServerMessage,
 } from '@iron/shared';
-import { MatchRelay } from './match.js';
+import { MatchRelay, type MatchPlayer } from './match.js';
 
 const PORT = Number(process.env.PORT ?? 8080);
 const SEED = Number(process.env.MATCH_SEED ?? 123456789);
@@ -24,16 +24,10 @@ const wss = new WebSocketServer({ port: PORT });
 const send = (ws: WebSocket, msg: ServerMessage): void => ws.send(encode(msg));
 
 wss.on('connection', (ws) => {
-  const player = relay.addPlayer('anonymous', (raw) => ws.send(raw));
-  console.warn(`[iron-server] connection: player ${player.id} (${relay.playerCount} connected)`);
-
-  send(ws, {
-    t: 'welcome',
-    v: PROTOCOL_VERSION,
-    playerId: player.id,
-    seed: relay.seed,
-    mapId: relay.mapId,
-  });
+  // No slot is claimed and no 'welcome' is sent until 'join' actually passes version
+  // and password checks — a failed attempt must never occupy a player slot, or a
+  // fast retry can race the still-closing socket and desync the two real players.
+  let player: MatchPlayer | null = null;
 
   ws.on('message', (data) => {
     let msg: ReturnType<typeof decodeClient>;
@@ -43,20 +37,27 @@ wss.on('connection', (ws) => {
       return; // ignore malformed frames
     }
     switch (msg.t) {
-      case 'join':
+      case 'join': {
+        if (player) break; // already joined on this connection
         if (msg.v !== PROTOCOL_VERSION) {
-          relay.removePlayer(player.id);
           ws.close();
           break;
         }
         if (MATCH_PASSWORD && msg.password !== MATCH_PASSWORD) {
-          console.warn(`[iron-server] rejected: player ${player.id} bad password`);
+          console.warn('[iron-server] rejected: bad password');
           send(ws, { t: 'rejected', reason: 'bad_password' });
           ws.close();
           return;
         }
-        player.name = msg.name;
+        player = relay.addPlayer(msg.name, (raw) => ws.send(raw));
         console.warn(`[iron-server] joined: player ${player.id} as "${player.name}"`);
+        send(ws, {
+          t: 'welcome',
+          v: PROTOCOL_VERSION,
+          playerId: player.id,
+          seed: relay.seed,
+          mapId: relay.mapId,
+        });
         if (!relay.isRunning && relay.playerCount >= 2) {
           console.warn(`[iron-server] match starting (${relay.playerCount} players)`);
           relay.start();
@@ -69,10 +70,12 @@ wss.on('connection', (ws) => {
         }
         // else: still waiting on the opponent — nothing to send yet.
         break;
+      }
       case 'command':
-        relay.enqueue(player.id, msg.execTick, msg.cmd);
+        if (player) relay.enqueue(player.id, msg.execTick, msg.cmd);
         break;
       case 'stateHash': {
+        if (!player) break;
         const mismatchedTick = relay.reportHash(msg.tick, msg.hash);
         if (mismatchedTick !== null) {
           for (const client of wss.clients) send(client, { t: 'desync', tick: mismatchedTick });
@@ -86,6 +89,7 @@ wss.on('connection', (ws) => {
   });
 
   ws.on('close', () => {
+    if (!player) return; // never authenticated — no slot to free, no one to notify
     relay.removePlayer(player.id);
     console.warn(`[iron-server] disconnected: player ${player.id} (${relay.playerCount} remaining)`);
     for (const client of wss.clients) send(client, { t: 'playerLeft', playerId: player.id });
