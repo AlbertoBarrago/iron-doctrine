@@ -15,4 +15,9 @@ WORKDIR /app
 ENV NODE_ENV=production PORT=8080
 COPY --from=build /app /app
 EXPOSE 8080
-CMD ["node", "apps/server/dist/index.js"]
+# tsx (not plain node): @iron/shared's package.json points "exports" at its raw
+# src/index.ts (so dev/test resolve source directly), whose own internal `.js`
+# specifiers (pointing at sibling `.ts` files) Node's native ESM resolver can't
+# follow. tsx's loader handles that regardless of whether the entry point is
+# compiled JS or TS, so it also works started from the tsc-built dist/index.js.
+CMD ["/app/apps/server/node_modules/.bin/tsx", "apps/server/dist/index.js"]

@@ -1,0 +1,5 @@
+{
+  "buildCommand": "pnpm --filter @iron/client build",
+  "outputDirectory": "apps/client/dist",
+  "installCommand": "pnpm install --frozen-lockfile=false"
+}
