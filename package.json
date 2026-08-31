@@ -10,6 +10,7 @@
   },
   "scripts": {
     "build": "pnpm -r build",
+    "dev:online": "pnpm --parallel --filter @iron/server --filter @iron/client dev",
     "assets:build": "node scripts/build-assets.mjs",
     "typecheck": "tsc -b --pretty",
     "test": "vitest run",

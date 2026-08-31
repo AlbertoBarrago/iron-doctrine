@@ -223,7 +223,7 @@ function Game({
   const [quitConfirmationOpen, setQuitConfirmationOpen] = useState(false);
   const [audioMuted, setAudioMuted] = useState(false);
   const [audioVolume, setAudioVolume] = useState(0.7);
-  const [musicMuted, setMusicMuted] = useState(false);
+  const [musicMuted, setMusicMuted] = useState(true);
   const [musicVolume, setMusicVolume] = useState(0.35);
   const containerRef = useRef<HTMLDivElement>(null);
   const rendererRef = useRef<GameRenderer | null>(null);
