@@ -234,11 +234,12 @@ export class GameRenderer {
      * Online only: StrictMode double-invokes effects in dev, creating (and disposing)
      * a throwaway GameRenderer before the real one. For local skirmish that's harmless
      * — the discarded worker's state just vanishes. Online, the initial spawn commands
-     * already reached the shared NetworkClient/server before disposal, so the surviving
-     * renderer must not resend them (they'll arrive again via the tick stream, applied
-     * exactly once). Callers set this to false on a known StrictMode remount.
+     * must reach the server exactly once. A shared mutable flag (not a plain boolean)
+     * because at the time this is called we don't yet know whether THIS renderer will
+     * be the one disposed mid-flight by React — the actual claim happens later, right
+     * before sending, once we know we survived past the `disposed` checks below.
      */
-    sendInitialCommands = true,
+    initialCommandsGate?: { current: boolean },
   ): Promise<void> {
     useGameStore.getState().resetTutorial();
     useGameStore.getState().setControlGroups([]);
@@ -423,6 +424,8 @@ export class GameRenderer {
     this.camera.y = fp.toFloat(humanBase.y);
     this.clampCamera();
 
+    const sendInitialCommands = !initialCommandsGate || !initialCommandsGate.current;
+    if (initialCommandsGate) initialCommandsGate.current = true;
     if (sendInitialCommands) {
       for (const resource of config.map.resources) {
         this.bridge.command({

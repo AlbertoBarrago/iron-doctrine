@@ -46,6 +46,8 @@ interface OnlineMatch {
   client: NetworkClient;
   playerId: number;
   seed: number;
+  /** Shared across StrictMode's mount/dispose/remount of Game; see GameRenderer.start(). */
+  initialCommandsSent: { current: boolean };
 }
 
 /** Authored maps for missions with a fixed, hand-designed battlefield. */
@@ -103,7 +105,7 @@ export function App(): JSX.Element {
           // The map itself isn't negotiated yet — both peers deterministically pick
           // the same first catalog entry, which only holds while catalogs match.
           if (!maps[0]) return;
-          setOnlineMatch({ client, playerId, seed });
+          setOnlineMatch({ client, playerId, seed, initialCommandsSent: { current: false } });
           setSkirmish({
             ...DEFAULT_SKIRMISH_SETTINGS,
             map: maps[0].map,
@@ -234,10 +236,6 @@ function Game({
   });
   const completionReported = useRef(false);
   const battleReportGenerated = useRef(false);
-  // Tracks which online match already had its initial spawn commands sent, so a
-  // StrictMode dev remount (mount -> dispose -> mount) doesn't resend them and
-  // double-spawn every starting unit/building.
-  const onlineInitSentFor = useRef<NetworkClient | null>(null);
   const tutorialStep = useGameStore((state) => state.tutorialStep);
   const match = useGameStore((state) => state.match);
   const matchMetrics = useGameStore((state) => state.matchMetrics);
@@ -252,9 +250,6 @@ function Game({
       : undefined;
     const renderer = new GameRenderer(el, bridge);
     rendererRef.current = renderer;
-    const sendInitialCommands =
-      !onlineMatch || onlineInitSentFor.current !== onlineMatch.client;
-    if (onlineMatch) onlineInitSentFor.current = onlineMatch.client;
     if (onlineMatch) {
       // The opponent disconnected: this client is remapped so "0" is always itself
       // (see playerPerspective.ts), so it always wins by forfeit here.
@@ -267,7 +262,7 @@ function Game({
         config,
         onlineMatch?.seed ?? 123456789,
         { chickenEasterEgg: chickenEasterEgg && session === 0 },
-        sendInitialCommands,
+        onlineMatch?.initialCommandsSent,
       )
       .then(() => {
         renderer.attachMinimap(minimapCanvasRef.current);
