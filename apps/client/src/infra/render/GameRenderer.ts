@@ -25,6 +25,7 @@ import { minimapTerrainColor } from './minimapFog.js';
 import {
   FOG_TRANSITION_BANDS,
   fogCornerTransitionState,
+  fogTextureSample,
   fogTransitionAlpha,
   fogTransitionState,
   type FogCorner,
@@ -243,6 +244,8 @@ export class GameRenderer {
     useGameStore.getState().setControlGroups([]);
     useGameStore.getState().setMatchMetrics(null);
     useGameStore.getState().setBattleReport(null);
+    useGameStore.getState().setMatch(null);
+    useGameStore.getState().setScenario(null);
     this.latestMetrics = null;
     this.activeMap = config.map;
     this.mission = config.mission;
@@ -414,8 +417,6 @@ export class GameRenderer {
     this.bridge.start();
     this.audio.requestAmbient();
     useGameStore.getState().setPlaying(true);
-    useGameStore.getState().setMatch(null);
-    useGameStore.getState().setScenario(null);
     this.camera.x = fp.toFloat(humanBase.x);
     this.camera.y = fp.toFloat(humanBase.y);
     this.clampCamera();
@@ -1146,6 +1147,7 @@ export class GameRenderer {
     const min = toCell(topLeft.wx, topLeft.wy);
     const max = toCell(botRight.wx, botRight.wy);
     const size = fog.cellSize * this.camera.scale;
+    const fogTextureSeed = this.activeMap?.environment?.seed ?? 0x1d0c7a1e;
 
     for (let cy = Math.max(0, min.cy); cy <= Math.min(fog.height - 1, max.cy); cy++) {
       for (let cx = Math.max(0, min.cx); cx <= Math.min(fog.width - 1, max.cx); cx++) {
@@ -1154,7 +1156,25 @@ export class GameRenderer {
         const wx = fog.originX + cx * fog.cellSize;
         const wy = fog.originY + cy * fog.cellSize;
         const { sx, sy } = this.camera.worldToScreen(wx, wy);
-        this.fogGfx.rect(sx, sy, size + 1, size + 1).fill({ color: 0x000000 });
+        const texture = fogTextureSample(fogTextureSeed, cx, cy);
+        this.fogGfx.rect(sx, sy, size + 1, size + 1).fill({ color: texture.color });
+        if (texture.mark !== 'none' && size >= 12) {
+          const inset = size * (0.22 + texture.offset * 0.12);
+          const left = sx + inset;
+          const right = sx + size - inset;
+          const top = sy + inset;
+          const bottom = sy + size - inset;
+          if (texture.mark === 'forward-slash') {
+            this.fogGfx.moveTo(left, bottom).lineTo(right, top);
+          } else {
+            this.fogGfx.moveTo(left, top).lineTo(right, bottom);
+          }
+          this.fogGfx.stroke({
+            width: Math.max(0.75, size * 0.025),
+            color: 0x263129,
+            alpha: 0.2,
+          });
+        }
       }
     }
 

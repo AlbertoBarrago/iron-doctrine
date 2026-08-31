@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FOG_TRANSITION_BANDS,
   fogCornerTransitionState,
+  fogTextureSample,
   fogTransitionAlpha,
   fogTransitionState,
 } from '../fogPresentation.js';
@@ -43,5 +44,16 @@ describe('battlefield fog presentation', () => {
     expect(hidden.every((alpha, index) => index === 0 || alpha < hidden[index - 1]!)).toBe(true);
     expect(explored).toEqual([0, 0, 0, 0]);
     expect(fogTransitionAlpha(0, FOG_TRANSITION_BANDS)).toBe(0);
+  });
+
+  it('samples stable, opaque-safe texture details for unexplored cells', () => {
+    const first = fogTextureSample(42, 7, 11);
+    const repeated = fogTextureSample(42, 7, 11);
+    const samples = Array.from({ length: 32 }, (_, x) => fogTextureSample(42, x, 11));
+
+    expect(repeated).toEqual(first);
+    expect(samples.some((sample) => sample.color !== first.color)).toBe(true);
+    expect(samples.some((sample) => sample.mark !== 'none')).toBe(true);
+    expect(samples.every((sample) => sample.offset >= 0 && sample.offset <= 1)).toBe(true);
   });
 });

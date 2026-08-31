@@ -60,7 +60,7 @@ export const DisarmingSystem: System = {
     for (const entity of world.query(Disarming, Position)) {
       const disarming = world.get(entity, Disarming)!;
       const targetTrap = asEntityId(disarming.target);
-      const trap = world.get(targetTrap, Trap);
+      const trap = world.isAlive(targetTrap) ? world.get(targetTrap, Trap) : undefined;
       if (!trap || !trap.armed) {
         world.remove(entity, Disarming);
         continue;

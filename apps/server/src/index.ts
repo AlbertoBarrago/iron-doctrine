@@ -7,7 +7,6 @@ import { WebSocketServer, type WebSocket } from 'ws';
 import {
   SIM_DT_MS,
   PROTOCOL_VERSION,
-  asTick,
   decodeClient,
   encode,
   type ServerMessage,
@@ -45,6 +44,11 @@ wss.on('connection', (ws) => {
     }
     switch (msg.t) {
       case 'join':
+        if (msg.v !== PROTOCOL_VERSION) {
+          relay.removePlayer(player.id);
+          ws.close();
+          break;
+        }
         if (MATCH_PASSWORD && msg.password !== MATCH_PASSWORD) {
           console.warn(`[iron-server] rejected: player ${player.id} bad password`);
           send(ws, { t: 'rejected', reason: 'bad_password' });
@@ -56,12 +60,24 @@ wss.on('connection', (ws) => {
         if (!relay.isRunning && relay.playerCount >= 2) {
           console.warn(`[iron-server] match starting (${relay.playerCount} players)`);
           relay.start();
-          for (const client of wss.clients) send(client, { t: 'start', startTick: asTick(0) });
+          for (const client of wss.clients) send(client, { t: 'start', startTick: relay.nextTick });
+        } else {
+          // Match already running: this player missed the initial broadcast, so
+          // bootstrap them individually at the next tick instead of one they'd
+          // never see (see relay.nextTick).
+          send(ws, { t: 'start', startTick: relay.nextTick });
         }
         break;
       case 'command':
         relay.enqueue(player.id, msg.execTick, msg.cmd);
         break;
+      case 'stateHash': {
+        const mismatchedTick = relay.reportHash(msg.tick, msg.hash);
+        if (mismatchedTick !== null) {
+          for (const client of wss.clients) send(client, { t: 'desync', tick: mismatchedTick });
+        }
+        break;
+      }
       case 'leave':
         ws.close();
         break;
@@ -71,6 +87,7 @@ wss.on('connection', (ws) => {
   ws.on('close', () => {
     relay.removePlayer(player.id);
     console.warn(`[iron-server] disconnected: player ${player.id} (${relay.playerCount} remaining)`);
+    for (const client of wss.clients) send(client, { t: 'playerLeft', playerId: player.id });
   });
 });
 

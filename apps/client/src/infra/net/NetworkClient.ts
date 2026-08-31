@@ -26,6 +26,7 @@ export interface NetworkClientEvents {
   onTick: (tick: number, commands: Array<{ player: number; cmd: WireCommand }>) => void;
   onDesync?: (tick: number) => void;
   onRejected?: (reason: 'bad_password') => void;
+  onDisconnect?: () => void;
 }
 
 export class NetworkClient {
@@ -40,6 +41,7 @@ export class NetworkClient {
     private readonly inputDelay = DEFAULT_INPUT_DELAY,
   ) {
     this.transport.onMessage((msg) => this.handle(msg));
+    this.transport.onDisconnect(() => this.events.onDisconnect?.());
   }
 
   join(name: string, password: string): void {
