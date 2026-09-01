@@ -42,4 +42,6 @@ export type FromWorker =
       t: 'snapshot';
       snapshot: Snapshot;
       events: PresentationEventEnvelope[];
-    };
+    }
+  /** Online only: periodic state hash so the server can catch the two sims diverging. */
+  | { t: 'hash'; tick: number; hash: number };

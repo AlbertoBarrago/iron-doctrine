@@ -130,6 +130,7 @@ export function Hud(props: HudProps): JSX.Element {
   const battleReport = useGameStore((state) => state.battleReport);
   const scenario = useGameStore((state) => state.scenario);
   const aiActivationSeconds = useGameStore((state) => state.aiActivationSeconds);
+  const desyncTick = useGameStore((state) => state.desyncTick);
   const tutorial = TUTORIAL[tutorialStep];
   const resultActions =
     match?.status === 'finished' ? matchResultActions(props.mission, match.winner) : null;
@@ -161,6 +162,26 @@ export function Hud(props: HudProps): JSX.Element {
 
   return (
     <>
+      {desyncTick !== null && (
+        <section
+          role="alert"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+            padding: '8px 16px',
+            background: '#a93427',
+            color: '#fff',
+            fontWeight: 600,
+            textAlign: 'center',
+          }}
+        >
+          ⚠ Desync detected at tick {desyncTick} — the two games have diverged, results from
+          here on aren't reliable.
+        </section>
+      )}
       <section className="mission-notice" aria-live="polite">
         <span className="mission-notice__signal" />
         <div>

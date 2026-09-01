@@ -157,6 +157,8 @@ interface GameUiState {
   battleReport: BattleReport | null;
   scenario: ScenarioSnapshot | null;
   aiActivationSeconds: number;
+  /** Online only: set once the server reports the two peers' simulations diverged. */
+  desyncTick: number | null;
   tutorialStep: TutorialStep;
   completedTutorial: TutorialMilestone[];
   setFps: (fps: number) => void;
@@ -174,6 +176,7 @@ interface GameUiState {
   setBattleReport: (report: BattleReport | null) => void;
   setScenario: (scenario: ScenarioSnapshot | null) => void;
   setAiActivationSeconds: (seconds: number) => void;
+  setDesyncTick: (tick: number | null) => void;
   advanceTutorial: (milestone: TutorialMilestone) => void;
   resetTutorial: () => void;
 }
@@ -337,6 +340,7 @@ export const useGameStore = create<GameUiState>((set) => ({
   battleReport: null,
   scenario: null,
   aiActivationSeconds: 0,
+  desyncTick: null,
   tutorialStep: 'select',
   completedTutorial: [],
   setFps: (fps) =>
@@ -387,6 +391,8 @@ export const useGameStore = create<GameUiState>((set) => ({
     set((state) =>
       state.aiActivationSeconds === aiActivationSeconds ? state : { aiActivationSeconds },
     ),
+  setDesyncTick: (desyncTick) =>
+    set((state) => (state.desyncTick === desyncTick ? state : { desyncTick })),
   advanceTutorial: (milestone) =>
     set((state) => {
       const progress = tutorialProgress(state.completedTutorial, milestone);

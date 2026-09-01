@@ -246,6 +246,7 @@ export class GameRenderer {
     useGameStore.getState().setMatchMetrics(null);
     useGameStore.getState().setBattleReport(null);
     useGameStore.getState().setMatch(null);
+    useGameStore.getState().setDesyncTick(null);
     useGameStore.getState().setScenario(null);
     this.latestMetrics = null;
     this.activeMap = config.map;

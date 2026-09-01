@@ -38,6 +38,8 @@ export class NetworkedSimBridge implements SimBridgeLike {
   private onMessage(msg: FromWorker): void {
     if (msg.t === 'snapshot') {
       this.snapshots.ingest(remapSnapshotPerspective(msg.snapshot, this.localPlayerId), msg.events);
+    } else if (msg.t === 'hash') {
+      this.client.reportHash(msg.tick, msg.hash);
     }
   }
 

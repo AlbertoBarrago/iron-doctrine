@@ -256,6 +256,9 @@ function Game({
       onlineMatch.client.setOnPlayerLeft(() => {
         useGameStore.getState().setMatch({ status: 'finished', winner: asPlayerId(0) });
       });
+      onlineMatch.client.setOnDesync((tick) => {
+        useGameStore.getState().setDesyncTick(tick);
+      });
     }
     void renderer
       .start(

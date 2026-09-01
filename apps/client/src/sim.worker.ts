@@ -13,6 +13,8 @@ import {
 } from './infra/worker/PresentationEvents.js';
 import type { FromWorker, ToWorker } from './infra/worker/protocol.js';
 
+const HASH_REPORT_INTERVAL_TICKS = 20;
+
 let sim: Simulation | null = null;
 let viewTeam = 0;
 let running = false;
@@ -89,6 +91,10 @@ self.onmessage = (ev: MessageEvent<ToWorker>): void => {
       const events: PresentationEventEnvelope[] = [];
       stepOnce(events);
       if (lastSnapshot) post({ t: 'snapshot', snapshot: lastSnapshot, events });
+      // Every ~1s (at 20Hz): lets the server catch the two peers' sims diverging.
+      if (sim.tick % HASH_REPORT_INTERVAL_TICKS === 0) {
+        post({ t: 'hash', tick: sim.tick, hash: sim.hash() });
+      }
       break;
     }
   }

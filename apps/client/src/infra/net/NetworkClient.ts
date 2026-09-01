@@ -36,6 +36,7 @@ export class NetworkClient {
   private playerId = -1;
   private tickOverride: NetworkClientEvents['onTick'] | null = null;
   private playerLeftOverride: NetworkClientEvents['onPlayerLeft'] | null = null;
+  private desyncOverride: NetworkClientEvents['onDesync'] | null = null;
 
   constructor(
     private readonly transport: Transport,
@@ -64,6 +65,11 @@ export class NetworkClient {
     this.playerLeftOverride = handler;
   }
 
+  /** Replaces the desync handler after construction, once the online game loop is ready. */
+  setOnDesync(handler: NonNullable<NetworkClientEvents['onDesync']>): void {
+    this.desyncOverride = handler;
+  }
+
   /** Queue a local command; it will execute `inputDelay` ticks in the future. */
   sendCommand(cmd: WireCommand): void {
     const execTick = asTick(this.currentTick + this.inputDelay);
@@ -88,7 +94,7 @@ export class NetworkClient {
         }
         break;
       case 'desync':
-        this.events.onDesync?.(msg.tick);
+        (this.desyncOverride ?? this.events.onDesync)?.(msg.tick);
         break;
       case 'rejected':
         this.events.onRejected?.(msg.reason);
