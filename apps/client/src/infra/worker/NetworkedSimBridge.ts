@@ -15,6 +15,16 @@ import type { FromWorker, InitConfig, ToWorker } from './protocol.js';
 export class NetworkedSimBridge implements SimBridgeLike {
   private readonly worker: Worker;
   private readonly snapshots = new SnapshotBuffer();
+  /**
+   * The worker only accepts `networkTick` after it has processed `init` (its `sim`
+   * is null before that). The server starts dispatching ticks the moment the match
+   * begins, which can race the async Pixi init + asset load in GameRenderer.start().
+   * Ticks that reach the coordinator before the worker is ready are buffered here and
+   * flushed once the worker posts `ready` — otherwise they'd be sent to a null sim and
+   * silently dropped, leaving this peer permanently behind and desynced.
+   */
+  private workerReady = false;
+  private readonly pendingTicks: Command[][] = [];
 
   /**
    * @param localPlayerId Server-assigned player id for this client. Every hardcoded
@@ -31,12 +41,21 @@ export class NetworkedSimBridge implements SimBridgeLike {
     this.worker.onmessage = (ev: MessageEvent<FromWorker>) => this.onMessage(ev.data);
     this.client.setOnTick((_tick, commands) => {
       const cmds = commands.map((confirmed) => confirmed.cmd as unknown as Command);
-      this.send({ t: 'networkTick', commands: cmds });
+      if (this.workerReady) {
+        this.send({ t: 'networkTick', commands: cmds });
+      } else {
+        this.pendingTicks.push(cmds);
+      }
     });
   }
 
   private onMessage(msg: FromWorker): void {
-    if (msg.t === 'snapshot') {
+    if (msg.t === 'ready') {
+      this.workerReady = true;
+      for (const cmds of this.pendingTicks.splice(0)) {
+        this.send({ t: 'networkTick', commands: cmds });
+      }
+    } else if (msg.t === 'snapshot') {
       this.snapshots.ingest(remapSnapshotPerspective(msg.snapshot, this.localPlayerId), msg.events);
     } else if (msg.t === 'hash') {
       this.client.reportHash(msg.tick, msg.hash);

@@ -428,12 +428,20 @@ export class GameRenderer {
     const sendInitialCommands = !initialCommandsGate || !initialCommandsGate.current;
     if (initialCommandsGate) initialCommandsGate.current = true;
     if (sendInitialCommands) {
-      for (const resource of config.map.resources) {
-        this.bridge.command({
-          type: 'spawnResource',
-          amount: resource.amount,
-          at: mapPosition(config.map, resource.x, resource.y),
-        });
+      // Resources are neutral, shared map data — they must be spawned exactly once.
+      // In online mode both clients send initial commands and the server relays every
+      // command to every peer, so if both sent the resource list each peer's sim would
+      // spawn every node twice. Only the player-0 client (the first joiner) sends them;
+      // the other peer still receives them via the relay. Single-player (no online id)
+      // is unaffected.
+      if (config.onlinePlayerId === undefined || config.onlinePlayerId === 0) {
+        for (const resource of config.map.resources) {
+          this.bridge.command({
+            type: 'spawnResource',
+            amount: resource.amount,
+            at: mapPosition(config.map, resource.x, resource.y),
+          });
+        }
       }
 
       if (missionRules.playerStart === 'base') {
