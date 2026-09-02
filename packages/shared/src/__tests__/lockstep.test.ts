@@ -41,4 +41,14 @@ describe('LockstepCoordinator', () => {
     const [first] = c.drainReady();
     expect(first!.commands[0]!.cmd.type).toBe('move');
   });
+
+  it('reset() realigns the cursor so ticks at a non-zero start drain', () => {
+    const c = new LockstepCoordinator(0);
+    c.receive(asTick(500), []);
+    expect(c.drainReady()).toEqual([]); // stuck behind the gap at 0
+    c.reset(500);
+    c.receive(asTick(500), []); // 'start' arrives before the tick stream in practice
+    expect(c.ready).toBe(true);
+    expect(c.drainReady().map((t) => t.tick)).toEqual([500]);
+  });
 });

@@ -61,12 +61,21 @@ export class MatchRelay {
     return this.players.size;
   }
 
-  /** Queue a command for a future tick (ignores ticks already dispatched). */
+  /**
+   * Queue a command for a future tick. If a command arrives with an `execTick` that
+   * has already been dispatched (a client that was slow to spin up — initial spawn
+   * commands, or any input queued during a hitch — schedules against a stale local
+   * tick), it is *clamped* to the next undispatched tick instead of being silently
+   * dropped. Silently dropping changes which side ends up owning the setup (e.g. a
+   * whole base), making the two peers build genuinely different worlds — the
+   * "separate games" symptom. The server serializes the corrected tick once and
+   * broadcasts it uniformly, so the peers still agree on the exact command stream.
+   */
   enqueue(player: PlayerId, execTick: Tick, cmd: WireCommand): void {
-    if (execTick <= this.currentTick) return; // too late, would break determinism
-    const list = this.queued.get(execTick) ?? [];
+    const tick = asTick(execTick <= this.currentTick ? this.currentTick + 1 : execTick);
+    const list = this.queued.get(tick) ?? [];
     list.push({ player, cmd });
-    this.queued.set(execTick, list);
+    this.queued.set(tick, list);
   }
 
   start(): void {

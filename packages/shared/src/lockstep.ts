@@ -33,6 +33,19 @@ export class LockstepCoordinator {
     return this.nextTick;
   }
 
+  /**
+   * Realign the cursor to a new start tick, discarding any buffered future ticks.
+   * Called once on `start` so the coordinator adopts the server's actual `startTick`
+   * (which is 0 for a normal two-player join, but can be non-zero for anyone who
+   * joins after the match is already running). Without this realignment the two
+   * stay out of step: buffered ticks sit behind a gap at 0 and never drain, freezing
+   * that peer into a desynced, effectively separate game.
+   */
+  reset(startTick = 0): void {
+    this.pending.clear();
+    this.nextTick = startTick;
+  }
+
   /** Whether the next contiguous tick is available to execute. */
   get ready(): boolean {
     return this.pending.has(this.nextTick);

@@ -84,6 +84,10 @@ export class NetworkClient {
         break;
       case 'start':
         this.currentTick = msg.startTick;
+        // Adopt the server's start tick so the coordinator drains from there (a
+        // late-joiner's startTick can be non-zero; without this it would buffer
+        // ticks forever behind a gap at 0 and never execute anything).
+        this.coord.reset(msg.startTick);
         this.events.onStart(msg.startTick);
         break;
       case 'tick':
